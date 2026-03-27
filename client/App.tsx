@@ -282,6 +282,7 @@ function RootRouter() {
     <Routes>
       {/* PUBLIC SAYFALAR - DeviceLock yok */}
       <Route path="/rydex" element={<Landing />} />
+      <Route path="/landing" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/member-login" element={<Login />} />
