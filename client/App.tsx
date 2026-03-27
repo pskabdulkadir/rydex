@@ -295,13 +295,19 @@ function RootRouter() {
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminPanel />} />
 
-      {/* PROTECTED APP ROUTES - DeviceLock ile korumalı */}
+      {/* PROTECTED APP ROUTES - DeviceLock ile korumalı (sadece dev modunda) */}
       <Route path="/" element={
-        <DeviceLock>
+        import.meta.env.DEV ? (
+          <DeviceLock>
+            <AccessControlProvider userId={localStorage.getItem('userId') || 'demo-user'}>
+              <AppLayout />
+            </AccessControlProvider>
+          </DeviceLock>
+        ) : (
           <AccessControlProvider userId={localStorage.getItem('userId') || 'demo-user'}>
             <AppLayout />
           </AccessControlProvider>
-        </DeviceLock>
+        )
       }>
         <Route index element={<Scanner />} />
         <Route path="dashboard" element={<Index />} />
