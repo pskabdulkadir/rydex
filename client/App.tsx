@@ -2,7 +2,7 @@ import "./global.css";
 
 import { useEffect, useState, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route, Outlet, useNavigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Outlet, useNavigate, useLocation } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
@@ -276,89 +276,106 @@ function AppLayout() {
   );
 }
 
-// ROOT ROUTER - Tüm routes tanımları
-function RootRouter() {
+// PROTECTED APP ROUTES - DeviceLock ile korunan sayfalar
+function ProtectedAppRoutes() {
   return (
-    <Routes>
-      {/* WEB SAYFALARI - Uygulamadan bağımsız */}
-      <Route path="/rydex" element={<Landing />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/member-login" element={<Login />} />
-      <Route path="/member-register" element={<Register />} />
-      <Route path="/member-panel" element={<MemberPanel />} />
-      <Route path="/pricing" element={<Pricing />} />
-      <Route path="/checkout" element={<Checkout />} />
-      <Route path="/payment-pending" element={<PaymentPending />} />
-      <Route path="/payment-success" element={<PaymentSuccess />} />
-      <Route path="/payment-expired" element={<PaymentExpired />} />
-      <Route path="/admin-login" element={<AdminLogin />} />
-      <Route path="/admin" element={<AdminPanel />} />
-
-      {/* APP SAYFALAR - AccessControl ve Sistem başlatma ile korumalı */}
-      <Route path="/" element={
-        <AccessControlProvider userId={localStorage.getItem('userId') || 'demo-user'}>
-          <AppLayout />
-        </AccessControlProvider>
-      }>
-        <Route index element={<Scanner />} />
-        <Route path="dashboard" element={<Index />} />
-        <Route path="camera-analysis" element={<CameraAnalysisDetail />} />
-        <Route path="application-features" element={<ApplicationFeaturesDetail />} />
-        <Route path="magnetometer" element={<MagnetometerDetail />} />
-        <Route path="viewer-3d" element={<Viewer3DDetail />} />
-        <Route path="satellite-analysis" element={<SatelliteAnalysisDetail />} />
-        <Route path="thermal-energy" element={<ThermalEnergyDetail />} />
-        <Route path="radar-scan" element={<RadarScanDetail />} />
-        <Route path="treasure-detection" element={<TreasureDetectionDetail />} />
-        <Route path="map-detections" element={<MapDetectionsDetail />} />
-        <Route path="scan-history" element={<ScanHistoryDetail />} />
-        <Route path="ar-analysis" element={<ARAnalysisDetail />} />
-        <Route path="area-scan" element={<AreaScanDetail />} />
-        <Route path="structure-scan" element={<StructureScanDetail />} />
-        <Route path="advanced-analytics" element={<AdvancedAnalyticsDetail />} />
-        <Route path="topography" element={<TopographyDetail />} />
-        <Route path="vegetation" element={<VegetationDetail />} />
-        <Route path="signal-analysis" element={<SignalAnalysisDetail />} />
-        <Route path="ocean-analysis" element={<OceanAnalysisDetail />} />
-        <Route path="climate-data" element={<ClimateDataDetail />} />
-        <Route path="wind-analysis" element={<WindAnalysisDetail />} />
-        <Route path="soil-composition" element={<SoilCompositionDetail />} />
-        <Route path="microorganisms" element={<MicroorganismsDetail />} />
-        <Route path="radioactivity" element={<RadioactivityDetail />} />
-        <Route path="vision-analysis" element={<VisionAnalysisDetail />} />
-        <Route path="pressure-mapping" element={<PressureMappingDetail />} />
-        <Route path="time-series-analysis" element={<TimeSeriesAnalysisDetail />} />
-        <Route path="volumetric-measurement" element={<VolumetricMeasurementDetail />} />
-        <Route path="gravitational-field" element={<GravitationalFieldDetail />} />
-        <Route path="seismic-activity" element={<SeismicActivityDetail />} />
-        <Route path="network-analysis" element={<NetworkAnalysisDetail />} />
-        <Route path="archeology-database" element={<ArcheologyDatabaseDetail />} />
-        <Route path="radar-scanner" element={<RadarScannerPage />} />
-        <Route path="area-scanner" element={<AreaScanner />} />
-        <Route path="structure-scanner" element={<StructureScanner />} />
-        <Route path="ar" element={<AR />} />
-        <Route path="camera" element={<Camera />} />
-        <Route path="magnetometer-app" element={<Magnetometer />} />
-        <Route path="magnetometer/history" element={<History />} />
-        <Route path="magnetometer/detections" element={<Detections />} />
-        <Route path="magnetometer/map" element={<MapPage />} />
-        <Route path="viewer-3d-app" element={<Viewer3DPage />} />
-        <Route path="real-data" element={<RealDataPage />} />
-        <Route path="radar" element={<RadarScannerPage />} />
-        <Route path="area" element={<AreaScanner />} />
-        <Route path="structure" element={<StructureScanner />} />
-        <Route path="search" element={<SearchResults />} />
-        <Route path="two-factor-auth" element={<TwoFactorAuth />} />
-        <Route path="refund-management" element={<RefundManagement />} />
-        <Route path="payment-reconciliation" element={<PaymentReconciliation />} />
-        <Route path="support-tickets" element={<SupportTickets />} />
-      </Route>
-
-      {/* Catch-all 404 */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <DeviceLock>
+      <Routes>
+        {/* APP SAYFALAR - AccessControl ve Sistem başlatma ile korumalı */}
+        <Route path="/" element={
+          <AccessControlProvider userId={localStorage.getItem('userId') || 'demo-user'}>
+            <AppLayout />
+          </AccessControlProvider>
+        }>
+          <Route index element={<Scanner />} />
+          <Route path="dashboard" element={<Index />} />
+          <Route path="camera-analysis" element={<CameraAnalysisDetail />} />
+          <Route path="application-features" element={<ApplicationFeaturesDetail />} />
+          <Route path="magnetometer" element={<MagnetometerDetail />} />
+          <Route path="viewer-3d" element={<Viewer3DDetail />} />
+          <Route path="satellite-analysis" element={<SatelliteAnalysisDetail />} />
+          <Route path="thermal-energy" element={<ThermalEnergyDetail />} />
+          <Route path="radar-scan" element={<RadarScanDetail />} />
+          <Route path="treasure-detection" element={<TreasureDetectionDetail />} />
+          <Route path="map-detections" element={<MapDetectionsDetail />} />
+          <Route path="scan-history" element={<ScanHistoryDetail />} />
+          <Route path="ar-analysis" element={<ARAnalysisDetail />} />
+          <Route path="area-scan" element={<AreaScanDetail />} />
+          <Route path="structure-scan" element={<StructureScanDetail />} />
+          <Route path="advanced-analytics" element={<AdvancedAnalyticsDetail />} />
+          <Route path="topography" element={<TopographyDetail />} />
+          <Route path="vegetation" element={<VegetationDetail />} />
+          <Route path="signal-analysis" element={<SignalAnalysisDetail />} />
+          <Route path="ocean-analysis" element={<OceanAnalysisDetail />} />
+          <Route path="climate-data" element={<ClimateDataDetail />} />
+          <Route path="wind-analysis" element={<WindAnalysisDetail />} />
+          <Route path="soil-composition" element={<SoilCompositionDetail />} />
+          <Route path="microorganisms" element={<MicroorganismsDetail />} />
+          <Route path="radioactivity" element={<RadioactivityDetail />} />
+          <Route path="vision-analysis" element={<VisionAnalysisDetail />} />
+          <Route path="pressure-mapping" element={<PressureMappingDetail />} />
+          <Route path="time-series-analysis" element={<TimeSeriesAnalysisDetail />} />
+          <Route path="volumetric-measurement" element={<VolumetricMeasurementDetail />} />
+          <Route path="gravitational-field" element={<GravitationalFieldDetail />} />
+          <Route path="seismic-activity" element={<SeismicActivityDetail />} />
+          <Route path="network-analysis" element={<NetworkAnalysisDetail />} />
+          <Route path="archeology-database" element={<ArcheologyDatabaseDetail />} />
+          <Route path="radar-scanner" element={<RadarScannerPage />} />
+          <Route path="area-scanner" element={<AreaScanner />} />
+          <Route path="structure-scanner" element={<StructureScanner />} />
+          <Route path="ar" element={<AR />} />
+          <Route path="camera" element={<Camera />} />
+          <Route path="magnetometer-app" element={<Magnetometer />} />
+          <Route path="magnetometer/history" element={<History />} />
+          <Route path="magnetometer/detections" element={<Detections />} />
+          <Route path="magnetometer/map" element={<MapPage />} />
+          <Route path="viewer-3d-app" element={<Viewer3DPage />} />
+          <Route path="real-data" element={<RealDataPage />} />
+          <Route path="radar" element={<RadarScannerPage />} />
+          <Route path="area" element={<AreaScanner />} />
+          <Route path="structure" element={<StructureScanner />} />
+          <Route path="search" element={<SearchResults />} />
+          <Route path="two-factor-auth" element={<TwoFactorAuth />} />
+          <Route path="refund-management" element={<RefundManagement />} />
+          <Route path="payment-reconciliation" element={<PaymentReconciliation />} />
+          <Route path="support-tickets" element={<SupportTickets />} />
+        </Route>
+      </Routes>
+    </DeviceLock>
   );
+}
+
+// ROUTER WRAPPER - Public ve Protected rotaları yönetir
+function RootRouter() {
+  const location = useLocation();
+  const publicPaths = ['/rydex', '/login', '/register', '/member-login', '/member-register', '/member-panel', '/pricing', '/checkout', '/payment-pending', '/payment-success', '/payment-expired', '/admin-login', '/admin'];
+  
+  const isPublicPath = publicPaths.some(path => location.pathname === path || location.pathname.startsWith(path + '/'));
+
+  if (isPublicPath) {
+    // Public sayfalar - DeviceLock yok
+    return (
+      <Routes>
+        <Route path="/rydex" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/member-login" element={<Login />} />
+        <Route path="/member-register" element={<Register />} />
+        <Route path="/member-panel" element={<MemberPanel />} />
+        <Route path="/pricing" element={<Pricing />} />
+        <Route path="/checkout" element={<Checkout />} />
+        <Route path="/payment-pending" element={<PaymentPending />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/payment-expired" element={<PaymentExpired />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin" element={<AdminPanel />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    );
+  }
+
+  // Protected app routes - DeviceLock ile korumalı
+  return <ProtectedAppRoutes />;
 }
 
 const App = () => {
@@ -386,11 +403,9 @@ const App = () => {
                   <TooltipProvider>
                     <Toaster />
                     <Sonner />
-                    <DeviceLock>
-                      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-                        <RootRouter />
-                      </BrowserRouter>
-                    </DeviceLock>
+                    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+                      <RootRouter />
+                    </BrowserRouter>
                   </TooltipProvider>
                 </CameraProvider>
               </LocationProvider>
