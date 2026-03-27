@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="rydex" />
+    <meta name="description" content="Açık kaynak uydu görüntüleri kullanarak yeraltı modellemesi ve görüntüleme sistemi" />
+    <meta name="theme-color" content="#3b82f6" />
+    <meta name="color-scheme" content="light dark" />
+
+    <link rel="manifest" href="/manifest.json" />
+    <link rel="icon" href="/favicon.ico" />
+
+    <title>rydex</title>
+  </head>
+
+  <body>
+    <div id="root"></div>
+
+    <script type="module" src="/client/App.tsx"></script>
+    <script>
+      // Service Worker registrasyonu
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').catch((error) => {
+          console.log('Service Worker registration hatası:', error);
+        });
+      }
+    </script>
+  </body>
+</html>
