@@ -66,11 +66,20 @@ export async function loginAdmin(credentials: AdminLoginData): Promise<AdminAuth
  * Admin olarak giriş yap (Client-side, API'ye bağlı değil)
  * Production'da API çalışmadığında kullanılır
  */
-export async function loginAdminLocal(password: string): Promise<AdminAuthToken> {
-  // Hardcoded admin şifresi
-  const ADMIN_PASSWORD = 'admin123';
+export async function loginAdminLocal(credentials: AdminLoginData): Promise<AdminAuthToken> {
+  // Hardcoded admin kimlik bilgileri
+  const ADMIN_EMAIL = 'psikologabdulkadirkan@gmail.com';
+  const ADMIN_PASSWORD = 'Abdulkadir1983';
 
-  if (password.trim() !== ADMIN_PASSWORD) {
+  const trimmedEmail = credentials.email.trim();
+  const trimmedPassword = credentials.password.trim();
+
+  // Kimlik bilgilerini kontrol et
+  if (trimmedEmail !== ADMIN_EMAIL) {
+    throw new Error('E-posta adresi yanlış');
+  }
+
+  if (trimmedPassword !== ADMIN_PASSWORD) {
     throw new Error('Şifre yanlış');
   }
 
@@ -79,7 +88,7 @@ export async function loginAdminLocal(password: string): Promise<AdminAuthToken>
     token: `local_${Date.now()}`,
     expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 saat geçerli
     adminId: 'admin_local',
-    email: 'admin@local',
+    email: ADMIN_EMAIL,
     name: 'Admin Yöneticisi',
     role: 'admin'
   };

@@ -6,6 +6,7 @@ import { loginAdminLocal, isAdminLoggedIn, scheduleTokenRefresh } from '@/lib/ad
 
 export default function AdminLogin() {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +25,13 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
+      const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
+
+      // Email validasyonu
+      if (!trimmedEmail) {
+        throw new Error('E-posta adresi girin');
+      }
 
       // Şifre validasyonu
       if (!trimmedPassword) {
@@ -32,7 +39,7 @@ export default function AdminLogin() {
       }
 
       // Admin olarak giriş yap (client-side)
-      const authToken = await loginAdminLocal(trimmedPassword);
+      const authToken = await loginAdminLocal({ email: trimmedEmail, password: trimmedPassword });
 
       // Token refresh scheduling'i başlat
       scheduleTokenRefresh();
@@ -88,6 +95,22 @@ export default function AdminLogin() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Email Input */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-300 mb-2">
+                E-Posta Adresi
+              </label>
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="admin@example.com"
+                autoFocus
+                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors"
+                disabled={isLoading}
+              />
+            </div>
+
             {/* Password Input */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
@@ -98,8 +121,7 @@ export default function AdminLogin() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Şifrenizi girin"
-                  autoFocus
+                  placeholder="••••••••"
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors pr-12"
                   disabled={isLoading}
                 />
