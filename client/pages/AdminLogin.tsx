@@ -2,11 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Eye, EyeOff, AlertCircle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
-import { loginAdmin, isAdminLoggedIn, scheduleTokenRefresh } from '@/lib/admin-auth';
+import { loginAdminLocal, isAdminLoggedIn, scheduleTokenRefresh } from '@/lib/admin-auth';
 
 export default function AdminLogin() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -25,21 +24,15 @@ export default function AdminLogin() {
     setIsLoading(true);
 
     try {
-      const trimmedEmail = email.trim();
       const trimmedPassword = password.trim();
 
-      // Email validasyonu
-      if (!trimmedEmail || !trimmedEmail.includes('@')) {
-        throw new Error('Geçerli bir e-posta adresi girin');
-      }
-
       // Şifre validasyonu
-      if (!trimmedPassword || trimmedPassword.length < 8) {
-        throw new Error('Şifre en az 8 karakter olmalıdır');
+      if (!trimmedPassword) {
+        throw new Error('Şifre girin');
       }
 
-      // Admin olarak giriş yap
-      const authToken = await loginAdmin({ email: trimmedEmail, password: trimmedPassword });
+      // Admin olarak giriş yap (client-side)
+      const authToken = await loginAdminLocal(trimmedPassword);
 
       // Token refresh scheduling'i başlat
       scheduleTokenRefresh();
@@ -95,21 +88,6 @@ export default function AdminLogin() {
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Email Input */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-300 mb-2">
-                E-Posta Adresi
-              </label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@example.com"
-                className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors"
-                disabled={isLoading}
-              />
-            </div>
-
             {/* Password Input */}
             <div>
               <label className="block text-sm font-semibold text-slate-300 mb-2">
@@ -120,7 +98,8 @@ export default function AdminLogin() {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Şifrenizi girin"
+                  autoFocus
                   className="w-full px-4 py-3 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:outline-none transition-colors pr-12"
                   disabled={isLoading}
                 />
@@ -137,15 +116,6 @@ export default function AdminLogin() {
                   )}
                 </button>
               </div>
-            </div>
-
-            {/* Info Box */}
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
-              <p className="text-xs text-blue-400">
-                <strong>Test Hesabı:</strong><br />
-                E-Posta: psikologabdulkadirkan@gmail.com<br />
-                Şifre: Abdulkadir1983
-              </p>
             </div>
 
             {/* Submit Button */}

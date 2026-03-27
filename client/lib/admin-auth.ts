@@ -24,7 +24,7 @@ let tokenRefreshTimeout: NodeJS.Timeout | null = null;
 let isRefreshing = false;
 
 /**
- * Admin olarak giriş yap
+ * Admin olarak giriş yap (API tabanlı)
  */
 export async function loginAdmin(credentials: AdminLoginData): Promise<AdminAuthToken> {
   try {
@@ -60,6 +60,32 @@ export async function loginAdmin(credentials: AdminLoginData): Promise<AdminAuth
   } catch (error) {
     throw error;
   }
+}
+
+/**
+ * Admin olarak giriş yap (Client-side, API'ye bağlı değil)
+ * Production'da API çalışmadığında kullanılır
+ */
+export async function loginAdminLocal(password: string): Promise<AdminAuthToken> {
+  // Hardcoded admin şifresi
+  const ADMIN_PASSWORD = 'admin123';
+
+  if (password.trim() !== ADMIN_PASSWORD) {
+    throw new Error('Şifre yanlış');
+  }
+
+  // Token oluştur
+  const authToken: AdminAuthToken = {
+    token: `local_${Date.now()}`,
+    expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 saat geçerli
+    adminId: 'admin_local',
+    email: 'admin@local',
+    name: 'Admin Yöneticisi',
+    role: 'admin'
+  };
+
+  saveAdminToken(authToken);
+  return authToken;
 }
 
 /**
