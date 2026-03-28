@@ -26,29 +26,6 @@ export default function PaymentSuccess() {
         if (state?.subscription) {
           console.log('✅ Subscription state\'ten alındı:', state.subscription);
           setSubscription(state.subscription);
-
-          // ✅ FIXED: Approval status kontrol et
-          const userId = localStorage.getItem('userId');
-          if (userId) {
-            const userData = localStorage.getItem(`user_${userId}`);
-            if (userData) {
-              try {
-                const parsedUser = JSON.parse(userData);
-
-                if (parsedUser.approval_status === 'rejected') {
-                  console.error('❌ Başvuru reddedilmiştir');
-                  setLoading(false);
-                  return;
-                } else if (parsedUser.approval_status === 'pending') {
-                  console.log('⏳ Admin onayı bekleniyor...');
-                  // Pending ise devam et, countdown başlayacak ve / sayfasına gidecek
-                }
-              } catch (e) {
-                console.error('User data parse hatası:', e);
-              }
-            }
-          }
-
           setLoading(false);
           return;
         }
@@ -57,26 +34,6 @@ export default function PaymentSuccess() {
         const activeSub = getActiveSubscription();
         if (activeSub) {
           console.log('✅ Subscription localStorage\'dan alındı:', activeSub);
-
-          // ✅ FIXED: Approval status kontrol et
-          const userId = localStorage.getItem('userId');
-          if (userId) {
-            const userData = localStorage.getItem(`user_${userId}`);
-            if (userData) {
-              try {
-                const parsedUser = JSON.parse(userData);
-
-                if (parsedUser.approval_status === 'rejected') {
-                  console.error('❌ Başvuru reddedilmiştir');
-                  setLoading(false);
-                  return;
-                }
-              } catch (e) {
-                console.error('User data parse hatası:', e);
-              }
-            }
-          }
-
           setSubscription(activeSub);
           setLoading(false);
           return;
@@ -93,7 +50,7 @@ export default function PaymentSuccess() {
           const data = await response.json();
 
           if (data.success && data.status === 'completed') {
-            // Ödeme başarılı - Access control oluşturuldu
+            // Ödeme başarılı - Subscription oluşturuldu
             console.log('✅ Ödeme başarılı:', data);
 
             // Session token'ı localStorage'a kaydet (Web-to-App bridge için)

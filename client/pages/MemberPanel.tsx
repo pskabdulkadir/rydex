@@ -40,8 +40,6 @@ export default function MemberPanel() {
   const [showPackageModal, setShowPackageModal] = useState(false);
   const [localSubscription, setLocalSubscription] = useState<any>(null);
   const [selectedPackageFromRegister, setSelectedPackageFromRegister] = useState<string | null>(null);
-  const [accessDenied, setAccessDenied] = useState(false);
-  const [denialReason, setDenialReason] = useState('');
 
   // Eğer kullanıcı giriş yapmamışsa redirect et
   useEffect(() => {
@@ -50,9 +48,6 @@ export default function MemberPanel() {
       return;
     }
 
-    // ✅ FIXED: Register sonrası approval kontrol kaldırıldı
-    // Approval kontrol Payment Success ve App Layout'da yapılacak
-
     // Abonelik geçerliliğini kontrol et (varsa)
     const savedSub = localStorage.getItem('subscription');
     if (savedSub) {
@@ -60,8 +55,8 @@ export default function MemberPanel() {
         const sub = JSON.parse(savedSub);
         const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
         if (daysRemaining <= 0) {
-          setAccessDenied(true);
-          setDenialReason('Abonelik süreniz bitmiştir. Lütfen yeni bir paket satın alınız.');
+          // Abonelik bitmiş - pricing sayfasına yönlendir
+          navigate('/pricing', { replace: true });
           return;
         }
       } catch (e) {

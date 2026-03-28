@@ -78,7 +78,23 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       });
     }
 
-    // Kullanıcı adı ve telefon kontrolü (bellek içi)
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Şifre en az 6 karakter olmalı",
+      });
+    }
+
+    // Telefon validasyonu
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Geçerli bir telefon numarası girin",
+      });
+    }
+
+    // Kullanıcı adı ve telefon kontrolü (bellek içi önce)
     const existingUser = Array.from(users.values()).find(
       u => u.username === username || u.phone === phone
     );
@@ -93,9 +109,9 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
 
     // Yeni kullanıcı oluştur
     const userId = `user_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const passwordHash = Buffer.from(password).toString("base64"); // Basit encoding (üretimde bcrypt)
+    const passwordHash = Buffer.from(password).toString("base64"); // Basit encoding (üretimde bcrypt kullanılmalı)
 
-    // Veritabanıya kaydet (başlangıçta onay bekleme durumunda)
+    // Veritabanıya kaydet
     const dbUser: UserRecord = {
       id: userId,
       username,
@@ -103,8 +119,8 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       password_hash: passwordHash,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      approval_status: 'pending',
-      is_active: false,
+      approval_status: 'approved', // Otomatik onay - istersen 'pending' yapabilirsin
+      is_active: true,
     };
 
     const dbResult = await db.saveUser(dbUser);
@@ -124,6 +140,7 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       createdAt: Date.now(),
       updatedAt: Date.now(),
       isAdmin: false,
+      lastLogin: Date.now(),
       preferences: {
         theme: "light",
         language: "tr",
@@ -148,13 +165,13 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
     // Şifreyi çıkar response'dan
     const { password: _, ...userProfile } = newUser;
 
-    console.log(`✅ Yeni kullanıcı kaydedildi: ${username} (${phone})`);
+    console.log(`✅ Yeni kullanıcı kaydedildi: ${username} (${phone}) - ID: ${userId}`);
 
     res.status(201).json({
       success: true,
       user: userProfile as UserProfile,
       token,
-      message: "Kayıt başarılı",
+      message: "Kayıt başarılı! Giriş yapabilirsiniz.",
     });
   } catch (error) {
     console.error("Register hatası:", error);
@@ -227,9 +244,9 @@ export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = asy
       });
     }
 
-    // Şifre kontrol et
-    const storedPassword = Buffer.from(user.password, "base64").toString();
-    if (storedPassword !== password) {
+    // Şifre kontrol et (base64'ü decode et ve karşılaştır)
+    const incomingPassword = Buffer.from(password).toString("base64");
+    if (user.password !== incomingPassword) {
       return res.status(401).json({
         success: false,
         message: "Kullanıcı adı veya şifre hatalı",
@@ -249,7 +266,7 @@ export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = asy
     // Şifreyi çıkar
     const { password: _, ...userProfile } = user;
 
-    console.log(`✅ Giriş başarılı: ${username}`);
+    console.log(`✅ Giriş başarılı: ${username} (ID: ${user.uid})`);
 
     res.json({
       success: true,

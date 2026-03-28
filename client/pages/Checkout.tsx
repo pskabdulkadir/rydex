@@ -329,12 +329,12 @@ export default function Checkout() {
       const pkgId = params.get('packageId') || 'starter';
       const userId = localStorage.getItem('userId') || 'demo-user';
 
-      // Ödeme işlemi başarılı, onay bekleme sayfasına yönlendir
-      console.log('✅ Ödeme başarılı, onay bekleme sayfasına yönlendiriliyor...');
+      // Ödeme işlemi başarılı, başarı sayfasına yönlendir
+      console.log('✅ Ödeme başarılı, başarı sayfasına yönlendiriliyor...');
 
       // Kısa bir delay sonra yönlendir
       setTimeout(() => {
-        navigate(`/payment-pending?packageId=${pkgId}`);
+        navigate(`/payment-success?packageId=${pkgId}`);
       }, 500);
     }
   }, [pkg, navigate]);
@@ -497,24 +497,8 @@ export default function Checkout() {
         // localStorage'a subscription'ı kaydet
         localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
 
-        // Ödeme doğrulama polling'i başlat
-        const stopPolling = startPaymentVerificationPolling(userId, (subscription) => {
-          console.log('✅ Ödeme doğrulandı ve subscription aktif edildi:', subscription);
-          toast.success('✅ Ödemeniz başarıyla doğrulanmıştır!');
-
-          // 2 saniye sonra yönlendir
-          setTimeout(() => {
-            navigate(`/payment-success?packageId=${pkg.id}&paymentId=${paymentRecord.id}`, {
-              state: {
-                subscription,
-                paymentRecord
-              }
-            });
-          }, 2000);
-        });
-
-        // Success sayfasına yönlendir
-        toast.success('🎉 Ödeme başarıyla tamamlandı!');
+        // Success sayfasına yönlendir (Admin onayı kaldırıldı)
+        toast.success('🎉 Ödeme başarıyla tamamlandı! Uygulama açılıyor...');
 
         setTimeout(() => {
           navigate(`/payment-success?packageId=${pkg.id}&paymentId=${paymentRecord.id}`, {
@@ -523,7 +507,7 @@ export default function Checkout() {
               paymentRecord
             }
           });
-        }, 1000);
+        }, 1500);
       } else {
         // API'ye fallback - gerçek ödeme gateway'i
         try {

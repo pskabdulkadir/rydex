@@ -149,10 +149,10 @@ function AppLayout() {
     localStorage.getItem("systemInitialized") === "true"
   );
 
-  // Subscription ve approval kontrol et
+  // Subscription kontrol et
   useEffect(() => {
-    const checkSubscriptionAndApproval = () => {
-      // 1. Subscription kontrol
+    const checkSubscription = () => {
+      // Subscription kontrol
       const savedSub = localStorage.getItem('subscription');
       if (!savedSub) {
         // Subscription yoksa landing sayfasına yönlendir
@@ -166,49 +166,24 @@ function AppLayout() {
         const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
 
         if (daysRemaining <= 0) {
-          // Subscription süresi bitmiş
-          console.warn('⏰ Subscription süresi bitti');
-          navigate('/payment-expired', { replace: true });
+          // Subscription süresi bitmiş - Paket satın almaya yönlendir
+          console.warn('⏰ Subscription süresi bitti, satın alma sayfasına yönlendiriliyorsunuz');
+          navigate('/pricing', { replace: true });
           return;
         }
+
+        // Subscription aktif
+        console.log('✅ Subscription aktif, kalan gün:', daysRemaining);
       } catch (e) {
         console.warn('Subscription parse hatası:', e);
         navigate('/landing', { replace: true });
         return;
       }
-
-      // ✅ FIXED: 2. Approval status kontrol et
-      const userId = localStorage.getItem('userId');
-      if (userId) {
-        const userData = localStorage.getItem(`user_${userId}`);
-        if (userData) {
-          try {
-            const parsedUser = JSON.parse(userData);
-
-            if (parsedUser.approval_status === 'pending') {
-              console.warn('⏳ Admin onayı bekleniyor, app erişimi kısıtlandı');
-              // pending ise app'e girmesine izin verme
-              navigate('/payment-pending', { replace: true });
-              return;
-            } else if (parsedUser.approval_status === 'rejected') {
-              console.error('❌ Başvuru reddedilmiştir, app erişimi engellendi');
-              navigate('/payment-expired', { replace: true });
-              return;
-            }
-
-            // approved ise devam et
-            console.log('✅ Approval status: approved');
-          } catch (e) {
-            console.error('User data parse hatası:', e);
-            // Parse hatası olsa bile devam et
-          }
-        }
-      }
     };
 
-    checkSubscriptionAndApproval();
+    checkSubscription();
     // Her 10 saniyede kontrol et
-    const interval = setInterval(checkSubscriptionAndApproval, 10000);
+    const interval = setInterval(checkSubscription, 10000);
     return () => clearInterval(interval);
   }, [navigate]);
 

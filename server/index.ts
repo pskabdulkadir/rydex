@@ -165,6 +165,12 @@ import {
   handleGetReceipt
 } from "./routes/receipts";
 import {
+  handleSaveScan,
+  handleGetUserScans,
+  handleGetAreaScans,
+  handleGetScanStats
+} from "./routes/scans";
+import {
   handleGetPendingMembers,
   handleApproveUser,
   handleDeleteUser,
@@ -387,6 +393,12 @@ export function createServer() {
   app.get("/api/receipt/admin/pending", handleGetPendingReceipts);
   app.get("/api/receipt/:receiptId", handleGetReceipt);
   app.post("/api/receipt/approve", handleApproveReceipt);
+
+  // ============ TARAMA (SCANS) ROUTES ============
+  app.post("/api/scan/save", handleSaveScan);
+  app.get("/api/scan/user", handleGetUserScans);
+  app.get("/api/scan/area", handleGetAreaScans);
+  app.get("/api/scan/stats", handleGetScanStats);
 
   // ============ ÜYE ONAY (MEMBER APPROVAL) ROUTES ============
   app.get("/api/admin/members/pending", handleGetPendingMembers);

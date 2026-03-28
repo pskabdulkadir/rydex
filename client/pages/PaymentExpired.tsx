@@ -52,7 +52,7 @@ export default function PaymentExpired() {
           <div className="space-y-3">
             {/* Primary button - New package */}
             <button
-              onClick={() => navigate('/', { replace: true })}
+              onClick={() => navigate('/pricing', { replace: true })}
               className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-semibold py-3 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-blue-500/50"
             >
               <RefreshCw className="w-5 h-5" />
@@ -61,10 +61,10 @@ export default function PaymentExpired() {
 
             {/* Secondary button - Home */}
             <button
-              onClick={() => navigate('/', { replace: true })}
+              onClick={() => navigate('/pricing', { replace: true })}
               className="w-full bg-slate-700/30 hover:bg-slate-700/50 text-slate-300 hover:text-slate-100 font-semibold py-3 rounded-lg transition-all duration-200 border border-slate-600/30"
             >
-              Ana Sayfaya Dön
+              Paket Sayfasına Git
             </button>
           </div>
 

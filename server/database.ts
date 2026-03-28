@@ -3,8 +3,9 @@
  * Gerçek tarama verilerinin kalıcı depolanması
  */
 
-// Supabase - optional bağımlılık (geliştirim ortamında bellek içi depolama kullanıyoruz)
-let createClient: any = null;
+// Supabase client'ını import et
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+let createClient = createSupabaseClient;
 
 // Veritabanı bağlantısı (Supabase/Neon kullanabilir)
 interface DatabaseConfig {

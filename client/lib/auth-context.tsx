@@ -178,12 +178,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setToken(null);
       setUser(null);
       setSubscription(null);
-      // ✅ FIXED: Tüm user data'yı localStorage'dan temizle
+      // Tüm user data'yı localStorage'dan temizle
       localStorage.removeItem('auth_token');
       localStorage.removeItem('userId');
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('systemInitialized');
+      localStorage.removeItem('subscription');
     }
   };
 
