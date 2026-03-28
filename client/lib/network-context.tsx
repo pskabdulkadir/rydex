@@ -43,7 +43,10 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const handleOnline = () => {
-      forceCheckConnection();
+      setWasOnline(isOnline);
+      setIsOnline(true);
+      setConnectionChanged(true);
+      console.log('✅ İnternet bağlantısı sağlandı');
     };
 
     const handleOffline = () => {
@@ -56,19 +59,11 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
     window.addEventListener('online', handleOnline);
     window.addEventListener('offline', handleOffline);
 
-    // Periyodik olarak bağlantı kontrol et (30 saniyede bir)
-    const checkInterval = setInterval(() => {
-      if (navigator.onLine) {
-        forceCheckConnection();
-      }
-    }, 30000);
-
     return () => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
-      clearInterval(checkInterval);
     };
-  }, [forceCheckConnection, isOnline]);
+  }, [isOnline]);
 
   // connectionChanged flag'ini sıfırla (bir kere tetikle)
   useEffect(() => {

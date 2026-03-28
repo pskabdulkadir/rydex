@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Loader2, UserPlus, AlertCircle, Package, Zap } from 'lucide-react';
+import { Loader2, UserPlus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PACKAGES } from '@shared/packages';
-import { supabase } from '@/lib/supabase';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -32,6 +31,15 @@ export default function Register() {
     }
     if (username.length < 3) {
       setError('Kullanıcı adı en az 3 karakter olmalı');
+      return false;
+    }
+    // Kullanıcı adında boşluk ve özel karakterleri kontrol et
+    if (/\s/.test(username)) {
+      setError('Kullanıcı adı boşluk içeremez');
+      return false;
+    }
+    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
+      setError('Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir');
       return false;
     }
     if (!phone.trim()) {
@@ -64,34 +72,34 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Email oluştururken boşlukları sil ve küçük harf yap
-      const cleanEmail = `${username.trim().toLowerCase()}@yeralti.com`;
-
-      // 1. Kullanıcıyı Supabase Auth sistemine kaydet
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password,
+      // Server API'sine kayıt isteği gönder
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: username.trim(),
+          phone: phone.trim(),
+          password: password,
+        }),
       });
 
-      if (authError) throw authError;
+      const data = await response.json();
 
-      if (!authData.user?.id) {
-        throw new Error('Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.');
+      if (!response.ok) {
+        throw new Error(data.message || 'Kayıt başarısız');
       }
 
-      // 2. Kullanıcı bilgilerini 'users' tablosuna yaz
-      const { error: dbError } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: authData.user.id,
-            username: username,
-            phone: phone,
-            approval_status: 'pending' // Admin onayı bekleyecek
-          }
-        ]);
+      if (!data.success) {
+        throw new Error(data.message || 'Kayıt başarısız');
+      }
 
-      if (dbError) throw dbError;
+      // Kayıt başarılı - token ve user bilgisini localStorage'a kaydet
+      if (data.token) {
+        localStorage.setItem('authToken', data.token);
+        localStorage.setItem('userId', data.user?.uid || '');
+      }
 
       toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
 
@@ -103,7 +111,13 @@ export default function Register() {
         navigate('/pricing');
       }
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Kayıt başarısız';
+      let message = 'Kayıt başarısız';
+
+      if (error instanceof Error) {
+        message = error.message;
+      }
+
+      console.error('Kayıt hatası:', error);
       setError(message);
       toast.error(message);
     } finally {
