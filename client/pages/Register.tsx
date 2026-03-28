@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { Loader2, UserPlus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PACKAGES } from '@shared/packages';
+import { supabase } from '@/lib/supabase';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -72,34 +73,82 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // Server API'sine kayıt isteği gönder
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          username: username.trim(),
-          phone: phone.trim(),
-          password: password,
-        }),
+      // Email oluştururken boşlukları sil ve küçük harf yap
+      const cleanEmail = `${username.trim().toLowerCase()}@yeralti.com`;
+
+      console.log('📝 Kayıt işlemi başlandı:', {
+        username: username.trim(),
+        email: cleanEmail,
+        phone: phone.trim(),
       });
 
-      const data = await response.json();
+      // 1. Kullanıcıyı Supabase Auth sistemine kaydet
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: cleanEmail,
+        password: password,
+        options: {
+          data: {
+            username: username.trim(),
+            phone: phone.trim(),
+          }
+        }
+      });
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Kayıt başarısız');
+      if (authError) {
+        console.error('🔴 Supabase Auth Hata Detayları:', {
+          message: authError.message,
+          status: authError.status,
+          code: (authError as any).code,
+          error: authError,
+        });
+
+        // Hata türlerine göre özel mesajlar
+        if (authError.message.includes('already registered')) {
+          throw new Error('Bu email adresi zaten kayıtlı. Lütfen giriş yapın.');
+        } else if (authError.message.includes('Invalid email')) {
+          throw new Error('Geçersiz email adresi. Kullanıcı adında özel karakterler olmadığından emin olun.');
+        } else if (authError.message.includes('password')) {
+          throw new Error('Şifre en az 6 karakter olmalı.');
+        } else if (authError.message.includes('CORS')) {
+          throw new Error('CORS hatasıydı. Lütfen tekrar deneyin.');
+        } else if (authError.status === 400) {
+          throw new Error(`Supabase Hatası: ${authError.message}`);
+        }
+
+        throw authError;
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Kayıt başarısız');
+      if (!authData.user?.id) {
+        throw new Error('Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.');
       }
 
-      // Kayıt başarılı - token ve user bilgisini localStorage'a kaydet
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('userId', data.user?.uid || '');
+      console.log('✅ Supabase Auth başarılı, User ID:', authData.user.id);
+
+      // 2. Kullanıcı bilgilerini 'users' tablosuna yaz
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            username: username.trim(),
+            phone: phone.trim(),
+            email: cleanEmail,
+            approval_status: 'approved'
+          }
+        ]);
+
+      if (dbError) {
+        console.error('🔴 Veritabanı Insert Hatası:', dbError);
+        // Database error'u ignore et, auth başarılı olduysa devam et
+        toast.warning('Profil bilgileri kaydedilemedi ama kimlik doğrulama başarılı');
+      } else {
+        console.log('✅ Kullanıcı veritabanına kaydedildi');
       }
+
+      // 3. Token ve user info'yu localStorage'a kaydet
+      localStorage.setItem('auth_token', authData.session?.access_token || '');
+      localStorage.setItem('userId', authData.user.id);
+      localStorage.setItem('userName', username.trim());
 
       toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
 
@@ -107,7 +156,6 @@ export default function Register() {
       if (selectedPackageId) {
         navigate('/checkout', { state: { packageId: selectedPackageId } });
       } else {
-        // Paket seçme sayfasına git
         navigate('/pricing');
       }
     } catch (error) {
@@ -115,9 +163,11 @@ export default function Register() {
 
       if (error instanceof Error) {
         message = error.message;
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        message = (error as any).message;
       }
 
-      console.error('Kayıt hatası:', error);
+      console.error('❌ Kayıt hatası:', error);
       setError(message);
       toast.error(message);
     } finally {
