@@ -3,9 +3,9 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Loader2, UserPlus, AlertCircle, Package, Zap } from 'lucide-react';
-import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import { PACKAGES } from '@shared/packages';
+import { supabase } from '@/lib/supabase';
 
 export default function Register() {
   const [username, setUsername] = useState('');
@@ -16,7 +16,6 @@ export default function Register() {
   const [error, setError] = useState('');
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { register } = useAuth();
 
   // localStorage'dan seçilen paketi al
   useEffect(() => {
@@ -65,11 +64,31 @@ export default function Register() {
     setLoading(true);
 
     try {
-      await register({
-        username,
-        phone,
-        password
+      // 1. Kullanıcıyı Supabase Auth sistemine kaydet
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: `${username}@yeralti.com`, // Email zorunlu olduğu için otomatik oluşturuyoruz
+        password: password,
       });
+
+      if (authError) throw authError;
+
+      if (!authData.user?.id) {
+        throw new Error('Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.');
+      }
+
+      // 2. Kullanıcı bilgilerini 'users' tablosuna yaz
+      const { error: dbError } = await supabase
+        .from('users')
+        .insert([
+          {
+            id: authData.user.id,
+            username: username,
+            phone: phone,
+            approval_status: 'pending' // Admin onayı bekleyecek
+          }
+        ]);
+
+      if (dbError) throw dbError;
 
       toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
 
