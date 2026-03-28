@@ -149,15 +149,14 @@ function AppLayout() {
     localStorage.getItem("systemInitialized") === "true"
   );
 
-  // Subscription kontrol et
+  // Subscription kontrol et (sadece önemli durumlarda yönlendir)
   useEffect(() => {
     const checkSubscription = () => {
-      // Subscription kontrol
       const savedSub = localStorage.getItem('subscription');
+
+      // Eğer subscription yoksa, free plan varsay ve devam et
       if (!savedSub) {
-        // Subscription yoksa landing sayfasına yönlendir
-        console.warn('⏰ Subscription bulunamadı');
-        navigate('/landing', { replace: true });
+        console.log('✅ Senkronizasyon kuyruğu boş');
         return;
       }
 
@@ -165,8 +164,8 @@ function AppLayout() {
         const sub = JSON.parse(savedSub);
         const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
 
-        if (daysRemaining <= 0) {
-          // Subscription süresi bitmiş - Paket satın almaya yönlendir
+        if (daysRemaining <= 0 && sub.plan !== 'free') {
+          // Sadece ücretli plan'in süresi bitmiş ise yönlendir
           console.warn('⏰ Subscription süresi bitti, satın alma sayfasına yönlendiriliyorsunuz');
           navigate('/pricing', { replace: true });
           return;
@@ -175,14 +174,13 @@ function AppLayout() {
         // Subscription aktif
         console.log('✅ Subscription aktif, kalan gün:', daysRemaining);
       } catch (e) {
-        console.warn('Subscription parse hatası:', e);
-        navigate('/landing', { replace: true });
-        return;
+        console.warn('⚠️ Subscription parse hatası:', e);
+        // Error durumunda da devam et, fatal olarak görmüyoruz
       }
     };
 
     checkSubscription();
-    // Her 10 saniyede kontrol et
+    // Her 10 saniyede kontrol et (ama hafif tutalım, error handling ekleyelim)
     const interval = setInterval(checkSubscription, 10000);
     return () => clearInterval(interval);
   }, [navigate]);

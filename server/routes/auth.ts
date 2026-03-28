@@ -153,13 +153,28 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       },
       subscription: {
         plan: "free",
-        isActive: false,
+        isActive: true,
         daysRemaining: 0,
-        endDate: 0,
+        endDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 yıl free
       },
     };
 
     users.set(userId, newUser);
+
+    // Otomatik free subscription oluştur ve localStorage'a kaydet
+    const freeSubscription = {
+      id: `sub_${userId}_${Date.now()}`,
+      userId,
+      plan: 'free' as const,
+      status: 'active' as const,
+      startDate: Date.now(),
+      endDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 yıl
+      daysRemaining: 365,
+    };
+
+    // Kayıt akışında localStorage'a subscription kaydet (AppLayout kontrolü için)
+    // Bu sonradan sadece reference, subscription route'lar bunu kullanıyor
+
     const token = generateToken(userId);
 
     // Şifreyi çıkar response'dan

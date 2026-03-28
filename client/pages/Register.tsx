@@ -70,12 +70,25 @@ export default function Register() {
         phone,
         password
       });
+
+      // Kayıt başarılı, free subscription'ı localStorage'a kaydet
+      const freeSubscription = {
+        id: `sub_${Date.now()}`,
+        plan: 'free',
+        status: 'active',
+        startDate: Date.now(),
+        endDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 yıl
+        daysRemaining: 365,
+      };
+      localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+
       toast.success('Kayıt başarılı! Üye paneline yönlendiriliyorsunuz...');
 
-      // Eğer seçilen paket varsa state'te ilet
+      // Eğer seçilen paket varsa state'te ilet, aksi halde pricing'e yönlendir
       if (selectedPackageId) {
         navigate('/member-panel', { state: { selectedPackageId } });
       } else {
+        // Free plan ile başlasın, daha sonra paket seçebilir
         navigate('/member-panel');
       }
     } catch (error) {
