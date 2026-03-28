@@ -71,25 +71,14 @@ export default function Register() {
         password
       });
 
-      // Kayıt başarılı, free subscription'ı localStorage'a kaydet
-      const freeSubscription = {
-        id: `sub_${Date.now()}`,
-        plan: 'free',
-        status: 'active',
-        startDate: Date.now(),
-        endDate: Date.now() + 365 * 24 * 60 * 60 * 1000, // 1 yıl
-        daysRemaining: 365,
-      };
-      localStorage.setItem('subscription', JSON.stringify(freeSubscription));
+      toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
 
-      toast.success('Kayıt başarılı! Üye paneline yönlendiriliyorsunuz...');
-
-      // Eğer seçilen paket varsa state'te ilet, aksi halde pricing'e yönlendir
+      // Eğer seçilen paket varsa checkout'a git, aksi halde pricing'e git
       if (selectedPackageId) {
-        navigate('/member-panel', { state: { selectedPackageId } });
+        navigate('/checkout', { state: { packageId: selectedPackageId } });
       } else {
-        // Free plan ile başlasın, daha sonra paket seçebilir
-        navigate('/member-panel');
+        // Paket seçme sayfasına git
+        navigate('/pricing');
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Kayıt başarısız';

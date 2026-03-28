@@ -149,14 +149,15 @@ function AppLayout() {
     localStorage.getItem("systemInitialized") === "true"
   );
 
-  // Subscription kontrol et (sadece önemli durumlarda yönlendir)
+  // Subscription kontrol et - /app altında subscription ZORUNLU
   useEffect(() => {
     const checkSubscription = () => {
       const savedSub = localStorage.getItem('subscription');
 
-      // Eğer subscription yoksa, free plan varsay ve devam et
+      // Subscription yoksa pricing'e yönlendir
       if (!savedSub) {
-        console.log('✅ Senkronizasyon kuyruğu boş');
+        console.warn('⏰ Subscription bulunamadı - paket satın alınması gerekli');
+        navigate('/pricing', { replace: true });
         return;
       }
 
@@ -164,9 +165,9 @@ function AppLayout() {
         const sub = JSON.parse(savedSub);
         const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
 
-        if (daysRemaining <= 0 && sub.plan !== 'free') {
-          // Sadece ücretli plan'in süresi bitmiş ise yönlendir
-          console.warn('⏰ Subscription süresi bitti, satın alma sayfasına yönlendiriliyorsunuz');
+        // Subscription süresi bitmiş ise pricing'e yönlendir
+        if (daysRemaining <= 0) {
+          console.warn('⏰ Subscription süresi bitti, paket satın alma sayfasına yönlendiriliyorsunuz');
           navigate('/pricing', { replace: true });
           return;
         }
@@ -175,12 +176,13 @@ function AppLayout() {
         console.log('✅ Subscription aktif, kalan gün:', daysRemaining);
       } catch (e) {
         console.warn('⚠️ Subscription parse hatası:', e);
-        // Error durumunda da devam et, fatal olarak görmüyoruz
+        navigate('/pricing', { replace: true });
+        return;
       }
     };
 
     checkSubscription();
-    // Her 10 saniyede kontrol et (ama hafif tutalım, error handling ekleyelim)
+    // Her 10 saniyede kontrol et
     const interval = setInterval(checkSubscription, 10000);
     return () => clearInterval(interval);
   }, [navigate]);
@@ -253,6 +255,9 @@ function AppLayout() {
 function RootRouter() {
   return (
     <Routes>
+      {/* ANA SAYFA - Public */}
+      <Route path="/" element={<Landing />} />
+
       {/* PUBLIC SAYFALAR - DeviceLock yok */}
       <Route path="/rydex" element={<Landing />} />
       <Route path="/landing" element={<Landing />} />
@@ -260,7 +265,6 @@ function RootRouter() {
       <Route path="/register" element={<Register />} />
       <Route path="/member-login" element={<Login />} />
       <Route path="/member-register" element={<Register />} />
-      <Route path="/member-panel" element={<MemberPanel />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/payment-pending" element={<PaymentPending />} />
@@ -270,7 +274,7 @@ function RootRouter() {
       <Route path="/admin" element={<AdminPanel />} />
 
       {/* PROTECTED APP ROUTES - DeviceLock ile korumalı (sadece dev modunda) */}
-      <Route path="/" element={
+      <Route path="/app" element={
         import.meta.env.DEV ? (
           <DeviceLock>
             <AccessControlProvider userId={localStorage.getItem('userId') || 'demo-user'}>

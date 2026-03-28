@@ -71,13 +71,14 @@ export default function PaymentSuccess() {
     checkPaymentStatus();
   }, [orderId, packageId, location.state]);
 
-  // Geri sayım
+  // Geri sayım - Member Panel'e yönlendir
   useEffect(() => {
     if (!loading) {
       const timer = setInterval(() => {
         setCountdown(prev => {
           if (prev <= 1) {
-            navigate('/', { replace: true });
+            // Ödeme başarılı → Member Panel'e yönlendir
+            navigate('/member-panel', { replace: true });
             return 0;
           }
           return prev - 1;

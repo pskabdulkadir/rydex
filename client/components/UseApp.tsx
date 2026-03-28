@@ -82,10 +82,10 @@ export function UseApp({
 
     // Sistem başlatıldı olarak işaretle
     localStorage.setItem('systemInitialized', 'true');
-    
-    // Tarama sayfasına git (uygulamanın ana sayfası)
-    navigate('/');
-    
+
+    // Uygulama sayfasına git (protected routes)
+    navigate('/app');
+
     toast.success('🚀 Uygulama başlatılıyor...');
   };
 
