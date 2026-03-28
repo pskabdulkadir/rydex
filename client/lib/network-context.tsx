@@ -19,31 +19,23 @@ export function NetworkProvider({ children }: { children: ReactNode }) {
   const forceCheckConnection = useCallback(async () => {
     setIsCheckingConnection(true);
     try {
-      const response = await fetch('/api/ping', {
-        method: 'GET',
-        cache: 'no-store',
-      });
-      const newOnlineStatus = response.ok;
+      // navigator.onLine API'sini kullan (Express server'a bağımlı değil)
+      const currentOnlineStatus = navigator.onLine;
 
       // Durumu değiştiyse ve önceki durumdan farklıysa
-      if (newOnlineStatus !== isOnline) {
+      if (currentOnlineStatus !== isOnline) {
         setWasOnline(isOnline);
-        setIsOnline(newOnlineStatus);
+        setIsOnline(currentOnlineStatus);
         setConnectionChanged(true);
 
-        if (newOnlineStatus) {
+        if (currentOnlineStatus) {
           console.log('✅ İnternet bağlantısı sağlandı');
         } else {
           console.log('❌ İnternet bağlantısı kesildi');
         }
       }
     } catch (error) {
-      if (isOnline) {
-        setWasOnline(true);
-        setIsOnline(false);
-        setConnectionChanged(true);
-        console.warn('⚠️ Bağlantı kontrolü başarısız:', error);
-      }
+      console.warn('⚠️ Bağlantı kontrolü hatası:', error);
     } finally {
       setIsCheckingConnection(false);
     }

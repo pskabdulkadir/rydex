@@ -64,9 +64,12 @@ export default function Register() {
     setLoading(true);
 
     try {
+      // Email oluştururken boşlukları sil ve küçük harf yap
+      const cleanEmail = `${username.trim().toLowerCase()}@yeralti.com`;
+
       // 1. Kullanıcıyı Supabase Auth sistemine kaydet
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: `${username}@yeralti.com`, // Email zorunlu olduğu için otomatik oluşturuyoruz
+        email: cleanEmail,
         password: password,
       });
 
