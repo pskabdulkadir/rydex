@@ -76,7 +76,6 @@ const StructureScanner = lazy(() => import("./pages/StructureScanner"));
 const AR = lazy(() => import("./pages/AR"));
 const Camera = lazy(() => import("./pages/Camera"));
 const History = lazy(() => import("./pages/History"));
-const MagnetometerResults = lazy(() => import("./pages/MagnetometerResults"));
 const Detections = lazy(() => import("./pages/Detections"));
 const Magnetometer = lazy(() => import("./pages/Magnetometer"));
 const MapPage = lazy(() => import("./pages/Map"));
@@ -339,7 +338,6 @@ function RootRouter() {
         <Route path="ar" element={<AR />} />
         <Route path="camera" element={<Camera />} />
         <Route path="magnetometer-app" element={<Magnetometer />} />
-        <Route path="magnetometer/results" element={<MagnetometerResults />} />
         <Route path="magnetometer/history" element={<History />} />
         <Route path="magnetometer/detections" element={<Detections />} />
         <Route path="magnetometer/map" element={<MapPage />} />

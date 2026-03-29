@@ -759,10 +759,10 @@ export default function Index() {
 
       toast.success('Tarama başarıyla tamamlandı!');
 
-      // Tarama başarılı - tarama sonuçları sayfasına yönlendir
-      console.log('✅ Tarama tamamlandı, sonuçlar sayfasına yönlendiriliyorsunuz...');
+      // Tarama başarılı - Dashboard'a yönlendir (uygulamanın kendi akışında)
+      console.log('✅ Tarama tamamlandı, Dashboard\'a yönlendiriliyorsunuz...');
       setTimeout(() => {
-        navigate('/app/magnetometer/results', {
+        navigate('/app/dashboard', {
           replace: true,
           state: {
             newScanId: scanSession?.id,
