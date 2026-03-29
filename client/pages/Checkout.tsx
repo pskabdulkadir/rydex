@@ -3,13 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PACKAGES, calculateExpiryTimestamp } from '@shared/packages';
 import { Currency, CurrencyInfo } from '@shared/api';
 import { Shield, ArrowLeft, CreditCard, AlertCircle, Banknote, MessageCircle, DollarSign } from 'lucide-react';
-import { launchAppAfterPayment, getBridge } from '@/lib/web-to-app-bridge';
 import { Invoice } from '@/components/Invoice';
 import { toast } from 'sonner';
 import {
-  validateCreditCard,
-  validateBankTransfer,
-  validateEmail,
   maskCardNumber,
   getCardType
 } from '@/lib/payment-validation';
@@ -404,59 +400,37 @@ export default function Checkout() {
     setPaymentProcessing(true);
 
     try {
-      // Ödeme yöntemi doğrulaması
-      if (paymentMethod === 'credit-card') {
-        const cardValidation = validateCreditCard(
-          cardDetails.cardNumber,
-          cardDetails.cardName,
-          cardDetails.expiryDate,
-          cardDetails.cvv
-        );
-
-        if (!cardValidation.valid) {
-          setError(cardValidation.errors.join(', '));
-          toast.error('Kart Doğrulama Hatası', {
-            description: cardValidation.errors.join('\n')
-          });
-          setIsLoading(false);
-          setPaymentProcessing(false);
-          return;
-        }
-      } else if (paymentMethod === 'bank-transfer') {
-        const bankValidation = validateBankTransfer(
-          bankDetails.iban,
-          bankDetails.accountHolder
-        );
-
-        if (!bankValidation.valid) {
-          setError(bankValidation.errors.join(', '));
-          toast.error('Banka Bilgisi Doğrulama Hatası', {
-            description: bankValidation.errors.join('\n')
-          });
-          setIsLoading(false);
-          setPaymentProcessing(false);
-          return;
-        }
-      }
+      // ==========================================
+      // 🔄 DEMO ÖDEME AKIŞI (TEST MODU)
+      // ==========================================
+      // Notlar:
+      // - Kart/Banka bilgisi doğrulaması YAPILMIYOR (demo test için)
+      // - Ödeme entegrasyonu DEVRE DIŞI (Stripe/PayPal)
+      // - Anında başarı akışı başlatılıyor
+      // - Gerçek entegrasyon için: verifyPayment() yerine
+      //   gerçek POS API çağrısı yapılacak
+      // ==========================================
 
       const userId = localStorage.getItem('userId') || 'demo-user';
-      const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
+      const userEmail = localStorage.getItem('userEmail') || 'demo@example.com';
 
-      // Email doğrulaması
-      if (!validateEmail(userEmail)) {
-        setError('Geçersiz e-posta adresi');
-        toast.error('Geçersiz E-Posta Adresi');
-        setIsLoading(false);
-        setPaymentProcessing(false);
-        return;
-      }
+      console.log('💳 DEMO ÖDEME BAŞLADI');
+      console.log(`📦 Paket: ${pkg.name} (${pkg.id})`);
+      console.log(`💰 Tutar: ${pkg.price} TRY`);
+      console.log(`🌐 Seçilen Para Birimi: ${selectedCurrency}`);
 
-      // Ödeme kaydını oluştur (TRY cinsinden)
+      // ─────────────────────────────────────────
+      // 1️⃣  ÖDEME KAYDI OLUŞTUR
+      // ─────────────────────────────────────────
       const paymentRecord = createPaymentRecord(userId, pkg.id, pkg.price, paymentMethod);
-      console.log('📝 Ödeme kaydı oluşturuldu:', paymentRecord.id);
-      console.log(`💱 Para Birimi: ${selectedCurrency} (${convertedPrice})`);
+      console.log('✅ Ödeme kaydı oluşturuldu');
+      console.log(`   ID: ${paymentRecord.id}`);
+      console.log(`   Durum: ${paymentRecord.status}`);
+      console.log(`   Süresi Bitiş: ${new Date(paymentRecord.expiresAt).toLocaleString('tr-TR')}`);
 
-      // Invoice oluştur
+      // ─────────────────────────────────────────
+      // 2️⃣  FATURA OLUŞTUR (İsteğe Bağlı)
+      // ─────────────────────────────────────────
       try {
         const invoiceResponse = await fetch('/api/invoice/generate', {
           method: 'POST',
@@ -474,86 +448,65 @@ export default function Checkout() {
 
         if (invoiceResponse.ok) {
           const invoiceData = await invoiceResponse.json();
-          console.log('📄 Fatura oluşturuldu:', invoiceData.invoiceNumber);
-
-          // Invoice ID'yi kaydet
+          console.log('📄 Fatura oluşturuldu');
+          console.log(`   Numara: ${invoiceData.invoiceNumber}`);
           localStorage.setItem('lastInvoiceId', invoiceData.invoiceId);
           localStorage.setItem('lastInvoiceNumber', invoiceData.invoiceNumber);
         }
       } catch (invoiceError) {
-        console.warn('Fatura oluşturulamadı:', invoiceError);
+        console.warn('⚠️  Fatura oluşturulamadı (devam ediliyor):', invoiceError);
         // Ödeme işlemi devam et, fatura isteğe bağlı
       }
 
-      // İş akışı: Mock sistem (demo için)
-      // Gerçek sistemde payment gateway entegrasyonu yapılmalı
+      // ─────────────────────────────────────────
+      // 3️⃣  ÖDEMEYİ DOĞRULA (DEMO - ANINDA)
+      // ─────────────────────────────────────────
+      // 🔴 ÜRETIM ORTAMINDA:
+      // - Gerçek ödeme ağ geçidi çağrısı yapılacak (Stripe/PayPal)
+      // - Ödeme başarılı olduğunda subscription oluşturulacak
+      // - verifyPayment() yerine API endpoint kullanılacak
+      console.log('⏳ Ödeme doğrulanıyor...');
 
-      // Ödemeyi doğrula (demo için anında doğrulama)
       const verificationResult = verifyPayment(paymentRecord.id, userId);
 
-      if (verificationResult.success && verificationResult.subscription) {
-        console.log('✅ Ödeme doğrulandı ve subscription aktif edildi:', verificationResult.subscription);
-
-        // localStorage'a subscription'ı kaydet
-        localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
-
-        // Success sayfasına yönlendir (Admin onayı kaldırıldı)
-        toast.success('🎉 Ödeme başarıyla tamamlandı! Uygulama açılıyor...');
-
-        setTimeout(() => {
-          navigate(`/payment-success?packageId=${pkg.id}&paymentId=${paymentRecord.id}`, {
-            state: {
-              subscription: verificationResult.subscription,
-              paymentRecord
-            }
-          });
-        }, 1500);
-      } else {
-        // API'ye fallback - gerçek ödeme gateway'i
-        try {
-          const response = await fetch('/api/payment/initiate', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId,
-              packageId: pkg.id,
-              amount: pkg.price,
-              email: userEmail,
-              paymentId: paymentRecord.id,
-              returnUrl: window.location.origin + '/checkout?success=true&packageId=' + pkg.id
-            })
-          });
-
-          const data = await response.json();
-
-          if (data.success) {
-            console.log('💳 Ödeme başlatıldı, Session Token:', data.sessionToken);
-
-            // Session token'ı localStorage'a kaydet
-            if (data.sessionToken) {
-              getBridge().saveTokenLocally(data.sessionToken);
-              console.log('✅ Session token kaydedildi');
-            }
-
-            // Ödeme sayfasına yönlendir
-            if (data.paymentUrl) {
-              toast.success('Ödeme sayfasına yönlendiriliyorsunuz...');
-              setTimeout(() => {
-                window.location.href = data.paymentUrl;
-              }, 500);
-            }
-          } else {
-            setError(data.message || 'Ödeme başlatılamadı');
-            toast.error('Ödeme başlatılamadı: ' + (data.message || 'Bilinmeyen hata'));
-          }
-        } catch (fallbackError) {
-          console.error('API fallback hatası:', fallbackError);
-          setError('Ödeme işlemi sırasında bir hata oluştu. Lütfen tekrar deneyin.');
-          toast.error('Ödeme işlemi başarısız oldu');
-        }
+      if (!verificationResult.success || !verificationResult.subscription) {
+        console.error('❌ Ödeme doğrulama başarısız:', verificationResult.message);
+        setError(verificationResult.message || 'Ödeme doğrulanamadı');
+        toast.error('Ödeme doğrulanamadı');
+        return;
       }
+
+      // ─────────────────────────────────────────
+      // 4️⃣  BAŞARILI - SUBSCRIPTION AKTIF ET
+      // ─────────────────────────────────────────
+      console.log('✅ ÖDEMEYİ TAMAMLANDI!');
+      console.log('🔐 Subscription bilgileri:');
+      console.log(`   Plan: ${verificationResult.subscription.plan}`);
+      console.log(`   Tutar: ${verificationResult.subscription.amount} TRY`);
+      console.log(`   Başlangıç: ${new Date(verificationResult.subscription.startDate).toLocaleString('tr-TR')}`);
+      console.log(`   Bitiş: ${new Date(verificationResult.subscription.endDate).toLocaleString('tr-TR')}`);
+      console.log(`   Kalan Gün: ${verificationResult.subscription.daysRemaining}`);
+
+      // localStorage'a kaydet (backup olarak)
+      localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
+
+      toast.success('🎉 Ödemeniz başarıyla tamamlandı! Başarı sayfasına yönlendiriliyorsunuz...');
+
+      // ─────────────────────────────────────────
+      // 5️⃣  BAŞARI SAYFASINA YÖNLENDİR
+      // ─────────────────────────────────────────
+      setTimeout(() => {
+        console.log('🔄 Başarı sayfasına yönlendiriliyor...');
+        navigate(`/payment-success?packageId=${pkg.id}&paymentId=${paymentRecord.id}`, {
+          state: {
+            subscription: verificationResult.subscription,
+            paymentRecord
+          }
+        });
+      }, 1500);
+
     } catch (err) {
-      console.error('Ödeme hatası:', err);
+      console.error('💥 Ödeme işleminde hata:', err);
       const errorMsg = 'Bir hata oluştu. Lütfen tekrar deneyin.';
       setError(errorMsg);
       toast.error(errorMsg);

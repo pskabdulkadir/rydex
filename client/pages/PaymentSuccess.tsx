@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { CheckCircle, Zap } from 'lucide-react';
+import { toast } from 'sonner';
 import { launchAppAfterPayment } from '@/lib/web-to-app-bridge';
 import { PACKAGE_TO_LEVEL } from '@/lib/types/access-control';
 import { calculateExpiryTimestamp } from '@shared/packages';
@@ -18,51 +19,87 @@ export default function PaymentSuccess() {
   const packageId = searchParams.get('packageId');
 
   useEffect(() => {
-    // Ödeme durumunu kontrol et
+    // ==========================================
+    // 📋 ÖDEME BAŞARISI KONTROL VE DOĞRULAMA
+    // ==========================================
     const checkPaymentStatus = async () => {
       try {
-        // Önce location state'ten subscription'ı kontrol et (Checkout'tan gelen)
+        console.log('🔍 Başarı sayfası yükleniyorsa, subscription kontrol ediliyor...');
+
+        // ─────────────────────────────────────────
+        // 1️⃣  LOCATION STATE'TEN KONTROL ET
+        // ─────────────────────────────────────────
+        // Checkout.tsx'den yönlendirme sırasında gönderilen subscription
         const state = location.state as { subscription?: any } | null;
         if (state?.subscription) {
-          console.log('✅ Subscription state\'ten alındı:', state.subscription);
+          console.log('✅ Subscription location state\'ten alındı (Checkout\'tan)');
+          console.log({
+            plan: state.subscription.plan,
+            amount: state.subscription.amount,
+            startDate: new Date(state.subscription.startDate).toLocaleString('tr-TR'),
+            endDate: new Date(state.subscription.endDate).toLocaleString('tr-TR'),
+            daysRemaining: state.subscription.daysRemaining
+          });
           setSubscription(state.subscription);
           setLoading(false);
           return;
         }
 
-        // Sonra localStorage'dan kontrol et
+        // ─────────────────────────────────────────
+        // 2️⃣  LOCALSTORAGE'DAN KONTROL ET
+        // ─────────────────────────────────────────
+        // Sayfa yeniden yüklenirse localStorage'dan al
         const activeSub = getActiveSubscription();
         if (activeSub) {
-          console.log('✅ Subscription localStorage\'dan alındı:', activeSub);
+          console.log('✅ Subscription localStorage\'dan alındı (Sayfa yeniden yüklemesi)');
+          console.log({
+            plan: activeSub.plan,
+            amount: activeSub.amount,
+            startDate: new Date(activeSub.startDate).toLocaleString('tr-TR'),
+            endDate: new Date(activeSub.endDate).toLocaleString('tr-TR'),
+            daysRemaining: activeSub.daysRemaining
+          });
           setSubscription(activeSub);
           setLoading(false);
           return;
         }
 
-        // Son olarak API'den kontrol et (orderId varsa)
+        // ─────────────────────────────────────────
+        // 3️⃣  API'DEN KONTROL ET (orderId varsa)
+        // ─────────────────────────────────────────
+        // Gerçek entegrasyon için: API'den ödeme durumunu kontrol et
         if (!orderId && !packageId) {
+          console.warn('⚠️  Subscription bulunamadı ve orderId/packageId yok');
           setLoading(false);
           return;
         }
 
         if (orderId) {
+          console.log('🔗 API\'den ödeme durumu kontrol ediliyor...');
           const response = await fetch(`/api/payment/status/${orderId}`);
           const data = await response.json();
 
           if (data.success && data.status === 'completed') {
-            // Ödeme başarılı - Subscription oluşturuldu
-            console.log('✅ Ödeme başarılı:', data);
+            console.log('✅ Ödeme başarılı (API\'den)');
+            console.log({
+              orderId,
+              status: data.status,
+              subscription: data.subscription
+            });
 
             // Session token'ı localStorage'a kaydet (Web-to-App bridge için)
             if (data.sessionToken) {
               localStorage.setItem('sessionToken', data.sessionToken);
+              console.log('🔐 Session token kaydedildi');
             }
 
             setSubscription(data.subscription);
+          } else {
+            console.warn('⚠️  API\'den ödeme doğrulanamadı:', data);
           }
         }
       } catch (error) {
-        console.error('Ödeme durumu kontrol hatası:', error);
+        console.error('💥 Ödeme durumu kontrol hatası:', error);
       } finally {
         setLoading(false);
       }
@@ -71,23 +108,45 @@ export default function PaymentSuccess() {
     checkPaymentStatus();
   }, [orderId, packageId, location.state]);
 
-  // Geri sayım - Member Panel'e yönlendir
+  // ─────────────────────────────────────────
+  // ⏱️  GERI SAYIM VE YÖNLENDIRME
+  // ─────────────────────────────────────────
+  // 5 saniye geri sayım sonrası Member Panel'e yönlendir
   useEffect(() => {
-    if (!loading) {
+    if (!loading && subscription) {
+      console.log('⏱️  Geri sayım başladı (5 saniye)');
       const timer = setInterval(() => {
         setCountdown(prev => {
-          if (prev <= 1) {
-            // Ödeme başarılı → Member Panel'e yönlendir
+          const remaining = prev - 1;
+
+          if (remaining <= 0) {
+            console.log('✅ Geri sayım tamamlandı');
+            console.log('🚀 Member Panel\'e yönlendiriliyor...');
+
+            // Aktivasyon doğrulaması
+            console.log('🔐 Paket erişimi kontrol ediliyor...');
+            const userId = localStorage.getItem('userId') || 'demo-user';
+            const hasAccess = subscription !== null && subscription.endDate > Date.now();
+
+            if (hasAccess) {
+              console.log('✅ Paket erişimi ONAYLANDI');
+              console.log(`   Kalan Gün: ${subscription.daysRemaining}`);
+            } else {
+              console.warn('⚠️  Paket erişimi REDDEDILDI');
+            }
+
             navigate('/member-panel', { replace: true });
             return 0;
           }
-          return prev - 1;
+
+          console.log(`⏳ Geri sayım: ${remaining}s`);
+          return remaining;
         });
       }, 1000);
 
       return () => clearInterval(timer);
     }
-  }, [loading, navigate]);
+  }, [loading, subscription, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center px-4">
@@ -152,26 +211,68 @@ export default function PaymentSuccess() {
               </div>
             )}
 
-            {/* CTA Button */}
+            {/* CTA Button - Uygulamayı Aç */}
             <button
               onClick={() => {
-                // TODO: Gerçek userId, packageId ve expiryTimestamp'ı al
-                const packageId = 'starter';
-                const userId = 'demo-user';
-                const accessLevel = PACKAGE_TO_LEVEL[packageId] || 1;
-                const expiryTimestamp = calculateExpiryTimestamp(packageId);
+                console.log('🚀 "Uygulamayı Aç" düğmesine tıklandı');
 
-                // Uygulamayı başlat
+                // ─────────────────────────────────────────
+                // 📦 PAKET KONTROL VE AKTIVASYON
+                // ─────────────────────────────────────────
+                const userId = localStorage.getItem('userId') || 'demo-user';
+                const packageId = subscription?.plan || searchParams.get('packageId') || 'starter';
+
+                console.log('📋 Paket Aktivasyon Bilgileri:');
+                console.log(`   User ID: ${userId}`);
+                console.log(`   Package ID: ${packageId}`);
+
+                // Subscription bilgilerini kontrol et
+                if (!subscription) {
+                  console.error('❌ Subscription bulunamadı!');
+                  toast.error('Paket aktivasyonu başarısız. Lütfen sayfayı yenileyin.');
+                  return;
+                }
+
+                // Paket erişimi doğrula
+                const isExpired = subscription.endDate <= Date.now();
+                if (isExpired) {
+                  console.error('❌ Paket süresi dolmuş!');
+                  toast.error('Paket sürenizin bitmiş. Lütfen yeniden satın alın.');
+                  return;
+                }
+
+                console.log('✅ Paket erişimi ONAYLANDI');
+                console.log({
+                  plan: subscription.plan,
+                  daysRemaining: subscription.daysRemaining,
+                  expiryDate: new Date(subscription.endDate).toLocaleString('tr-TR')
+                });
+
+                // ─────────────────────────────────────────
+                // 🔐 ERIŞIM SEVİYESİ BELİRLE
+                // ─────────────────────────────────────────
+                const accessLevel = PACKAGE_TO_LEVEL[packageId as keyof typeof PACKAGE_TO_LEVEL] || 1;
+                const expiryTimestamp = subscription.endDate;
+
+                console.log('🔐 Erişim Seviyelendirmesi:');
+                console.log(`   Package Level: ${accessLevel}`);
+                console.log(`   Expiry: ${new Date(expiryTimestamp).toLocaleString('tr-TR')}`);
+
+                // ─────────────────────────────────────────
+                // 🎯 UYGULAMASI BAŞLAT
+                // ─────────────────────────────────────────
+                console.log('⚡ Web-to-App Bridge başlatılıyor...');
                 launchAppAfterPayment(userId, packageId, accessLevel, expiryTimestamp);
 
-                // Fallback: ana sayfaya geri dön
+                console.log('⏳ Fallback: 2 saniye sonra ana sayfaya yönlendiriliyor...');
                 setTimeout(() => {
+                  console.log('🔄 Ana sayfaya yönlendiriliyor...');
                   navigate('/', { replace: true });
                 }, 2000);
               }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-green-500/30 mb-4"
             >
-              Uygulamayı Aç
+              ⚡ Uygulamayı Aç
             </button>
 
             {/* Auto redirect message */}
