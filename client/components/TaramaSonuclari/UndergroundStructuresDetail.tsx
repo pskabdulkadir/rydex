@@ -40,7 +40,7 @@ export default function UndergroundStructuresDetail({
     <div className="space-y-4">
       {/* Detaylı Arama Butonu */}
       <Button
-        onClick={() => navigate('/application-features')}
+        onClick={() => navigate('/app/application-features')}
         className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 px-4 rounded-lg font-bold text-base shadow-lg transition-all duration-200 transform hover:scale-105 flex items-center justify-center gap-3"
       >
         <Microscope className="w-5 h-5" />

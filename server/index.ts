@@ -659,6 +659,8 @@ export function createServer() {
       // URL güvenliği - sadece HTTPS ve belirli domenler
       const allowedDomains = [
         "api.ncei.noaa.gov",
+        "www.ngdc.noaa.gov",
+        "ngdc.noaa.gov",
         "overpass-api.de",
         "whc.unesco.org",
         "opencontext.org",
