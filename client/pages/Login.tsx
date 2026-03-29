@@ -35,11 +35,11 @@ export default function Login() {
           if (userData.role === 'admin') {
             navigate('/admin');
           } else {
-            navigate('/app/dashboard');
+            navigate('/dashboard');
           }
         } else {
-          // Kullanıcı dokümanı bulunamadıysa member panel'e yönlendir
-          navigate('/member-panel');
+          // Kullanıcı dokümanı bulunamadıysa dashboard'a yönlendir
+          navigate('/dashboard');
         }
       }
     } catch (error) {

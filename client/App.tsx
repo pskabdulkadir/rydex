@@ -25,6 +25,7 @@ import { initializeDB } from "@/lib/local-db";
 // Lazy loaded pages for better performance
 const Scanner = lazy(() => import("./pages/Scanner"));
 const Index = lazy(() => import("./pages/Index"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
@@ -265,6 +266,7 @@ function RootRouter() {
       <Route path="/register" element={<Register />} />
       <Route path="/member-login" element={<Login />} />
       <Route path="/member-register" element={<Register />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/member-panel" element={<MemberPanel />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/checkout" element={<Checkout />} />

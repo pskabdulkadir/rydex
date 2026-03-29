@@ -134,58 +134,7 @@ export default function AdminPanel() {
     { date: 'Cmt', sales: 0, revenue: 0 }
   ]);
 
-  const [users, setUsers] = useState<User[]>([
-    {
-      id: 'user_001',
-      name: 'Ahmet Yılmaz',
-      email: 'ahmet@example.com',
-      role: 'user',
-      status: 'active',
-      joinDate: Date.now() - 2592000000,
-      lastLogin: Date.now() - 86400000,
-      package: 'Pro'
-    },
-    {
-      id: 'user_002',
-      name: 'Fatih Demir',
-      email: 'fatih@example.com',
-      role: 'user',
-      status: 'active',
-      joinDate: Date.now() - 5184000000,
-      lastLogin: Date.now() - 3600000,
-      package: 'Master License'
-    },
-    {
-      id: 'user_003',
-      name: 'Zeynep Kaya',
-      email: 'zeynep@example.com',
-      role: 'manager',
-      status: 'active',
-      joinDate: Date.now() - 7776000000,
-      lastLogin: Date.now() - 172800000,
-      package: 'Ultimate'
-    },
-    {
-      id: 'user_004',
-      name: 'Ali Çetin',
-      email: 'ali@example.com',
-      role: 'user',
-      status: 'inactive',
-      joinDate: Date.now() - 10368000000,
-      lastLogin: Date.now() - 1296000000,
-      package: 'Basic'
-    },
-    {
-      id: 'user_005',
-      name: 'Admin Kullanıcı',
-      email: 'admin@example.com',
-      role: 'admin',
-      status: 'active',
-      joinDate: Date.now() - 31536000000,
-      lastLogin: Date.now() - 3600000,
-      package: 'Master License'
-    }
-  ]);
+  const [users, setUsers] = useState<User[]>([]);
 
   const [editingUser, setEditingUser] = useState<User | null>(null);
 

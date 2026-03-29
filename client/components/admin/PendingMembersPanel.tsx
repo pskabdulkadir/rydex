@@ -21,6 +21,18 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
   const [rejectionReason, setRejectionReason] = useState('');
   const [approvingId, setApprovingId] = useState<string | null>(null);
 
+  // Demo üyeleri temizle
+  const clearDemoMembers = () => {
+    if (!confirm('Tüm demo ve sahte üyeleri temizlemek istediğinize emin misiniz?')) {
+      return;
+    }
+
+    localStorage.removeItem('pending_members');
+    localStorage.removeItem('approved_members');
+    setMembers([]);
+    toast.success('Demo üyeler başarıyla temizlendi');
+  };
+
   // Onay bekleyen üyeleri yükle
   useEffect(() => {
     loadPendingMembers();
@@ -189,13 +201,22 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
           <h2 className="text-2xl font-bold text-white mb-1">Onay Bekleyen Üyeler</h2>
           <p className="text-slate-400">Toplam: {members.length} üye</p>
         </div>
-        <button
-          onClick={loadPendingMembers}
-          className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
-          title="Yenile"
-        >
-          <RefreshCw className="w-5 h-5 text-slate-300" />
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={clearDemoMembers}
+            className="px-4 py-2 bg-red-600/20 hover:bg-red-600/30 border border-red-600/50 text-red-300 rounded-lg transition-colors text-sm font-semibold"
+            title="Demo üyeleri temizle"
+          >
+            Demo Sil
+          </button>
+          <button
+            onClick={loadPendingMembers}
+            className="p-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors"
+            title="Yenile"
+          >
+            <RefreshCw className="w-5 h-5 text-slate-300" />
+          </button>
+        </div>
       </div>
 
       {/* Empty State */}
