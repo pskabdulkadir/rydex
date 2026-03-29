@@ -28,6 +28,16 @@ import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks
 export default function MemberPanel() {
   const navigate = useNavigate();
   const { user, logout, subscription, loading: authLoading, token } = useAuth();
+
+  const handleGoBack = () => {
+    // Eğer history içinde önceki sayfa varsa geri git
+    if (window.history.length > 1) {
+      window.history.back();
+    } else {
+      // History yoksa ana sayfaya yönlendir
+      navigate('/');
+    }
+  };
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
   useSubscriptionExpiryWarning();
 
@@ -272,10 +282,10 @@ export default function MemberPanel() {
           </div>
           <div className="flex items-center gap-3">
             <Button
-              onClick={() => navigate('/')}
+              onClick={handleGoBack}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold"
             >
-              🏠 Ana Sayfaya Dön
+              ◀ Geri Dön
             </Button>
             <Button
               onClick={handleLogout}
@@ -323,10 +333,10 @@ export default function MemberPanel() {
             {/* Navigation Buttons */}
             <div className="mt-6 space-y-2 pb-4 border-b border-slate-700/50">
               <button
-                onClick={() => navigate('/')}
+                onClick={handleGoBack}
                 className="w-full px-4 py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 rounded-lg text-sm font-semibold transition-all text-left flex items-center gap-2"
               >
-                🏠 Ana Sayfaya Geçiş
+                ◀ Geri Dön
               </button>
               <button
                 onClick={() => setActiveTab('overview')}

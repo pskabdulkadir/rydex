@@ -156,12 +156,26 @@ function AppLayout() {
   // /APP ALTINDA SÜRÜ KONTROL
   // Demo mode VEYA Subscription gerekli
   // ==========================================
+  const [subscriptionCheckId, setSubscriptionCheckId] = useState<number | null>(null);
+
   useEffect(() => {
     const checkSubscription = () => {
       // Demo mode aktifse subscription kontrolünü skip et (3 dakika demo süresi var)
       if (demoStatus.isActive) {
-        console.log('✅ Demo mode aktif - Subscription kontrolü bypass edildi');
-        console.log(`   Kalan süre: ${demoStatus.minutesRemaining}:${demoStatus.secondsRemaining.toString().padStart(2, '0')}`);
+        // Demo süresi biterse uyarı ver ve yönlendir
+        if (demoStatus.timeRemaining <= 0) {
+          console.error('❌ DEMO SÜRESI DOLDU!');
+          localStorage.removeItem('demoMode');
+          localStorage.removeItem('demoStartTime');
+          localStorage.removeItem('demoExpireTime');
+          toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.', {
+            description: 'Sisteme geri yönlendiriliyorsunuz...',
+            duration: 3000
+          });
+          setTimeout(() => {
+            navigate('/pricing', { replace: true });
+          }, 2000);
+        }
         return;
       }
 
@@ -171,36 +185,74 @@ function AppLayout() {
       // Subscription yoksa pricing'e yönlendir
       if (!savedSub) {
         console.warn('⏰ Demo veya Subscription bulunamadı - paket satın alınması gerekli');
-        navigate('/pricing', { replace: true });
+        toast.error('❌ Aktif paket gereklidir', {
+          description: 'Paket satın alma sayfasına yönlendiriliyorsunuz...',
+          duration: 2000
+        });
+        setTimeout(() => {
+          navigate('/pricing', { replace: true });
+        }, 1000);
         return;
       }
 
       try {
         const sub = JSON.parse(savedSub);
-        const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+        const now = Date.now();
+        const daysRemaining = Math.max(0, Math.ceil((sub.endDate - now) / (1000 * 60 * 60 * 24)));
+        const hoursRemaining = Math.max(0, Math.ceil((sub.endDate - now) / (1000 * 60 * 60)));
+        const minutesRemaining = Math.max(0, Math.ceil((sub.endDate - now) / (1000 * 60)));
 
         // Subscription süresi bitmiş ise pricing'e yönlendir
-        if (daysRemaining <= 0) {
-          console.warn('⏰ Subscription süresi bitti, paket satın alma sayfasına yönlendiriliyorsunuz');
+        if (minutesRemaining <= 0) {
+          console.error('❌ SUBSCRIPTION SÜRESI BITTI!');
           localStorage.removeItem('subscription');
-          navigate('/pricing', { replace: true });
+
+          toast.error('⏰ Aboneliğinizin süresi dolmuştur!', {
+            description: 'Paket satın alma sayfasına yönlendiriliyorsunuz...',
+            duration: 3000
+          });
+
+          setTimeout(() => {
+            navigate('/pricing', { replace: true });
+          }, 2000);
           return;
         }
 
+        // Subscription bitişine yakın uyarı ver (30 dakika kaldı)
+        if (minutesRemaining <= 30 && minutesRemaining > 29) {
+          toast.warning('⚠️ Aboneliğinizin süresi yakında bitecektir!', {
+            description: `${minutesRemaining} dakika kaldı - Yenileme yapınız`,
+            duration: 5000
+          });
+        }
+
         // Subscription aktif
-        console.log('✅ Subscription aktif, kalan gün:', daysRemaining);
+        console.log(`✅ Subscription aktif - Kalan: ${daysRemaining > 0 ? daysRemaining + ' gün' : minutesRemaining + ' dakika'}`);
       } catch (e) {
         console.warn('⚠️ Subscription parse hatası:', e);
-        navigate('/pricing', { replace: true });
+        toast.error('❌ Paket bilgisinde hata oluştu', {
+          description: 'Lütfen tekrar paket satın alınız',
+          duration: 3000
+        });
+        setTimeout(() => {
+          navigate('/pricing', { replace: true });
+        }, 1000);
         return;
       }
     };
 
+    // İlk kontrol hemen yap
     checkSubscription();
-    // Her 10 saniyede kontrol et
-    const interval = setInterval(checkSubscription, 10000);
-    return () => clearInterval(interval);
-  }, [navigate, demoStatus.isActive]);
+
+    // Daha sık kontrol et (5 saniyede bir, ama minute'e göre kontrol aralığını ayarla)
+    // Kontrol sıklığı: dakika cinsinden 5 saniye, saat cinsinden 30 saniye
+    const interval = setInterval(checkSubscription, 5000);
+    setSubscriptionCheckId(interval as unknown as number);
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [navigate, demoStatus.isActive, demoStatus.timeRemaining]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {

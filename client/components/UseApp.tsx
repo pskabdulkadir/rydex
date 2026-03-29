@@ -102,29 +102,10 @@ export function UseApp({
     );
   }
 
-  // Aktif subscription yoksa
+  // Aktif subscription yoksa - component gizle
+  // Parent component'de zaten subscription kontrolü yapılmalı
   if (!subscription || !hasAccess) {
-    return (
-      <Card className={`bg-gradient-to-br from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 p-6 ${className}`}>
-        <div className="flex items-start gap-4">
-          <div className="p-3 bg-yellow-500/20 rounded-full flex-shrink-0">
-            <AlertCircle className="w-6 h-6 text-yellow-400" />
-          </div>
-          <div className="flex-1">
-            <h3 className="text-lg font-bold text-white mb-1">Aktif Paket Yok</h3>
-            <p className="text-slate-300 text-sm mb-4">
-              Uygulamayı kullanmak için bir paket satın almanız gerekmektedir.
-            </p>
-            <Button
-              onClick={handleExtendSubscription}
-              className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-            >
-              📦 Paket Satın Al
-            </Button>
-          </div>
-        </div>
-      </Card>
-    );
+    return null;
   }
 
   // Compact mod (sidebar ve özet gösterimler için)
