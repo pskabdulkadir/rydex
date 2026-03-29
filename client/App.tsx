@@ -265,6 +265,7 @@ function RootRouter() {
       <Route path="/register" element={<Register />} />
       <Route path="/member-login" element={<Login />} />
       <Route path="/member-register" element={<Register />} />
+      <Route path="/member-panel" element={<MemberPanel />} />
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/payment-pending" element={<PaymentPending />} />

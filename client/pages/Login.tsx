@@ -22,7 +22,7 @@ export default function Login() {
     try {
       await login({ email, password });
       toast.success('Giriş başarılı!');
-      navigate('/member-panel');
+      navigate('/app');
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Giriş başarısız';
       setError(message);
