@@ -369,30 +369,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Hiçbiri başarısız olursa API'ye sor
-      if (token) {
-        const response = await fetch('/api/subscription/active', {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        if (!response.ok) return;
-
-        const data = await response.json();
-
-        if (data.subscription) {
-          setSubscription(data.subscription);
-
-          // Subscription'ın süresi dolduysa logout yap
-          if (data.subscription.status === 'expired' && data.subscription.daysRemaining <= 0) {
-            console.warn('⏰ Subscription süresi doldu, çıkış yapılıyor...');
-            await logout();
-          }
-        } else {
-          setSubscription(null);
-        }
-      }
+      // Firestore ve localStorage'dan kontrol yeterli (Firebase kullanıyor)
     } catch (err) {
       console.error('Subscription check error:', err);
     }

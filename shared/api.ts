@@ -333,7 +333,7 @@ export interface UserProfile {
  * Login Request
  */
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
 }
 

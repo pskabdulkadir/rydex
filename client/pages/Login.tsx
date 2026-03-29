@@ -7,7 +7,7 @@ import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
 export default function Login() {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -20,7 +20,7 @@ export default function Login() {
     setLoading(true);
 
     try {
-      await login({ username, password });
+      await login({ email, password });
       toast.success('Giriş başarılı!');
       navigate('/member-panel');
     } catch (error) {
@@ -54,13 +54,13 @@ export default function Login() {
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kullanıcı Adı
+              E-posta Adresi
             </label>
             <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Kullanıcı adınız"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="orneginiz@email.com"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
               required
             />
