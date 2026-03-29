@@ -390,3 +390,4 @@ const App = () => {
 };
 
 createRoot(document.getElementById("root")!).render(<App />);
+// firebase admin sdk aktif edildi
