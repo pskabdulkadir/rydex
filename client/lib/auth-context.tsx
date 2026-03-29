@@ -1,5 +1,17 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { UserProfile, LoginRequest, RegisterRequest, Subscription } from '@shared/api';
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  User as FirebaseUser,
+  updateProfile,
+  sendPasswordResetEmail
+} from 'firebase/auth';
+import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { auth, db } from './firebase';
+import { getUserSubscription, migrateUserDataToFirestore } from './firestore-user';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -28,15 +40,106 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // LocalStorage'dan token'ı al ve restore et
+  // Firebase Authentication State listener
   useEffect(() => {
-    const savedToken = localStorage.getItem('auth_token');
-    if (savedToken) {
-      setToken(savedToken);
-      fetchProfile(savedToken);
-    } else {
-      setLoading(false);
-    }
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
+      try {
+        if (firebaseUser) {
+          // Kullanıcı giriş yapmış
+          const idToken = await firebaseUser.getIdToken();
+          setToken(idToken);
+
+          // Firestore'dan user profile'ı çek
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+          const userDocSnap = await getDoc(userDocRef);
+
+          if (userDocSnap.exists()) {
+            const userData = userDocSnap.data();
+            const userProfile: UserProfile = {
+              uid: firebaseUser.uid,
+              email: firebaseUser.email || '',
+              username: userData.username || firebaseUser.displayName || 'Kullanıcı',
+              phone: userData.phone || '',
+              createdAt: userData.createdAt || new Date().toISOString(),
+              updatedAt: userData.updatedAt || new Date().toISOString(),
+            };
+            setUser(userProfile);
+            localStorage.setItem('auth_token', idToken);
+            localStorage.setItem('userId', firebaseUser.uid);
+            localStorage.setItem('userName', userProfile.username);
+            if (firebaseUser.email) {
+              localStorage.setItem('userEmail', firebaseUser.email);
+            }
+          } else {
+            // localStorage'dan migration kontrol et
+            const savedUserProfile = localStorage.getItem('user_profile');
+            if (savedUserProfile) {
+              try {
+                // localStorage'dan migration yap
+                console.log('📦 localStorage\'dan Firestore\'a migration başlatılıyor...');
+                await migrateUserDataToFirestore(firebaseUser.uid);
+
+                const migratedData = JSON.parse(savedUserProfile);
+                const userProfile: UserProfile = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email || migratedData.email || '',
+                  username: firebaseUser.displayName || migratedData.username || 'Kullanıcı',
+                  phone: migratedData.phone || '',
+                  createdAt: migratedData.createdAt || new Date().toISOString(),
+                  updatedAt: migratedData.updatedAt || new Date().toISOString(),
+                };
+
+                // Firestore'da profili oluştur
+                await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
+                setUser(userProfile);
+                console.log('✅ Migration başarılı');
+              } catch (migrationErr) {
+                console.warn('⚠️ Migration sırasında hata:', migrationErr);
+                // Migration başarısız olsa da kullanıcıya giriş yaptırmaya devam et
+                const userProfile: UserProfile = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email || '',
+                  username: firebaseUser.displayName || 'Kullanıcı',
+                  phone: '',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                };
+                await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
+                setUser(userProfile);
+              }
+            } else {
+              // Yeni kullanıcı, profil oluştur
+              const userProfile: UserProfile = {
+                uid: firebaseUser.uid,
+                email: firebaseUser.email || '',
+                username: firebaseUser.displayName || 'Kullanıcı',
+                phone: '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              };
+              await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
+              setUser(userProfile);
+            }
+          }
+        } else {
+          // Kullanıcı giriş yapmamış
+          setToken(null);
+          setUser(null);
+          setSubscription(null);
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('userId');
+          localStorage.removeItem('userName');
+          localStorage.removeItem('userEmail');
+        }
+      } catch (err) {
+        console.error('Auth state change error:', err);
+        setError(err instanceof Error ? err.message : 'Yetkilendirme hatası');
+      } finally {
+        setLoading(false);
+      }
+    });
+
+    return unsubscribe;
   }, []);
 
   // Subscription'ı kontrol et (her 30 saniyede bir - erken uyarı için)
@@ -48,82 +151,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token, user]);
 
-  const fetchProfile = async (authToken: string) => {
-    try {
-      const response = await fetch('/api/auth/profile', {
-        headers: {
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Profile fetch failed');
-
-      const data = await response.json();
-      setUser(data.user);
-      setError(null);
-    } catch (err) {
-      console.error('Profile fetch error:', err);
-
-      // Fallback: localStorage'dan user profile'ı okumuş dene
-      const savedUserProfile = localStorage.getItem('user_profile');
-      if (savedUserProfile) {
-        try {
-          const userProfile = JSON.parse(savedUserProfile);
-          setUser(userProfile);
-          console.log('✅ localStorage\'dan user profili yüklendi:', userProfile.username);
-          setError(null);
-          setLoading(false);
-          return;
-        } catch (parseErr) {
-          console.error('localStorage user profile parse hatası:', parseErr);
-        }
-      }
-
-      // Fallback başarısız olduysa, logout et
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_profile');
-      setToken(null);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const login = async (credentials: LoginRequest) => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-      });
+      // Firebase Authentication ile giriş yap
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        credentials.email,
+        credentials.password
+      );
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || 'Giriş başarısız');
-      }
+      const firebaseUser = userCredential.user;
+      const idToken = await firebaseUser.getIdToken();
 
-      const data = await response.json();
-      setToken(data.token);
-      setUser(data.user);
-      localStorage.setItem('auth_token', data.token);
+      // Firestore'dan kullanıcı profilini çek
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
 
-      // userId ve kullanıcı bilgilerini localStorage'a kaydet
-      if (data.user?.uid) {
-        localStorage.setItem('userId', data.user.uid);
-        localStorage.setItem('userName', data.user.username || 'Kullanıcı');
-        if (data.user.email) {
-          localStorage.setItem('userEmail', data.user.email);
+      if (userDocSnap.exists()) {
+        const userData = userDocSnap.data();
+        const userProfile: UserProfile = {
+          uid: firebaseUser.uid,
+          email: firebaseUser.email || '',
+          username: userData.username || firebaseUser.displayName || 'Kullanıcı',
+          phone: userData.phone || '',
+          createdAt: userData.createdAt || new Date().toISOString(),
+          updatedAt: userData.updatedAt || new Date().toISOString(),
+        };
+        setUser(userProfile);
+        setToken(idToken);
+        localStorage.setItem('auth_token', idToken);
+        localStorage.setItem('userId', firebaseUser.uid);
+        localStorage.setItem('userName', userProfile.username);
+        if (firebaseUser.email) {
+          localStorage.setItem('userEmail', firebaseUser.email);
         }
       }
 
       // Subscription'ı kontrol et
       await checkSubscriptionValidity();
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Giriş hatası';
+      let message = 'Giriş hatası';
+      if (err instanceof Error) {
+        if (err.message.includes('user-not-found')) {
+          message = 'Kullanıcı bulunamadı';
+        } else if (err.message.includes('wrong-password')) {
+          message = 'Yanlış şifre';
+        } else if (err.message.includes('too-many-requests')) {
+          message = 'Çok fazla başarısız deneme. Lütfen daha sonra tekrar deneyin.';
+        } else {
+          message = err.message;
+        }
+      }
       setError(message);
-      throw err;
+      throw new Error(message);
     } finally {
       setLoading(false);
     }
@@ -134,43 +217,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
 
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
+      // Firebase Authentication'da yeni kullanıcı oluştur
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        data.email,
+        data.password
+      );
 
-      if (!response.ok) {
-        const responseData = await response.json();
+      const firebaseUser = userCredential.user;
 
-        // 429 Too Many Requests hatası özel mesaj
-        if (response.status === 429) {
-          throw new Error('Çok fazla deneme yapıldı. Lütfen birkaç dakika sonra tekrar deneyin.');
-        }
-
-        throw new Error(responseData.message || 'Kayıt başarısız');
+      // Display name'i güncelle
+      if (data.username) {
+        await updateProfile(firebaseUser, {
+          displayName: data.username,
+        });
       }
 
-      const responseData = await response.json();
-      setToken(responseData.token);
-      setUser(responseData.user);
-      localStorage.setItem('auth_token', responseData.token);
+      // Firestore'da kullanıcı profilini oluştur
+      const userProfile: UserProfile = {
+        uid: firebaseUser.uid,
+        email: data.email,
+        username: data.username || 'Kullanıcı',
+        phone: data.phone || '',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
 
-      // userId ve kullanıcı bilgilerini localStorage'a kaydet
-      if (responseData.user?.uid) {
-        localStorage.setItem('userId', responseData.user.uid);
-        localStorage.setItem('userName', responseData.user.username || 'Kullanıcı');
-        if (responseData.user.email) {
-          localStorage.setItem('userEmail', responseData.user.email);
-        }
-      }
+      await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
+
+      // Token'ı al
+      const idToken = await firebaseUser.getIdToken();
+
+      setToken(idToken);
+      setUser(userProfile);
+      localStorage.setItem('auth_token', idToken);
+      localStorage.setItem('userId', firebaseUser.uid);
+      localStorage.setItem('userName', userProfile.username);
+      localStorage.setItem('userEmail', data.email);
     } catch (err) {
       let message = 'Kayıt hatası';
 
-      if (err instanceof TypeError && err.message === 'Failed to fetch') {
-        message = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
-      } else if (err instanceof Error) {
-        message = err.message;
+      if (err instanceof Error) {
+        if (err.message.includes('email-already-in-use')) {
+          message = 'Bu e-posta zaten kullanılıyor';
+        } else if (err.message.includes('weak-password')) {
+          message = 'Şifre en az 6 karakter olmalıdır';
+        } else if (err.message.includes('invalid-email')) {
+          message = 'Geçersiz e-posta adresi';
+        } else if (err.message === 'Failed to fetch') {
+          message = 'Bağlantı hatası. İnternet bağlantınızı kontrol edin ve tekrar deneyin.';
+        } else {
+          message = err.message;
+        }
       }
 
       setError(message);
@@ -182,14 +280,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      if (token) {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      }
+      // Firebase'den çıkış yap
+      await signOut(auth);
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
@@ -207,14 +299,51 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const refreshProfile = async () => {
-    if (token) {
-      await fetchProfile(token);
+    if (auth.currentUser) {
+      try {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (userDocSnap.exists()) {
+          const userData = userDocSnap.data();
+          const userProfile: UserProfile = {
+            uid: auth.currentUser.uid,
+            email: auth.currentUser.email || '',
+            username: userData.username || auth.currentUser.displayName || 'Kullanıcı',
+            phone: userData.phone || '',
+            createdAt: userData.createdAt || new Date().toISOString(),
+            updatedAt: userData.updatedAt || new Date().toISOString(),
+          };
+          setUser(userProfile);
+        }
+      } catch (err) {
+        console.error('Refresh profile error:', err);
+      }
     }
   };
 
   const checkSubscriptionValidity = async () => {
     try {
-      // Önce localStorage'dan subscription kontrol et
+      if (!auth.currentUser) return;
+
+      // Önce Firestore'dan subscription kontrol et
+      try {
+        const sub = await getUserSubscription(auth.currentUser.uid);
+        if (sub) {
+          setSubscription(sub);
+
+          // Subscription'ın süresi dolduysa logout yap
+          if (sub.daysRemaining <= 0) {
+            console.warn('⏰ Subscription süresi doldu, çıkış yapılıyor...');
+            await logout();
+          }
+          return;
+        }
+      } catch (firestoreErr) {
+        console.warn('⚠ Firestore subscription kontrol hatası:', firestoreErr);
+      }
+
+      // Firestore başarısız olursa localStorage'dan kontrol et
       const savedSubscription = localStorage.getItem('subscription');
       if (savedSubscription) {
         try {
@@ -240,7 +369,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // localStorage başarısız olursa API'ye sor
+      // Hiçbiri başarısız olursa API'ye sor
       if (token) {
         const response = await fetch('/api/subscription/active', {
           headers: {

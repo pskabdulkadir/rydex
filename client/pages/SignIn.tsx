@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Loader2, LogIn, Mail, Lock } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { loginLocal } from '@/lib/auth-local';
-import { initializeDB as initDB } from '@/lib/local-db';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
 export default function SignIn() {
@@ -13,6 +12,7 @@ export default function SignIn() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +24,7 @@ export default function SignIn() {
     setLoading(true);
 
     try {
-      await initDB();
-      await loginLocal(email, password);
+      await login({ email, password });
       toast.success('Giriş başarılı');
       navigate('/dashboard');
     } catch (error: any) {

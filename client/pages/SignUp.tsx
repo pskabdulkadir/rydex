@@ -4,8 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { Loader2, UserPlus, Mail, Lock, User } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
-import { createLocalAccount } from '@/lib/auth-local';
-import { initializeDB as initDB } from '@/lib/local-db';
+import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 
 export default function SignUp() {
@@ -14,6 +13,7 @@ export default function SignUp() {
   const [displayName, setDisplayName] = useState('');
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const { register } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +30,12 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      await initDB();
-      await createLocalAccount(email, password, displayName);
+      await register({
+        email,
+        password,
+        username: displayName,
+        phone: '',
+      });
       toast.success('Hesap başarıyla oluşturuldu');
       navigate('/dashboard');
     } catch (error: any) {

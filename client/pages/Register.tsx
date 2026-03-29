@@ -1,302 +1,194 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { auth, db } from '@/lib/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
-import { Loader2, UserPlus, AlertCircle } from 'lucide-react';
+import { Loader2, UserPlus, Mail, Lock, User, Phone } from 'lucide-react';
 import { toast } from 'sonner';
-import { PACKAGES } from '@shared/packages';
-import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/lib/auth-context';
 
 export default function Register() {
-  const { user: contextUser } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const navigate = useNavigate();
-
-  // localStorage'dan seçilen paketi al
-  useEffect(() => {
-    const packageId = localStorage.getItem('selectedPackageId');
-    if (packageId) {
-      setSelectedPackageId(packageId);
-    }
-  }, []);
-
-  const validateForm = () => {
-    if (!username.trim()) {
-      setError('Kullanıcı adı gerekli');
-      return false;
-    }
-    if (username.length < 3) {
-      setError('Kullanıcı adı en az 3 karakter olmalı');
-      return false;
-    }
-    // Kullanıcı adında boşluk ve özel karakterleri kontrol et
-    if (/\s/.test(username)) {
-      setError('Kullanıcı adı boşluk içeremez');
-      return false;
-    }
-    if (!/^[a-zA-Z0-9._-]+$/.test(username)) {
-      setError('Kullanıcı adı sadece harf, rakam, nokta, tire ve alt çizgi içerebilir');
-      return false;
-    }
-    if (!phone.trim()) {
-      setError('Telefon numarası gerekli');
-      return false;
-    }
-    if (phone.replace(/\D/g, '').length < 10) {
-      setError('Geçerli bir telefon numarası girin');
-      return false;
-    }
-    if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalı');
-      return false;
-    }
-    if (password !== confirmPassword) {
-      setError('Şifreler eşleşmiyor');
-      return false;
-    }
-    return true;
-  };
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    
+    if (!email || !password || !username || !phone) {
+      toast.error('Tüm alanları doldurun');
+      return;
+    }
 
-    if (!validateForm()) {
+    if (password.length < 6) {
+      toast.error('Şifre en az 6 karakter olmalıdır');
       return;
     }
 
     setLoading(true);
 
     try {
-      // Email oluştururken boşlukları sil ve küçük harf yap
-      const cleanEmail = `${username.trim().toLowerCase()}@yeralti.com`;
+      // 1. Firebase Auth ile gerçek mail ve şifreyle kullanıcı oluştur
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
 
-      console.log('📝 Kayıt işlemi başlandı:', {
-        username: username.trim(),
-        email: cleanEmail,
-        phone: phone.trim(),
+      // 2. Kullanıcı detaylarını Firestore'a (veritabanına) kaydet
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        email: email,
+        username: username,
+        phone: phone,
+        role: 'user',
+        approval_status: 'pending', // Yönetici onayı bekliyor
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
       });
 
-      // 1. Kullanıcıyı Supabase Auth sistemine kaydet
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: cleanEmail,
-        password: password,
-        options: {
-          data: {
-            username: username.trim(),
-            phone: phone.trim(),
-          }
-        }
+      toast.success('Kayıt başarılı!', {
+        description: 'Yönetici onayı bekleniyor. Giriş sayfasına yönlendiriliyorsunuz...'
       });
-
-      if (authError) {
-        console.error('🔴 Supabase Auth Hata Detayları:', {
-          message: authError.message,
-          status: authError.status,
-          code: (authError as any).code,
-          error: authError,
-        });
-
-        // Hata türlerine göre özel mesajlar
-        if (authError.message.includes('already registered')) {
-          throw new Error('Bu email adresi zaten kayıtlı. Lütfen giriş yapın.');
-        } else if (authError.message.includes('Invalid email')) {
-          throw new Error('Geçersiz email adresi. Kullanıcı adında özel karakterler olmadığından emin olun.');
-        } else if (authError.message.includes('password')) {
-          throw new Error('Şifre en az 6 karakter olmalı.');
-        } else if (authError.message.includes('CORS')) {
-          throw new Error('CORS hatasıydı. Lütfen tekrar deneyin.');
-        } else if (authError.status === 400) {
-          throw new Error(`Supabase Hatası: ${authError.message}`);
-        }
-
-        throw authError;
-      }
-
-      if (!authData.user?.id) {
-        throw new Error('Kullanıcı oluşturulamadı. Lütfen tekrar deneyin.');
-      }
-
-      console.log('✅ Supabase Auth başarılı, User ID:', authData.user.id);
-
-      // 2. Kullanıcı bilgilerini 'users' tablosuna yaz
-      const { error: dbError } = await supabase
-        .from('users')
-        .insert([
-          {
-            id: authData.user.id,
-            username: username.trim(),
-            phone: phone.trim(),
-            email: cleanEmail,
-            approval_status: 'approved'
-          }
-        ]);
-
-      if (dbError) {
-        console.error('🔴 Veritabanı Insert Hatası:', dbError);
-        // Database error'u ignore et, auth başarılı olduysa devam et
-        toast.warning('Profil bilgileri kaydedilemedi ama kimlik doğrulama başarılı');
-      } else {
-        console.log('✅ Kullanıcı veritabanına kaydedildi');
-      }
-
-      // 3. Token ve user info'yu localStorage'a kaydet
-      const userProfile = {
-        uid: authData.user.id,
-        username: username.trim(),
-        email: cleanEmail,
-        phone: phone.trim(),
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
-        isAdmin: false,
-        lastLogin: Date.now(),
-        preferences: { theme: 'light', language: 'tr', notifications: true },
-        statistics: { totalScans: 0, totalScanTime: 0, areasExplored: 0 },
-        subscription: { plan: 'free', isActive: true, daysRemaining: 365, endDate: Date.now() + 365 * 24 * 60 * 60 * 1000 }
-      };
-
-      localStorage.setItem('auth_token', authData.session?.access_token || '');
-      localStorage.setItem('userId', authData.user.id);
-      localStorage.setItem('userName', username.trim());
-      localStorage.setItem('user_profile', JSON.stringify(userProfile));
-
-      toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
-
-      // Paket seçme sayfasına (Pricing) yönlendir
+      
+      // Giriş sayfasına yönlendir
       setTimeout(() => {
-        navigate('/pricing');
-      }, 500);
-    } catch (error) {
-      let message = 'Kayıt başarısız';
+        navigate('/login');
+      }, 2000);
 
-      if (error instanceof Error) {
-        message = error.message;
-      } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        message = (error as any).message;
+    } catch (error: any) {
+      console.error('Kayıt Hatası:', error.message);
+      
+      let errorMessage = 'Kayıt başarısız';
+      if (error.message.includes('email-already-in-use')) {
+        errorMessage = 'Bu e-posta zaten kullanılıyor';
+      } else if (error.message.includes('weak-password')) {
+        errorMessage = 'Şifre en az 6 karakter olmalıdır';
+      } else if (error.message.includes('invalid-email')) {
+        errorMessage = 'Geçersiz e-posta adresi';
+      } else {
+        errorMessage = error.message;
       }
-
-      console.error('❌ Kayıt hatası:', error);
-      setError(message);
-      toast.error(message);
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md p-8">
-        <div className="flex justify-center mb-8">
-          <div className="p-3 bg-blue-100 rounded-full">
-            <UserPlus className="w-8 h-8 text-blue-600" />
-          </div>
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
+        <div className="text-center space-y-2">
+          <h1 className="text-3xl font-bold text-gray-900">Görüntüleme Sistemi</h1>
+          <p className="text-gray-600">Yeni üyelik oluşturun</p>
         </div>
 
-        <h1 className="text-2xl font-bold text-center mb-2">rydex'e Üye Ol</h1>
-        <p className="text-center text-gray-600 mb-8">Yeni bir hesap oluşturun</p>
+        <Card className="p-6">
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                <User className="w-4 h-4 inline mr-2" />
+                Kullanıcı Adı
+              </label>
+              <Input
+                type="text"
+                placeholder="Kullanıcı adınız"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                disabled={loading}
+                className="border-gray-300"
+                required
+              />
+            </div>
 
-        {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-start gap-2">
-            <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700">{error}</p>
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Mail className="w-4 h-4 inline mr-2" />
+                E-posta Adresi
+              </label>
+              <Input
+                type="email"
+                placeholder="orneginiz@email.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
+                className="border-gray-300"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Phone className="w-4 h-4 inline mr-2" />
+                Telefon Numaranız
+              </label>
+              <Input
+                type="tel"
+                placeholder="+90 (5XX) XXX XXXX"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                disabled={loading}
+                className="border-gray-300"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                <Lock className="w-4 h-4 inline mr-2" />
+                Şifre
+              </label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                className="border-gray-300"
+                required
+              />
+              <p className="text-xs text-gray-600 mt-1">En az 6 karakter</p>
+            </div>
+
+            <Button
+              type="submit"
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold h-10 mt-6"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Kaydediliyor...
+                </>
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Kayıt Ol
+                </>
+              )}
+            </Button>
+          </form>
+
+          <div className="mt-6 pt-6 border-t border-gray-200">
+            <p className="text-center text-sm text-gray-600">
+              Zaten hesabınız var mı?{' '}
+              <Link
+                to="/login"
+                className="text-blue-600 hover:text-blue-700 font-semibold"
+              >
+                Giriş Yapın
+              </Link>
+            </p>
           </div>
-        )}
+        </Card>
 
-        <form onSubmit={handleRegister} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Kullanıcı Adı
-            </label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              placeholder="Kullanıcı adınız"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">En az 3 karakter</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Telefon Numarası
-            </label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+90 (5XX) XXX XX XX"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">Örnek: 05551234567</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Şifre
-            </label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              required
-            />
-            <p className="text-xs text-gray-500 mt-1">En az 6 karakter</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Şifre Tekrar
-            </label>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none"
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2"
-          >
-            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Kayıt Ol
-          </Button>
-        </form>
-
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <p className="text-center text-gray-600 text-sm">
-            Zaten hesabınız var mı?{' '}
-            <Link to="/member-login" className="text-blue-600 hover:text-blue-700 font-medium">
-              Giriş Yapın
-            </Link>
-          </p>
-        </div>
-
-        <div className="mt-6 pt-6 border-t border-gray-200">
-          <Link
-            to="/rydex"
-            className="text-center block text-sm text-gray-600 hover:text-gray-700"
-          >
-            ← Ana Sayfaya Dön
-          </Link>
-        </div>
-      </Card>
+        <p className="text-center text-xs text-gray-600">
+          Kayıt olduktan sonra yönetici onayı beklenecektir.
+        </p>
+      </div>
     </div>
   );
 }
