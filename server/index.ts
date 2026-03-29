@@ -314,6 +314,146 @@ export function createServer() {
     });
   });
 
+  // ============ FIREBASE ADMIN TEST ENDPOINTS ============
+  // Firebase Admin SDK'nın çalıştığını kontrol etmek için
+
+  // Firebase Admin SDK'nın başlatılıp başlatılmadığını kontrol et
+  app.get("/api/firebase/status", (_req, res) => {
+    try {
+      const { adminDb, adminAuth } = initializeFirebaseAdmin();
+
+      const status = {
+        initialized: true,
+        firestoreAvailable: !!adminDb,
+        authAvailable: !!adminAuth,
+        message: "Firebase Admin SDK başarıyla bağlandı ✅",
+        timestamp: new Date().toISOString(),
+      };
+
+      console.log("✅ Firebase Status Check:", status);
+      res.json(status);
+    } catch (error) {
+      console.error("❌ Firebase Status Error:", error);
+      res.status(500).json({
+        initialized: false,
+        message: "Firebase Admin SDK bağlanırken hata oluştu",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // Firebase Firestore test - basit veri yazma
+  app.post("/api/firebase/test-write", async (_req, res) => {
+    try {
+      const { adminDb } = initializeFirebaseAdmin();
+
+      if (!adminDb) {
+        return res.status(500).json({
+          success: false,
+          message: "Firestore veritabanı bağlanamadı",
+        });
+      }
+
+      // Test verisi yaz
+      const testData = {
+        message: "Test verisi - Firebase Admin SDK çalışıyor",
+        timestamp: new Date().toISOString(),
+        serverTime: new Date(),
+      };
+
+      const docRef = await adminDb.collection("firebase_test").add(testData);
+
+      console.log("✅ Firebase Firestore yazma başarılı:", docRef.id);
+      res.json({
+        success: true,
+        message: "Test verisi Firestore'a yazıldı",
+        docId: docRef.id,
+        data: testData,
+      });
+    } catch (error) {
+      console.error("❌ Firebase Firestore yazma hatası:", error);
+      res.status(500).json({
+        success: false,
+        message: "Firestore'a veri yazılırken hata oluştu",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // Firebase Firestore test - veri okuma
+  app.get("/api/firebase/test-read", async (_req, res) => {
+    try {
+      const { adminDb } = initializeFirebaseAdmin();
+
+      if (!adminDb) {
+        return res.status(500).json({
+          success: false,
+          message: "Firestore veritabanı bağlanamadı",
+        });
+      }
+
+      const snapshot = await adminDb.collection("firebase_test").limit(5).get();
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+
+      console.log("✅ Firebase Firestore okuma başarılı:", data.length, "dokuman");
+      res.json({
+        success: true,
+        message: "Test verileri Firestore'dan okundu",
+        count: data.length,
+        data,
+      });
+    } catch (error) {
+      console.error("❌ Firebase Firestore okuma hatası:", error);
+      res.status(500).json({
+        success: false,
+        message: "Firestore'dan veri okunurken hata oluştu",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
+  // Firebase Auth test - test kullanıcısı oluştur
+  app.post("/api/firebase/create-test-user", async (req, res) => {
+    try {
+      const { adminAuth } = initializeFirebaseAdmin();
+
+      if (!adminAuth) {
+        return res.status(500).json({
+          success: false,
+          message: "Firebase Auth bağlanamadı",
+        });
+      }
+
+      const email = `test_${Date.now()}@example.com`;
+      const password = "TestPassword123!";
+
+      const userRecord = await adminAuth.createUser({
+        email,
+        password,
+        displayName: "Firebase Test User",
+      });
+
+      console.log("✅ Firebase Auth test kullanıcısı oluşturuldu:", userRecord.uid);
+      res.json({
+        success: true,
+        message: "Test kullanıcısı Firebase Auth'da oluşturuldu",
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName,
+      });
+    } catch (error) {
+      console.error("❌ Firebase Auth kullanıcı oluşturma hatası:", error);
+      res.status(500).json({
+        success: false,
+        message: "Firebase Auth'da kullanıcı oluşturulurken hata oluştu",
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  });
+
   // ============ RATE LIMITING (GÖREV 12) ============
   // Global rate limiting'i kaldırdık, sadece hassas endpoint'lere uygulanıyor
   // (giriş, kayıt, 2FA vb.)
