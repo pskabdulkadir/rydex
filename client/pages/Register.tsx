@@ -6,8 +6,10 @@ import { Loader2, UserPlus, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { PACKAGES } from '@shared/packages';
 import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/lib/auth-context';
 
 export default function Register() {
+  const { user: contextUser } = useAuth();
   const [username, setUsername] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
@@ -146,18 +148,31 @@ export default function Register() {
       }
 
       // 3. Token ve user info'yu localStorage'a kaydet
+      const userProfile = {
+        uid: authData.user.id,
+        username: username.trim(),
+        email: cleanEmail,
+        phone: phone.trim(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        isAdmin: false,
+        lastLogin: Date.now(),
+        preferences: { theme: 'light', language: 'tr', notifications: true },
+        statistics: { totalScans: 0, totalScanTime: 0, areasExplored: 0 },
+        subscription: { plan: 'free', isActive: true, daysRemaining: 365, endDate: Date.now() + 365 * 24 * 60 * 60 * 1000 }
+      };
+
       localStorage.setItem('auth_token', authData.session?.access_token || '');
       localStorage.setItem('userId', authData.user.id);
       localStorage.setItem('userName', username.trim());
+      localStorage.setItem('user_profile', JSON.stringify(userProfile));
 
-      toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
+      toast.success('Kayıt başarılı! Üye paneline yönlendiriliyorsunuz...');
 
-      // Eğer seçilen paket varsa checkout'a git, aksi halde pricing'e git
-      if (selectedPackageId) {
-        navigate('/checkout', { state: { packageId: selectedPackageId } });
-      } else {
-        navigate('/pricing');
-      }
+      // Üye paneline yönlendir
+      setTimeout(() => {
+        navigate('/member-panel');
+      }, 500);
     } catch (error) {
       let message = 'Kayıt başarısız';
 

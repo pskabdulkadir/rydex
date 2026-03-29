@@ -28,7 +28,7 @@ import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks
 export default function MemberPanel() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout, subscription } = useAuth();
+  const { user, logout, subscription, loading: authLoading, token } = useAuth();
   const subscriptionStatus = useSubscriptionStatus(user?.id);
   useSubscriptionExpiryWarning();
 
@@ -41,9 +41,9 @@ export default function MemberPanel() {
   const [localSubscription, setLocalSubscription] = useState<any>(null);
   const [selectedPackageFromRegister, setSelectedPackageFromRegister] = useState<string | null>(null);
 
-  // Eğer kullanıcı giriş yapmamışsa redirect et
+  // Eğer kullanıcı giriş yapmamışsa redirect et (ama auth loading'i bekle)
   useEffect(() => {
-    if (!user) {
+    if (!authLoading && !user && !token) {
       navigate('/member-login');
       return;
     }

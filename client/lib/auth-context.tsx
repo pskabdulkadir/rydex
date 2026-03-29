@@ -63,7 +63,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
     } catch (err) {
       console.error('Profile fetch error:', err);
+
+      // Fallback: localStorage'dan user profile'ı okumuş dene
+      const savedUserProfile = localStorage.getItem('user_profile');
+      if (savedUserProfile) {
+        try {
+          const userProfile = JSON.parse(savedUserProfile);
+          setUser(userProfile);
+          console.log('✅ localStorage\'dan user profili yüklendi:', userProfile.username);
+          setError(null);
+          setLoading(false);
+          return;
+        } catch (parseErr) {
+          console.error('localStorage user profile parse hatası:', parseErr);
+        }
+      }
+
+      // Fallback başarısız olduysa, logout et
       localStorage.removeItem('auth_token');
+      localStorage.removeItem('user_profile');
       setToken(null);
     } finally {
       setLoading(false);
