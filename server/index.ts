@@ -190,6 +190,12 @@ import {
   downloadInvoiceHandler,
   viewInvoiceHandler,
 } from "./routes/invoice";
+import {
+  handleDeleteAllFirestoreUsers,
+  handleListFirestoreCollections,
+  handleDeleteFirestoreCollection,
+} from "./routes/admin-firestore";
+import { initializeFirebaseAdmin } from "./lib/firebase-admin";
 
 /**
  * Gerçek Veri Depolama Sistemi
@@ -274,6 +280,9 @@ const stats = {
 
 export function createServer() {
   const app = express();
+
+  // Firebase Admin SDK'yı başlat
+  initializeFirebaseAdmin();
 
   // Demo kullanıcılarını initialize et
   initializeDemoUsers();
@@ -455,6 +464,11 @@ export function createServer() {
   app.post("/api/admin/login", handleAdminLogin);
   app.get("/api/admin/verify", requireAdminAuth, handleAdminVerify);
   app.post("/api/admin/refresh-token", requireAdminAuth, handleTokenRefresh);
+
+  // ============ FIRESTORE ADMIN ROUTES ============
+  app.post("/api/admin/firestore/delete-users", requireAdminAuth, handleDeleteAllFirestoreUsers);
+  app.get("/api/admin/firestore/collections", requireAdminAuth, handleListFirestoreCollections);
+  app.post("/api/admin/firestore/delete-collection", requireAdminAuth, handleDeleteFirestoreCollection);
 
   // ============ AUDIT LOGGING ROUTES ============
   app.post("/api/admin/audit-log", requireAdminAuth, handleCreateAuditLog);

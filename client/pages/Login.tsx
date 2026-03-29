@@ -22,8 +22,26 @@ export default function Login() {
     setError('');
     setLoading(true);
 
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    // Form validasyonu
+    if (!trimmedEmail || !trimmedPassword) {
+      setError('E-posta ve şifre gereklidir');
+      setLoading(false);
+      return;
+    }
+
+    // E-posta format kontrolü
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      setError('Geçersiz e-posta adresi');
+      setLoading(false);
+      return;
+    }
+
     try {
-      await login({ email, password });
+      await login({ email: trimmedEmail, password: trimmedPassword });
       toast.success('Giriş başarılı!');
 
       // Giriş başarılı olduktan sonra kullanıcı verisini Firestore'dan çek

@@ -19,14 +19,26 @@ export default function Register() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password || !username || !phone) {
+
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+    const trimmedUsername = username.trim();
+    const trimmedPhone = phone.trim();
+
+    if (!trimmedEmail || !trimmedPassword || !trimmedUsername || !trimmedPhone) {
       toast.error('Tüm alanları doldurun');
       return;
     }
 
-    if (password.length < 6) {
+    if (trimmedPassword.length < 6) {
       toast.error('Şifre en az 6 karakter olmalıdır');
+      return;
+    }
+
+    // E-posta format kontrolü
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      toast.error('Geçersiz e-posta adresi');
       return;
     }
 
@@ -34,15 +46,15 @@ export default function Register() {
 
     try {
       // 1. Firebase Auth ile gerçek mail ve şifreyle kullanıcı oluştur
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const userCredential = await createUserWithEmailAndPassword(auth, trimmedEmail, trimmedPassword);
       const user = userCredential.user;
 
       // 2. Kullanıcı detaylarını Firestore'a (veritabanına) kaydet
       await setDoc(doc(db, 'users', user.uid), {
         uid: user.uid,
-        email: email,
-        username: username,
-        phone: phone,
+        email: trimmedEmail,
+        username: trimmedUsername,
+        phone: trimmedPhone,
         role: 'user',
         approval_status: 'pending', // Yönetici onayı bekliyor
         createdAt: Date.now(),

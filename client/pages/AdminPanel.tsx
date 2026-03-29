@@ -65,6 +65,117 @@ export default function AdminPanel() {
     }
   };
 
+  const handleResetDatabase = () => {
+    const confirmMessage = 'UYARI: Tüm localStorage verileri silinecek!\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const finalConfirm = 'Son onay: Tüm demo ve test verilerini silmek istiyorum. Gerçek kullanıcı verilerine dokunmayacak mısınız?';
+    if (!confirm(finalConfirm)) {
+      return;
+    }
+
+    try {
+      // Admin token'ı ve kullanıcı verisini kaydet (geri yüklemek için)
+      const adminToken = localStorage.getItem('admin_auth_token');
+      const adminUser = localStorage.getItem('admin_user_data');
+
+      // localStorage'dan tüm keyleri al
+      const allKeys = Object.keys(localStorage);
+
+      // Admin ile ilişkili keyleri tanımla (koruyacağız)
+      const adminRelatedKeys = ['admin_auth_token', 'admin_user_data'];
+
+      // Silinecek keyleri belirle
+      const keysToRemove = allKeys.filter(key => {
+        // Admin keyleri hariç tut
+        if (adminRelatedKeys.includes(key)) return false;
+
+        // Silinecek key pattern'leri
+        const demoPatterns = [
+          'pending_members', 'approved_members', 'escrowRequests', 'demo_users',
+          'test_data', 'audit_logs', 'user_profile', 'subscription', 'auth_token',
+          'userId', 'userName', 'userEmail', 'systemInitialized', 'adminUsers',
+          'adminCoupons', 'adminStats', 'selectedPackageId', 'magnetometer_history',
+          'magnetometer_calibration', 'device_id', 'global_location', 'sessionToken',
+          'access_control', 'checkout_bank_accounts', 'paymentRecords', 'offline_mock_mode',
+          'lastInvoiceId', 'lastInvoiceNumber', 'system_license_data',
+          'REAL_DATA_CACHE', // REAL_DATA_CACHE ile başlayan tüm keyleri sil
+        ];
+
+        // Key pattern'lerini kontrol et
+        return demoPatterns.some(pattern => key.includes(pattern));
+      });
+
+      // Keyleri sil
+      keysToRemove.forEach(key => {
+        localStorage.removeItem(key);
+      });
+
+      // Admin bilgilerini geri yükle
+      if (adminToken) localStorage.setItem('admin_auth_token', adminToken);
+      if (adminUser) localStorage.setItem('admin_user_data', adminUser);
+
+      toast.success('✅ localStorage temizlendi!', {
+        description: `${keysToRemove.length} adet demo verisi silindi.`
+      });
+
+    } catch (error) {
+      toast.error('Veri silme hatası');
+      console.error('Reset error:', error);
+    }
+  };
+
+  const handleDeleteFirestoreUsers = async () => {
+    const confirmMessage = 'UYARI: Firestore\'daki TÜM kullanıcılar silinecek!\n\nBu işlem geri alınamaz. Devam etmek istiyor musunuz?';
+
+    if (!confirm(confirmMessage)) {
+      return;
+    }
+
+    const finalConfirm = 'SON ONAY: Firestore users collection\'ını tamamen silmek istiyorum.';
+    if (!confirm(finalConfirm)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('admin_auth_token');
+      if (!token) {
+        toast.error('Admin kimliği doğrulanmadı');
+        return;
+      }
+
+      toast.loading('Firestore kullanıcıları siliniyor...');
+
+      const response = await fetch('/api/admin/firestore/delete-users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Firestore silme başarısız');
+      }
+
+      const data = await response.json();
+
+      toast.dismiss();
+      toast.success(`✅ ${data.deletedCount} Firestore kullanıcısı silindi!`, {
+        description: `Tamamlanma zamanı: ${new Date(data.timestamp).toLocaleString('tr-TR')}`
+      });
+
+    } catch (error) {
+      toast.dismiss();
+      toast.error('Firestore kullanıcıları silinemedi');
+      console.error('Firestore delete error:', error);
+    }
+  };
+
   const [requests, setRequests] = useState<EscrowRequest[]>([
     {
       id: 'escrow_001',
@@ -995,6 +1106,24 @@ export default function AdminPanel() {
               >
                 <Zap className="w-4 h-4" />
                 Yeni Sipariş
+              </button>
+
+              <button
+                onClick={handleResetDatabase}
+                className="px-4 py-2 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
+                title="localStorage'daki tüm demo verilerini temizle"
+              >
+                <RefreshCw className="w-4 h-4" />
+                localStorage Temizle
+              </button>
+
+              <button
+                onClick={handleDeleteFirestoreUsers}
+                className="px-4 py-2 bg-gradient-to-r from-red-700 to-red-600 hover:from-red-600 hover:to-red-500 text-white rounded-lg font-semibold transition-all flex items-center gap-2"
+                title="Firestore users collection'ını sil"
+              >
+                <Trash2 className="w-4 h-4" />
+                Firestore Kullanıcıları Sil
               </button>
             </div>
 
