@@ -544,10 +544,11 @@ export function createServer() {
   app.post("/api/receipt/approve", handleApproveReceipt);
 
   // ============ TARAMA (SCANS) ROUTES ============
-  app.post("/api/scan/save", handleSaveScan);
-  app.get("/api/scan/user", handleGetUserScans);
-  app.get("/api/scan/area", handleGetAreaScans);
-  app.get("/api/scan/stats", handleGetScanStats);
+  // Subscription gerekli - Kullanıcı aktif subscription'a sahip olmalı
+  app.post("/api/scan/save", requireActiveSubscription, handleSaveScan);
+  app.get("/api/scan/user", requireActiveSubscription, handleGetUserScans);
+  app.get("/api/scan/area", requireActiveSubscription, handleGetAreaScans);
+  app.get("/api/scan/stats", requireActiveSubscription, handleGetScanStats);
 
   // ============ ÜYE ONAY (MEMBER APPROVAL) ROUTES ============
   app.get("/api/admin/members/pending", handleGetPendingMembers);

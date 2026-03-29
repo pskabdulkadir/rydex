@@ -758,7 +758,18 @@ export default function Index() {
       }
 
       toast.success('Tarama başarıyla tamamlandı!');
-      setTimeout(() => navigate('/dashboard'), 2000);
+
+      // Tarama başarılı - history sayfasına yönlendir
+      console.log('✅ Tarama tamamlandı, history sayfasına yönlendiriliyorsunuz...');
+      setTimeout(() => {
+        navigate('/app/magnetometer/history', {
+          replace: true,
+          state: {
+            newScanId: scanSession?.id,
+            scanCompleted: true
+          }
+        });
+      }, 1500);
     } catch (error) {
       console.error('Tarama hatası:', error);
       toast.error('Tarama başarısız oldu: ' + (error instanceof Error ? error.message : 'Bilinmeyen hata'));
@@ -775,7 +786,7 @@ export default function Index() {
       <header className="border-b border-gray-200 p-4">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-900">Yeni Tarama</h1>
-          <Button size="icon" variant="ghost" onClick={() => navigate('/dashboard')}>
+          <Button size="icon" variant="ghost" onClick={() => navigate('/app/dashboard')}>
             <X className="w-5 h-5" />
           </Button>
         </div>

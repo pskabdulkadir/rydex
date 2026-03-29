@@ -10,6 +10,7 @@ export const requireActiveSubscription: RequestHandler = (req, res, next) => {
   try {
     const token = req.headers.authorization?.split(" ")[1];
     if (!token) {
+      console.warn("❌ Subscription kontrol: Token bulunamadı");
       return res.status(401).json({
         success: false,
         message: "Token gerekli",
@@ -18,6 +19,7 @@ export const requireActiveSubscription: RequestHandler = (req, res, next) => {
 
     const userId = getUserIdFromToken(token);
     if (!userId) {
+      console.warn("❌ Subscription kontrol: Token geçersiz");
       return res.status(401).json({
         success: false,
         message: "Geçersiz token",
@@ -27,6 +29,7 @@ export const requireActiveSubscription: RequestHandler = (req, res, next) => {
     const subscriptionStatus = checkSubscriptionValidity(userId);
 
     if (!subscriptionStatus.isActive) {
+      console.warn(`⚠️  Subscription kontrol başarısız - Kullanıcı: ${userId}, Durum: ${subscriptionStatus.daysRemaining > 0 ? 'Süresi dolmuş' : 'Satın alınmamış'}`);
       return res.status(403).json({
         success: false,
         message: "Abonelik süresi dolmuş. Lütfen yenileyin.",
@@ -38,6 +41,8 @@ export const requireActiveSubscription: RequestHandler = (req, res, next) => {
     // Request objesine user bilgisini ekle
     (req as any).userId = userId;
     (req as any).subscription = subscriptionStatus;
+
+    console.log(`✅ Subscription kontrol BAŞARILI - Kullanıcı: ${userId}, Kalan: ${subscriptionStatus.daysRemaining} gün`);
 
     next();
   } catch (error) {

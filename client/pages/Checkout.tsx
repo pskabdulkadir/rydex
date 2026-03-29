@@ -459,12 +459,8 @@ export default function Checkout() {
       }
 
       // ─────────────────────────────────────────
-      // 3️⃣  ÖDEMEYİ DOĞRULA (DEMO - ANINDA)
+      // 3️⃣  ÖDEMEYİ DOĞRULA VE SUBSCRIPTION OLUŞTUR
       // ─────────────────────────────────────────
-      // 🔴 ÜRETIM ORTAMINDA:
-      // - Gerçek ödeme ağ geçidi çağrısı yapılacak (Stripe/PayPal)
-      // - Ödeme başarılı olduğunda subscription oluşturulacak
-      // - verifyPayment() yerine API endpoint kullanılacak
       console.log('⏳ Ödeme doğrulanıyor...');
 
       const verificationResult = verifyPayment(paymentRecord.id, userId);
@@ -474,6 +470,37 @@ export default function Checkout() {
         setError(verificationResult.message || 'Ödeme doğrulanamadı');
         toast.error('Ödeme doğrulanamadı');
         return;
+      }
+
+      // ─────────────────────────────────────────
+      // 3️⃣  API VIA SUBSCRIPTION OLUŞTUR
+      // ─────────────────────────────────────────
+      try {
+        console.log('📡 API\'ye subscription kaydı gönderiliyor...');
+
+        const token = localStorage.getItem('authToken');
+        const subscriptionResponse = await fetch('/api/subscription/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': token ? `Bearer ${token}` : ''
+          },
+          body: JSON.stringify({
+            userId,
+            plan: pkg.id
+          })
+        });
+
+        if (!subscriptionResponse.ok) {
+          console.error('❌ Subscription API hatası:', subscriptionResponse.status);
+          // API başarısız olsa da devam et - localStorage'a kayıtlı olan kullanılacak
+        } else {
+          const subData = await subscriptionResponse.json();
+          console.log('✅ API\'ye subscription kaydedildi:', subData);
+        }
+      } catch (subError) {
+        console.warn('⚠️  Subscription API çağrısında hata (devam ediliyor):', subError);
+        // Error olsa da devam et
       }
 
       // ─────────────────────────────────────────

@@ -135,7 +135,14 @@ export default function PaymentSuccess() {
               console.warn('⚠️  Paket erişimi REDDEDILDI');
             }
 
-            navigate('/member-panel', { replace: true });
+            console.log('🔄 Member Panel\'e yönlendiriliyor...');
+            navigate('/member-panel', {
+              replace: true,
+              state: {
+                subscriptionCompleted: true,
+                packageId: subscription?.plan
+              }
+            });
             return 0;
           }
 
@@ -264,10 +271,16 @@ export default function PaymentSuccess() {
                 console.log('⚡ Web-to-App Bridge başlatılıyor...');
                 launchAppAfterPayment(userId, packageId, accessLevel, expiryTimestamp);
 
-                console.log('⏳ Fallback: 2 saniye sonra ana sayfaya yönlendiriliyor...');
+                console.log('⏳ Fallback: 2 saniye sonra /app\'ye yönlendiriliyor...');
                 setTimeout(() => {
-                  console.log('🔄 Ana sayfaya yönlendiriliyor...');
-                  navigate('/', { replace: true });
+                  console.log('🚀 Uygulamaya yönlendiriliyor (/app)...');
+                  navigate('/app', {
+                    replace: true,
+                    state: {
+                      launchAfterPayment: true,
+                      packageId: packageId
+                    }
+                  });
                 }, 2000);
               }}
               className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold py-3 rounded-lg transition-all duration-200 shadow-lg shadow-green-500/30 mb-4"

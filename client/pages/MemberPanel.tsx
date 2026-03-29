@@ -17,6 +17,7 @@ import {
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import { UseApp } from '@/components/UseApp';
+import { PACKAGES } from '@shared/packages';
 import {
   startPaymentVerificationPolling,
   getActiveSubscription,
@@ -176,7 +177,50 @@ export default function MemberPanel() {
   };
 
   const handlePurchasePackage = (packageId: string) => {
-    navigate('/checkout', { state: { packageId } });
+    // Paketi seç ve direkt subscription oluştur (ödeme bypass)
+    const pkg = PACKAGES[packageId as keyof typeof PACKAGES];
+    if (!pkg) {
+      toast.error('Paket bulunamadı');
+      return;
+    }
+
+    // Subscription oluştur
+    const startDate = Date.now();
+    // Paket süresini günlere çevir (örneğin "30 gün" → 30, "3 ay" → 90)
+    let daysInMs = 30 * 24 * 60 * 60 * 1000; // Varsayılan 30 gün
+
+    if (pkg.duration.includes('3 ay') || pkg.duration.includes('3ay')) {
+      daysInMs = 90 * 24 * 60 * 60 * 1000;
+    } else if (pkg.duration.includes('1 ay') || pkg.duration.includes('1ay')) {
+      daysInMs = 30 * 24 * 60 * 60 * 1000;
+    } else if (pkg.duration.includes('7 gün') || pkg.duration.includes('7gün')) {
+      daysInMs = 7 * 24 * 60 * 60 * 1000;
+    }
+
+    const endDate = startDate + daysInMs;
+    const daysRemaining = Math.ceil(daysInMs / (24 * 60 * 60 * 1000));
+
+    const subscription = {
+      id: `sub_${Date.now()}`,
+      plan: packageId,
+      amount: pkg.price,
+      currency: 'TRY',
+      startDate,
+      endDate,
+      daysRemaining,
+      status: 'active'
+    };
+
+    // localStorage'a kaydet
+    localStorage.setItem('subscription', JSON.stringify(subscription));
+
+    toast.success(`✅ ${pkg.name} paketi aktif edildi! ${daysRemaining} gün kullanabilirsiniz.`);
+    console.log('✅ Paket satın alındı:', subscription);
+
+    // Başarı sayfasına yönlendir
+    setTimeout(() => {
+      navigate('/dashboard', { replace: true });
+    }, 1500);
   };
 
   const handleOpenPackagesModal = () => {

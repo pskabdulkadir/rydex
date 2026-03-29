@@ -21,6 +21,7 @@ import { AdminProvider } from "@/lib/admin-context";
 import { useConnectionSync } from "@/lib/use-connection-sync";
 import { initializeSync } from "@/lib/sync-manager";
 import { initializeDB } from "@/lib/local-db";
+import { useDemo } from "@/lib/hooks/useDemo";
 
 // Lazy loaded pages for better performance
 const Scanner = lazy(() => import("./pages/Scanner"));
@@ -145,14 +146,22 @@ async function requestSensorPermissions() {
 function AppLayout() {
   useConnectionSync();
   const navigate = useNavigate();
+  const { demoStatus } = useDemo();
 
   const [systemInitialized, setSystemInitialized] = useState(
     localStorage.getItem("systemInitialized") === "true"
   );
 
   // Subscription kontrol et - /app altında subscription ZORUNLU
+  // Ama demo mode'da kontrolü skip et
   useEffect(() => {
     const checkSubscription = () => {
+      // Demo mode aktifse subscription kontrolünü skip et
+      if (demoStatus.isActive) {
+        console.log('✅ Demo mode aktif - Subscription kontrolü bypass edildi');
+        return;
+      }
+
       const savedSub = localStorage.getItem('subscription');
 
       // Subscription yoksa pricing'e yönlendir
@@ -186,7 +195,7 @@ function AppLayout() {
     // Her 10 saniyede kontrol et
     const interval = setInterval(checkSubscription, 10000);
     return () => clearInterval(interval);
-  }, [navigate]);
+  }, [navigate, demoStatus.isActive]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {

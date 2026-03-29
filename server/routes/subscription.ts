@@ -131,14 +131,27 @@ export const handleGetActiveSubscription: RequestHandler = (req, res) => {
 /**
  * Yeni subscription oluştur (Ödeme sonrası veya Dekont onayından sonra)
  */
-export const handleCreateSubscription: RequestHandler<any, any, { userId: string; plan: SubscriptionPlan }> = (
+export const handleCreateSubscription: RequestHandler<any, any, { userId?: string; plan: SubscriptionPlan }> = (
   req,
   res
 ) => {
   try {
-    const { userId, plan } = req.body;
+    const { userId: bodyUserId, plan } = req.body;
+    const token = req.headers.authorization?.split(" ")[1];
+
+    // Önce token'dan userId al, yoksa body'den al
+    let userId = bodyUserId;
+
+    if (token) {
+      const tokenUserId = getUserIdFromToken(token);
+      if (tokenUserId) {
+        console.log(`📝 Token'dan userId alındı: ${tokenUserId}`);
+        userId = tokenUserId;
+      }
+    }
 
     if (!userId || !plan) {
+      console.warn("❌ Subscription oluştur: userId veya plan eksik");
       return res.status(400).json({
         success: false,
         message: "userId ve plan gerekli",
@@ -146,6 +159,7 @@ export const handleCreateSubscription: RequestHandler<any, any, { userId: string
     }
 
     if (!subscriptionPlans[plan]) {
+      console.warn(`❌ Subscription oluştur: Geçersiz plan - ${plan}`);
       return res.status(400).json({
         success: false,
         message: "Geçersiz plan",
@@ -179,13 +193,18 @@ export const handleCreateSubscription: RequestHandler<any, any, { userId: string
     subscriptions.set(subscription.id, subscription);
     userSubscriptions.set(userId, subscription);
 
-    console.log(`✅ Subscription oluşturuldu: ${userId} - ${plan} (${planDetail.durationDays} gün)`);
+    const daysRemaining = Math.ceil((endDate - now) / (1000 * 60 * 60 * 24));
+    console.log(`✅ Subscription başarıyla oluşturuldu:`);
+    console.log(`   Kullanıcı: ${userId}`);
+    console.log(`   Plan: ${plan}`);
+    console.log(`   Gün: ${daysRemaining}`);
+    console.log(`   Süresi Bitiş: ${new Date(endDate).toLocaleString("tr-TR")}`);
 
     res.status(201).json({
       success: true,
       subscription: {
         ...subscription,
-        daysRemaining: planDetail.durationDays,
+        daysRemaining,
       },
       message: "Subscription başarıyla oluşturuldu",
     });
