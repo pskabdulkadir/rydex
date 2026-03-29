@@ -13,6 +13,7 @@ import {
   Zap,
   Settings,
   X,
+  Globe,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
@@ -32,7 +33,7 @@ export default function MemberPanel() {
   const subscriptionStatus = useSubscriptionStatus(user?.id);
   useSubscriptionExpiryWarning();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'receipts' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'receipts' | 'settings' | 'website'>('overview');
   const [receipts, setReceipts] = useState<any[]>([]);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -344,6 +345,18 @@ export default function MemberPanel() {
               >
                 <Settings className="w-4 h-4 mr-2" />
                 Ayarlar
+              </Button>
+              <Button
+                onClick={() => setActiveTab('website')}
+                variant={activeTab === 'website' ? 'default' : 'outline'}
+                className={`w-full justify-start ${
+                  activeTab === 'website'
+                    ? 'bg-blue-600 hover:bg-blue-700'
+                    : 'border-slate-700'
+                }`}
+              >
+                <Globe className="w-4 h-4 mr-2" />
+                Web Sayfası
               </Button>
             </div>
           </Card>
@@ -774,6 +787,42 @@ export default function MemberPanel() {
                   Oturumu Kapat
                 </Button>
               </Card>
+            </div>
+          )}
+
+          {/* Website Tab */}
+          {activeTab === 'website' && (
+            <div className="space-y-6">
+              <Card className="p-6 bg-slate-800/50 border border-slate-700/50">
+                <h3 className="text-xl font-bold text-white mb-4">
+                  <Globe className="w-5 h-5 inline mr-2" />
+                  Rydex Ana Sayfası
+                </h3>
+                <p className="text-slate-400 text-sm mb-4">
+                  Web sitemizi aşağıdan ziyaret edebilirsiniz. Yeni paketler ve özellikler hakkında bilgi alabilirsiniz.
+                </p>
+              </Card>
+
+              <Card className="p-0 bg-slate-800/50 border border-slate-700/50 overflow-hidden">
+                <iframe
+                  src="/"
+                  title="Rydex Ana Sayfası"
+                  className="w-full h-[800px] border-0"
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+                />
+              </Card>
+
+              <div className="text-center py-4 text-slate-400 text-sm">
+                <p>Ana sayfaya tam ekranla erişmek için:</p>
+                <Button
+                  onClick={() => window.open('/', '_blank')}
+                  variant="outline"
+                  className="mt-2 border-slate-600 text-blue-400 hover:bg-slate-700"
+                >
+                  <Globe className="w-4 h-4 mr-2" />
+                  Yeni Sekmede Aç
+                </Button>
+              </div>
             </div>
           )}
         </div>

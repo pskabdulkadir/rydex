@@ -167,11 +167,11 @@ export default function Register() {
       localStorage.setItem('userName', username.trim());
       localStorage.setItem('user_profile', JSON.stringify(userProfile));
 
-      toast.success('Kayıt başarılı! Üye paneline yönlendiriliyorsunuz...');
+      toast.success('Kayıt başarılı! Paket seçimine yönlendiriliyorsunuz...');
 
-      // Üye paneline yönlendir
+      // Paket seçme sayfasına (Pricing) yönlendir
       setTimeout(() => {
-        navigate('/member-panel');
+        navigate('/pricing');
       }, 500);
     } catch (error) {
       let message = 'Kayıt başarısız';
