@@ -45,8 +45,8 @@ export default function Register() {
         phone: phone,
         role: 'user',
         approval_status: 'pending', // Yönetici onayı bekliyor
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        createdAt: Date.now(),
+        updatedAt: Date.now()
       });
 
       toast.success('Kayıt başarılı!', {

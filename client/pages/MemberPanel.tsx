@@ -30,7 +30,7 @@ export default function MemberPanel() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, subscription, loading: authLoading, token } = useAuth();
-  const subscriptionStatus = useSubscriptionStatus(user?.id);
+  const subscriptionStatus = useSubscriptionStatus(user?.uid);
   useSubscriptionExpiryWarning();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'packages' | 'receipts' | 'settings' | 'website'>('overview');
@@ -78,12 +78,12 @@ export default function MemberPanel() {
 
   // Ödeme doğrulama polling başlat
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.uid) return;
 
     console.log('🔄 Ödeme doğrulama polling başlatılıyor...');
 
     // Ödeme durumunu kontrol etmeye başla
-    const stopPolling = startPaymentVerificationPolling(user.id, (subscription) => {
+    const stopPolling = startPaymentVerificationPolling(user.uid, (subscription) => {
       console.log('✅ Ödeme başarıyla doğrulandı!', subscription);
 
       // Subscription'ı state'e yükle
@@ -127,7 +127,7 @@ export default function MemberPanel() {
     try {
       const response = await fetch('/api/receipt/user', {
         headers: {
-          'x-user-id': user?.id || '',
+          'x-user-id': user?.uid || '',
         },
       });
       const data = await response.json();

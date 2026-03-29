@@ -60,8 +60,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               email: firebaseUser.email || '',
               username: userData.username || firebaseUser.displayName || 'Kullanıcı',
               phone: userData.phone || '',
-              createdAt: userData.createdAt || new Date().toISOString(),
-              updatedAt: userData.updatedAt || new Date().toISOString(),
+              createdAt: userData.createdAt || Date.now(),
+              updatedAt: userData.updatedAt || Date.now(),
             };
             setUser(userProfile);
             localStorage.setItem('auth_token', idToken);
@@ -85,8 +85,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   email: firebaseUser.email || migratedData.email || '',
                   username: firebaseUser.displayName || migratedData.username || 'Kullanıcı',
                   phone: migratedData.phone || '',
-                  createdAt: migratedData.createdAt || new Date().toISOString(),
-                  updatedAt: migratedData.updatedAt || new Date().toISOString(),
+                  createdAt: migratedData.createdAt || Date.now(),
+                  updatedAt: migratedData.updatedAt || Date.now(),
                 };
 
                 // Firestore'da profili oluştur
@@ -101,8 +101,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                   email: firebaseUser.email || '',
                   username: firebaseUser.displayName || 'Kullanıcı',
                   phone: '',
-                  createdAt: new Date().toISOString(),
-                  updatedAt: new Date().toISOString(),
+                  createdAt: Date.now(),
+                  updatedAt: Date.now(),
                 };
                 await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
                 setUser(userProfile);
@@ -114,8 +114,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
                 email: firebaseUser.email || '',
                 username: firebaseUser.displayName || 'Kullanıcı',
                 phone: '',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
+                createdAt: Date.now(),
+                updatedAt: Date.now(),
               };
               await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);
               setUser(userProfile);
@@ -177,8 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           email: firebaseUser.email || '',
           username: userData.username || firebaseUser.displayName || 'Kullanıcı',
           phone: userData.phone || '',
-          createdAt: userData.createdAt || new Date().toISOString(),
-          updatedAt: userData.updatedAt || new Date().toISOString(),
+          createdAt: userData.createdAt || Date.now(),
+          updatedAt: userData.updatedAt || Date.now(),
         };
         setUser(userProfile);
         setToken(idToken);
@@ -239,8 +239,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: data.email,
         username: data.username || 'Kullanıcı',
         phone: data.phone || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
       };
 
       await setDoc(doc(db, 'users', firebaseUser.uid), userProfile);

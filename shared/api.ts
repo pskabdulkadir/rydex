@@ -304,19 +304,20 @@ export interface ReceiptApprovalRequest {
  */
 export interface UserProfile {
   uid: string;
+  email: string;
   username: string;
   phone: string;
   password?: string; // Hash'lenmiş, sadece server'da tutulur
-  createdAt: number;
-  updatedAt: number;
+  createdAt: number | string;
+  updatedAt: number | string;
   lastLogin?: number;
-  isAdmin: boolean;
-  preferences: {
+  isAdmin?: boolean;
+  preferences?: {
     theme: "light" | "dark";
     language: "tr" | "en";
     notifications: boolean;
   };
-  statistics: {
+  statistics?: {
     totalScans: number;
     totalScanTime: number; // milliseconds
     areasExplored: number;

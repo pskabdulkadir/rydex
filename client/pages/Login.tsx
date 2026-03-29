@@ -5,6 +5,9 @@ import { Card } from '@/components/ui/card';
 import { Loader2, LogIn, AlertCircle } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -22,7 +25,23 @@ export default function Login() {
     try {
       await login({ email, password });
       toast.success('Giriş başarılı!');
-      navigate('/app');
+
+      // Giriş başarılı olduktan sonra kullanıcı verisini Firestore'dan çek
+      if (auth.currentUser) {
+        const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          // Eğer adminse admin paneline, değilse dashboard'a yönlendir
+          if (userData.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/app/dashboard');
+          }
+        } else {
+          // Kullanıcı dokümanı bulunamadıysa member panel'e yönlendir
+          navigate('/member-panel');
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Giriş başarısız';
       setError(message);
