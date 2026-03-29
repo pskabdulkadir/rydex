@@ -3,11 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { Play, CheckCircle, Zap, Radio, MapPin, Eye, Smartphone, Cloud, MessageCircle } from 'lucide-react';
 import { PACKAGES, getPackagesByCategory } from '@shared/packages';
 import { PricingCard } from '@/components/PricingCard';
+import { useDemo } from '@/lib/hooks/useDemo';
 
 type NavTab = 'home' | 'features' | 'benefits' | 'pricing';
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { startDemo } = useDemo();
   const [scrolled, setScrolled] = useState(false);
   const [activeNav, setActiveNav] = useState<NavTab>('home');
   const [activeTab, setActiveTab] = useState<'all' | 'basic' | 'pro' | 'corporate'>('all');
@@ -121,6 +123,28 @@ export default function Landing() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
+                {/* DEMO TEST ET BUTTON - Highlight */}
+                <button
+                  onClick={() => {
+                    // ==========================================
+                    // 🎯 DEMO TEST BAŞLAT (3 DAKİKA)
+                    // ==========================================
+                    startDemo(3); // 3 dakika
+                    setTimeout(() => {
+                      navigate('/dashboard');
+                    }, 300);
+                  }}
+                  className="relative px-8 py-4 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-400 hover:via-emerald-400 hover:to-green-500 text-white font-bold text-lg rounded-lg transition-all shadow-2xl shadow-green-500/40 hover:shadow-green-500/60 flex items-center gap-2 group overflow-hidden"
+                >
+                  {/* Animated background glow */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-green-400/0 via-white/10 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+
+                  <Play className="w-5 h-5 group-hover:animate-bounce" />
+                  <span>🎮 3 Dakika Demo Test Et</span>
+
+                  {/* Pulse indicator */}
+                  <span className="absolute top-2 right-2 w-2 h-2 bg-green-300 rounded-full animate-pulse"></span>
+                </button>
                 <button onClick={() => setActiveNav('features')} className="px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-bold rounded-lg transition-all shadow-xl shadow-orange-500/30 hover:shadow-orange-500/50 flex items-center gap-2">
                   <Play className="w-5 h-5" />
                   Özellikler Gör

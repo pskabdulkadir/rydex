@@ -69,7 +69,7 @@ export default function MemberPanel() {
     console.log('🔄 Ödeme doğrulama polling başlatılıyor...');
 
     // Ödeme durumunu kontrol etmeye başla
-    const stopPolling = startPaymentVerificationPolling(user.uid, (subscription) => {
+    const stopPolling = startPaymentVerificationPolling(user?.uid, (subscription) => {
       console.log('✅ Ödeme başarıyla doğrulandı!', subscription);
 
       // Subscription'ı state'e yükle
@@ -208,15 +208,23 @@ export default function MemberPanel() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold text-white mb-2">Üye Paneli</h1>
-            <p className="text-slate-400">Hoş geldiniz, {user.username}</p>
+            <p className="text-slate-400">Hoş geldiniz, {user?.username || 'Kullanıcı'}</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            className="bg-red-600 hover:bg-red-700 text-white"
-          >
-            <LogOut className="w-4 h-4 mr-2" />
-            Çıkış Yap
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={() => navigate('/')}
+              className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold"
+            >
+              🏠 Ana Sayfaya Dön
+            </Button>
+            <Button
+              onClick={handleLogout}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Çıkış Yap
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -229,31 +237,47 @@ export default function MemberPanel() {
                 <User className="w-8 h-8 text-blue-400" />
               </div>
             </div>
-            <h2 className="text-white font-bold text-center text-lg mb-4">{user.username}</h2>
+            <h2 className="text-white font-bold text-center text-lg mb-4">{user?.username || 'Kullanıcı'}</h2>
 
             <div className="space-y-3 border-t border-slate-700/50 pt-4">
               <div>
                 <p className="text-xs text-slate-500 uppercase font-semibold">Telefon</p>
-                <p className="text-slate-300 text-sm">{user.phone}</p>
+                <p className="text-slate-300 text-sm">{user?.phone || '-'}</p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase font-semibold">Üye Tarihi</p>
                 <p className="text-slate-300 text-sm">
-                  {new Date(user.createdAt).toLocaleDateString('tr-TR')}
+                  {user?.createdAt ? new Date(user.createdAt).toLocaleDateString('tr-TR') : '-'}
                 </p>
               </div>
               <div>
                 <p className="text-xs text-slate-500 uppercase font-semibold">Son Giriş</p>
                 <p className="text-slate-300 text-sm">
-                  {user.lastLogin
+                  {user?.lastLogin
                     ? new Date(user.lastLogin).toLocaleDateString('tr-TR')
                     : 'İlk girişiniz'}
                 </p>
               </div>
             </div>
 
+            {/* Navigation Buttons */}
+            <div className="mt-6 space-y-2 pb-4 border-b border-slate-700/50">
+              <button
+                onClick={() => navigate('/')}
+                className="w-full px-4 py-2 bg-green-600/20 hover:bg-green-600/30 border border-green-500/30 text-green-400 rounded-lg text-sm font-semibold transition-all text-left flex items-center gap-2"
+              >
+                🏠 Ana Sayfaya Geçiş
+              </button>
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="w-full px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-semibold transition-all text-left flex items-center gap-2"
+              >
+                👤 Üye Paneline Dön
+              </button>
+            </div>
+
             {/* Tab Buttons */}
-            <div className="mt-6 space-y-2">
+            <div className="mt-4 space-y-2">
               <Button
                 onClick={() => setActiveTab('overview')}
                 variant={activeTab === 'overview' ? 'default' : 'outline'}
@@ -430,17 +454,21 @@ export default function MemberPanel() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="p-4 bg-slate-800/50 border border-slate-700/50">
                   <p className="text-slate-400 text-sm mb-2">Toplam Tarama</p>
-                  <p className="text-3xl font-bold text-white">{user.statistics.totalScans}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {user?.statistics?.totalScans ?? 0}
+                  </p>
                 </Card>
                 <Card className="p-4 bg-slate-800/50 border border-slate-700/50">
                   <p className="text-slate-400 text-sm mb-2">Tarama Süresi</p>
                   <p className="text-3xl font-bold text-white">
-                    {Math.round(user.statistics.totalScanTime / 1000 / 60)}m
+                    {Math.round((user?.statistics?.totalScanTime ?? 0) / 1000 / 60)}m
                   </p>
                 </Card>
                 <Card className="p-4 bg-slate-800/50 border border-slate-700/50">
                   <p className="text-slate-400 text-sm mb-2">Keşfedilen Alanlar</p>
-                  <p className="text-3xl font-bold text-white">{user.statistics.areasExplored}</p>
+                  <p className="text-3xl font-bold text-white">
+                    {user?.statistics?.areasExplored ?? 0}
+                  </p>
                 </Card>
               </div>
             </div>
