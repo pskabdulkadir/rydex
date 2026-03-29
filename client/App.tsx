@@ -146,6 +146,7 @@ async function requestSensorPermissions() {
 function AppLayout() {
   useConnectionSync();
   const navigate = useNavigate();
+  const location = useLocation();
   const { demoStatus } = useDemo();
 
   const [systemInitialized, setSystemInitialized] = useState(

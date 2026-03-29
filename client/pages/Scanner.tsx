@@ -13,8 +13,9 @@ import {
   AlertCircle,
   Globe,
   MessageCircle,
+  ArrowLeft,
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -50,6 +51,13 @@ export default function Index() {
   const [addressLoading, setAddressLoading] = useState(false);
   const [showWorldLocationModal, setShowWorldLocationModal] = useState(false);
   const navigate = useNavigate();
+  const locationState = useLocation();
+
+  // Geri tuşu fonksiyonu - UseApp'ten gelen state'i kontrol et
+  const handleBackClick = () => {
+    const backTo = (locationState.state as any)?.from || '/member-panel';
+    navigate(backTo, { replace: true });
+  };
 
   useEffect(() => {
     // Cihazdan kullanıcı bilgisi al
@@ -785,10 +793,11 @@ export default function Index() {
       {/* Header */}
       <header className="border-b border-gray-200 p-4">
         <div className="max-w-2xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">Yeni Tarama</h1>
-          <Button size="icon" variant="ghost" onClick={() => navigate('/app/dashboard')}>
-            <X className="w-5 h-5" />
+          <Button size="icon" variant="ghost" onClick={handleBackClick} className="hover:bg-gray-100">
+            <ArrowLeft className="w-5 h-5 text-gray-700" />
           </Button>
+          <h1 className="text-2xl font-bold text-gray-900 flex-1 text-center">Yeni Tarama</h1>
+          <div className="w-10"></div>
         </div>
       </header>
 

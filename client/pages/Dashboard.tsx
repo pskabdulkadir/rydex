@@ -32,12 +32,13 @@ export default function Dashboard() {
   const [daysRemaining, setDaysRemaining] = useState(0);
 
   // Kontrol et - kullanıcı giriş yapmamışsa redirect et
+  // ANCAK: Demo mode aktifse auth kontrolü skip et (herkes demo kullanabilsin)
   useEffect(() => {
-    if (!authLoading && !user) {
+    if (!authLoading && !user && !demoStatus.isActive) {
       navigate('/login');
       return;
     }
-  }, [user, authLoading, navigate]);
+  }, [user, authLoading, navigate, demoStatus.isActive]);
 
   // Subscription'ı localStorage'dan çek
   useEffect(() => {
@@ -126,76 +127,7 @@ export default function Dashboard() {
       </div>
 
       <div className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* DEMO MODE - TIMER GÖSTER */}
-        {demoStatus.isActive && (
-          <div className="bg-gradient-to-r from-yellow-500 via-red-500 to-pink-500 p-0.5 rounded-xl shadow-2xl">
-            <div className="bg-slate-900 rounded-lg p-6 border border-yellow-500/20">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-3">
-                    <Hourglass className="w-6 h-6 text-red-400 animate-pulse" />
-                    <h3 className="text-lg font-bold text-white">🎮 DEMO MODU AKTİF</h3>
-                  </div>
-                  <p className="text-slate-300 text-sm mb-4">
-                    {demoStatus.minutesRemaining} dakika {demoStatus.secondsRemaining} saniye kalmıştır. Demo süresi bitince ödeme sayfasına yönlendirileceksiniz.
-                  </p>
-
-                  {/* Progress Bar */}
-                  <div className="w-full bg-slate-800 rounded-full h-3 overflow-hidden mb-3">
-                    <div
-                      className="h-full bg-gradient-to-r from-yellow-500 via-red-500 to-pink-500 transition-all duration-1000"
-                      style={{ width: `${demoStatus.percentageRemaining}%` }}
-                    />
-                  </div>
-
-                  {/* Warning Badges */}
-                  <div className="flex flex-wrap gap-2">
-                    {demoStatus.minutesRemaining === 0 && demoStatus.secondsRemaining <= 30 && (
-                      <div className="inline-block px-3 py-1 bg-red-500/20 border border-red-500/50 rounded-full text-red-300 text-xs font-bold animate-pulse">
-                        🔴 30 SANİYE KALDI!
-                      </div>
-                    )}
-                    {demoStatus.minutesRemaining === 1 && demoStatus.secondsRemaining === 0 && (
-                      <div className="inline-block px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full text-yellow-300 text-xs font-bold">
-                        ⚠️ 1 DAKIKA KALDI
-                      </div>
-                    )}
-                    {demoStatus.minutesRemaining === 2 && demoStatus.secondsRemaining === 0 && (
-                      <div className="inline-block px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 rounded-full text-yellow-300 text-xs font-bold">
-                        ⚠️ 2 DAKIKA KALDI
-                      </div>
-                    )}
-                    <div className="inline-block px-3 py-1 bg-blue-500/20 border border-blue-500/50 rounded-full text-blue-300 text-xs font-bold">
-                      📦 Paket satın almak için ödeme sayfasına gidebilirsiniz
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right ml-6">
-                  <div className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-red-500 mb-2">
-                    {demoStatus.minutesRemaining}:{demoStatus.secondsRemaining.toString().padStart(2, '0')}
-                  </div>
-                  <p className="text-slate-400 text-sm">Kalan Süre</p>
-                </div>
-              </div>
-
-              {/* CTA Buttons */}
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Button
-                  onClick={() => navigate('/pricing')}
-                  className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold flex items-center gap-2"
-                >
-                  💳 Hemen Paket Satın Al
-                </Button>
-                <Button
-                  onClick={() => navigate('/member-panel')}
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold flex items-center gap-2"
-                >
-                  👤 Üye Paneline Git
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* DEMO MODE - TIMER GÖSTERILMEZ (Sistem arka planda otomatik kontrol eder) */}
         {/* Subscription Status Card */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {subscription ? (

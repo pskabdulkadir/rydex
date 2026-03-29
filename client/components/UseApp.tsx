@@ -83,8 +83,15 @@ export function UseApp({
     // Sistem başlatıldı olarak işaretle
     localStorage.setItem('systemInitialized', 'true');
 
-    // Uygulama sayfasına git (protected routes)
-    navigate('/app');
+    // Uygulama sayfasına git (state ile geri dönüş bilgisi geç)
+    // State'i kullanarak back button'u doğru çalıştırabilir
+    navigate('/app', {
+      state: {
+        from: '/member-panel',  // Geri tuşuna tıklandığında buraya dön
+        timestamp: Date.now()   // Oturum başlangıç zamanı
+      },
+      replace: false  // History'ye kayıt et ki geri buton çalışsın
+    });
 
     toast.success('🚀 Uygulama başlatılıyor...');
   };
