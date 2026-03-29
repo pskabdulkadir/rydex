@@ -67,10 +67,12 @@ export default function Dashboard() {
   };
 
   const getPackageInfo = (packageId: string) => {
-    return PACKAGES.find(p => p.id === packageId);
+    if (!packageId) return undefined;
+    return PACKAGES[packageId as keyof typeof PACKAGES];
   };
 
   const getPackageFeatures = (packageId: string) => {
+    if (!packageId) return null;
     const pkg = getPackageInfo(packageId);
     if (!pkg) return null;
     return pkg.features;
@@ -91,8 +93,8 @@ export default function Dashboard() {
     return null;
   }
 
-  const features = subscription ? getPackageFeatures(subscription.packageId) : null;
-  const pkg = subscription ? getPackageInfo(subscription.packageId) : null;
+  const features = subscription && subscription.packageId ? getPackageFeatures(subscription.packageId) : null;
+  const pkg = subscription && subscription.packageId ? getPackageInfo(subscription.packageId) : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900">
