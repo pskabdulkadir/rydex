@@ -174,7 +174,7 @@ function AppLayout() {
             duration: 3000
           });
           setTimeout(() => {
-            navigate('/pricing', { replace: true });
+            navigate('/pricing', { replace: true, state: { from: location.pathname } });
           }, 2000);
         }
         return;
@@ -191,7 +191,7 @@ function AppLayout() {
           duration: 2000
         });
         setTimeout(() => {
-          navigate('/pricing', { replace: true });
+          navigate('/pricing', { replace: true, state: { from: location.pathname } });
         }, 1000);
         return;
       }
@@ -214,7 +214,7 @@ function AppLayout() {
           });
 
           setTimeout(() => {
-            navigate('/pricing', { replace: true });
+            navigate('/pricing', { replace: true, state: { from: location.pathname } });
           }, 2000);
           return;
         }
@@ -236,7 +236,7 @@ function AppLayout() {
           duration: 3000
         });
         setTimeout(() => {
-          navigate('/pricing', { replace: true });
+          navigate('/pricing', { replace: true, state: { from: location.pathname } });
         }, 1000);
         return;
       }
@@ -253,7 +253,7 @@ function AppLayout() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [navigate, demoStatus.isActive, demoStatus.timeRemaining]);
+  }, [navigate, location.pathname, demoStatus.isActive, demoStatus.timeRemaining]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {

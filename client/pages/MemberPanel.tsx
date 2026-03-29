@@ -13,10 +13,12 @@ import {
   Zap,
   Settings,
   Globe,
+  Play,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
 import { UseApp } from '@/components/UseApp';
+import { useDemo } from '@/lib/hooks/useDemo';
 import { PACKAGES } from '@shared/packages';
 import {
   startPaymentVerificationPolling,
@@ -28,6 +30,7 @@ import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks
 export default function MemberPanel() {
   const navigate = useNavigate();
   const { user, logout, subscription, loading: authLoading, token } = useAuth();
+  const { startDemo } = useDemo();
 
   const handleGoBack = () => {
     // Eğer history içinde önceki sayfa varsa geri git
@@ -420,6 +423,59 @@ export default function MemberPanel() {
               {/* UseApp Component - Uygulamayı Kullan */}
               {hasActiveSubscription && (
                 <UseApp userId={user?.id} showExtendButton={true} compact={false} />
+              )}
+
+              {/* Demo Butonu - Subscription yoksa göster */}
+              {!hasActiveSubscription && (
+                <Card className="p-6 bg-gradient-to-br from-green-600/20 to-emerald-600/20 border border-green-500/30">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-white mb-2">🎮 Ücretsiz Demo Deneyin</h3>
+                      <p className="text-slate-300 mb-4">
+                        Paket satın almadan önce, yazılımı 3 dakika boyunca ücretsiz deneyebilirsiniz.
+                      </p>
+                      <ul className="space-y-2 text-sm text-slate-300 mb-6">
+                        <li className="flex items-center gap-2">
+                          <span className="text-green-400">✓</span>
+                          Tüm özelliklere tam erişim
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-green-400">✓</span>
+                          Gerçek tarama yapabilirsiniz
+                        </li>
+                        <li className="flex items-center gap-2">
+                          <span className="text-green-400">✓</span>
+                          Hiç kredi kartı gerekmez
+                        </li>
+                      </ul>
+                      <Button
+                        onClick={() => {
+                          // Demo verilerini temizle
+                          localStorage.removeItem('demoMode');
+                          localStorage.removeItem('demoStartTime');
+                          localStorage.removeItem('demoExpireTime');
+
+                          // Demo başlat
+                          startDemo(3);
+
+                          // Uygulamaya git
+                          localStorage.setItem('systemInitialized', 'true');
+                          setTimeout(() => {
+                            navigate('/app', {
+                              state: { from: '/member-panel' }
+                            });
+                          }, 300);
+
+                          toast.success('🎮 Demo başlatıldı! 3 dakikanız var.');
+                        }}
+                        className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3"
+                      >
+                        <Play className="w-5 h-5 mr-2" />
+                        Demo Başlat
+                      </Button>
+                    </div>
+                  </div>
+                </Card>
               )}
 
               {/* Subscription Status */}

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { PricingCard } from '@/components/PricingCard';
 import { useAuth } from '@/lib/auth-context';
 import { getPackagesByCategory, PACKAGES } from '@shared/packages';
@@ -10,8 +12,16 @@ type PricingTab = 'all' | 'basic' | 'pro' | 'corporate';
 
 export default function Pricing() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<PricingTab>('all');
+
+  const pricingState = location.state as { from?: string } | null;
+
+  const handleBackClick = () => {
+    const backTo = typeof pricingState?.from === 'string' ? pricingState.from : '/';
+    navigate(backTo, { replace: true });
+  };
 
   const packages = useMemo(() => {
     if (activeTab === 'all') {
@@ -38,6 +48,19 @@ export default function Pricing() {
   return (
     <div className="min-h-screen bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
+        {/* Header with Back Button */}
+        <div className="mb-8 flex items-center gap-3">
+          <Button
+            type="button"
+            onClick={handleBackClick}
+            variant="ghost"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900/60 px-4 text-slate-200 hover:bg-slate-800 hover:text-white"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            <span>Geri Dön</span>
+          </Button>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">Pricing Planları</h1>
           <p className="text-xl text-slate-300 max-w-3xl mx-auto">

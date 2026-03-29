@@ -123,15 +123,32 @@ export default function Landing() {
 
               {/* CTA Buttons */}
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">
-                {/* DEMO TEST ET BUTTON - Highlight */}
+                {/* DEMO TEST ET BUTTON - Her tarayıcıda gösteril */}
                 <button
                   onClick={() => {
                     // ==========================================
                     // 🎯 DEMO TEST BAŞLAT (3 DAKİKA)
+                    // Her tarayıcıda yeni demo başlat (localStorage temiz yap)
                     // ==========================================
+                    // Önceki demo verilerini temizle
+                    localStorage.removeItem('demoMode');
+                    localStorage.removeItem('demoStartTime');
+                    localStorage.removeItem('demoExpireTime');
+
+                    // Yeni demo başlat
                     startDemo(3); // 3 dakika
+
+                    // localStorage'e kaydedildiğini doğrula
+                    console.log('✅ Demo kaydedildi - localStorage kontrol:', {
+                      demoMode: localStorage.getItem('demoMode'),
+                      demoExpireTime: localStorage.getItem('demoExpireTime')
+                    });
+
+                    // Üye kayıt formuna yönlendir (Demo için kaydolmayan kullanıcılar)
                     setTimeout(() => {
-                      navigate('/dashboard');
+                      navigate('/member-register', {
+                        state: { demoMode: true }
+                      });
                     }, 300);
                   }}
                   className="relative px-8 py-4 bg-gradient-to-r from-green-500 via-emerald-500 to-green-600 hover:from-green-400 hover:via-emerald-400 hover:to-green-500 text-white font-bold text-lg rounded-lg transition-all shadow-2xl shadow-green-500/40 hover:shadow-green-500/60 flex items-center gap-2 group overflow-hidden"

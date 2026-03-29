@@ -58,15 +58,15 @@ export function useDemo() {
 
         clearInterval(interval);
 
-        toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.');
+        toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.', {
+          description: 'Paket satın alma sayfasına yönlendiriliyorsunuz...',
+          duration: 3000
+        });
 
-        // Eğer subscription yoksa pricing'e yönlendir
-        const savedSub = localStorage.getItem('subscription');
-        if (!savedSub) {
-          setTimeout(() => {
-            navigate('/pricing', { replace: true });
-          }, 1500);
-        }
+        // HER DURUMDA pricing'e yönlendir (subscription varsa da varsa da)
+        setTimeout(() => {
+          navigate('/pricing', { replace: true });
+        }, 1500);
 
         return;
       }

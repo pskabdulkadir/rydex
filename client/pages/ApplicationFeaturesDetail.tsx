@@ -770,7 +770,7 @@ export default function ApplicationFeaturesDetail() {
       {/* Header */}
       <header className="border-b border-gray-300 p-4 bg-white shadow-sm sticky top-0 z-30">
         <div className="max-w-7xl mx-auto flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={() => navigate('/camera-analysis')}>
+          <Button variant="outline" size="icon" onClick={() => navigate('/app/camera-analysis')}>
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div>
@@ -1546,7 +1546,7 @@ export default function ApplicationFeaturesDetail() {
         {/* Geri Dön Butonu */}
         <div className="flex gap-4 mt-8">
           <Button
-            onClick={() => navigate('/camera-analysis')}
+            onClick={() => navigate('/app/camera-analysis')}
             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-lg h-12"
           >
             Detaylı Tarama
