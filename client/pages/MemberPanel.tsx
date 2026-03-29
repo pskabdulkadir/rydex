@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -12,12 +12,10 @@ import {
   CheckCircle,
   Zap,
   Settings,
-  X,
   Globe,
 } from 'lucide-react';
 import { useAuth } from '@/lib/auth-context';
 import { toast } from 'sonner';
-import { PACKAGES } from '@shared/packages';
 import { UseApp } from '@/components/UseApp';
 import {
   startPaymentVerificationPolling,
@@ -28,7 +26,6 @@ import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks
 
 export default function MemberPanel() {
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, logout, subscription, loading: authLoading, token } = useAuth();
   const subscriptionStatus = useSubscriptionStatus(user?.uid);
   useSubscriptionExpiryWarning();
@@ -38,9 +35,7 @@ export default function MemberPanel() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPackageModal, setShowPackageModal] = useState(false);
   const [localSubscription, setLocalSubscription] = useState<any>(null);
-  const [selectedPackageFromRegister, setSelectedPackageFromRegister] = useState<string | null>(null);
 
   // Eğer kullanıcı giriş yapmamışsa redirect et (ama auth loading'i bekle)
   useEffect(() => {
@@ -66,15 +61,6 @@ export default function MemberPanel() {
     }
   }, [user, navigate]);
 
-  // Register sayfasından gelen paketId'yi kontrol et
-  useEffect(() => {
-    const state = location.state as { selectedPackageId?: string } | null;
-    if (state?.selectedPackageId) {
-      setSelectedPackageFromRegister(state.selectedPackageId);
-      // Otomatik olarak modal aç
-      setShowPackageModal(true);
-    }
-  }, [location]);
 
   // Ödeme doğrulama polling başlat
   useEffect(() => {
@@ -194,7 +180,8 @@ export default function MemberPanel() {
   };
 
   const handleOpenPackagesModal = () => {
-    setShowPackageModal(true);
+    // Pricing sayfasına yönlendir (modal yerine)
+    navigate('/pricing');
   };
 
   if (!user) {
@@ -213,37 +200,6 @@ export default function MemberPanel() {
   const remainingPercentage = subscriptionEndDate > Date.now()
     ? Math.min(100, Math.max(0, (daysRemaining / 30) * 100))
     : 0;
-
-  // Erişim engellenmişse göster
-  if (accessDenied) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
-        <div className="max-w-md w-full text-center">
-          <div className="mb-6">
-            <div className="inline-block p-4 bg-red-500/20 rounded-full">
-              <AlertCircle className="w-12 h-12 text-red-400" />
-            </div>
-          </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Erişim Reddedildi</h1>
-          <p className="text-slate-300 mb-6">{denialReason}</p>
-          <div className="flex gap-3">
-            <Button
-              onClick={handleLogout}
-              className="flex-1 bg-slate-700 hover:bg-slate-600 text-white"
-            >
-              Çıkış Yap
-            </Button>
-            <Button
-              onClick={() => navigate('/landing')}
-              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              Ana Sayfa
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
@@ -828,88 +784,6 @@ export default function MemberPanel() {
         </div>
       </div>
 
-      {/* Package Purchase Modal */}
-      {showPackageModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <Card className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-700">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-700/50 sticky top-0 bg-slate-900">
-              <div>
-                <h2 className="text-2xl font-bold text-white">Mevcut Paketler</h2>
-                {selectedPackageFromRegister && (
-                  <p className="text-sm text-amber-400 mt-1">
-                    ✨ Seçtiğiniz paket: <span className="font-semibold">{PACKAGES[selectedPackageFromRegister as keyof typeof PACKAGES]?.name}</span>
-                  </p>
-                )}
-              </div>
-              <button
-                onClick={() => {
-                  setShowPackageModal(false);
-                  setSelectedPackageFromRegister(null);
-                }}
-                className="p-1 hover:bg-slate-800 rounded transition-colors"
-              >
-                <X className="w-6 h-6 text-slate-400" />
-              </button>
-            </div>
-
-            {/* Modal Content */}
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {Object.entries(PACKAGES).map(([key, pkg]) => (
-                  <div
-                    key={key}
-                    className={`p-4 rounded-lg border transition-all ${
-                      selectedPackageFromRegister === key
-                        ? 'border-amber-500/50 bg-amber-500/10 ring-2 ring-amber-400/30'
-                        : 'border-slate-700/50 bg-slate-800/50 hover:border-blue-500/50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-lg font-bold text-white">{pkg.name}</h3>
-                      {selectedPackageFromRegister === key && (
-                        <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded font-semibold">
-                          ✨ Seçildi
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-slate-400 text-sm mb-3">{pkg.duration}</p>
-
-                    <div className="text-2xl font-bold text-yellow-400 mb-4">
-                      {pkg.price.toLocaleString('tr-TR')} ₺
-                    </div>
-
-                    <ul className="space-y-2 mb-4">
-                      {pkg.features.slice(0, 3).map((feature, idx) => (
-                        <li key={idx} className="text-slate-300 text-sm flex items-start gap-2">
-                          <span className="text-green-400 mt-0.5">✓</span>
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-
-                    <Button
-                      onClick={() => {
-                        handlePurchasePackage(key);
-                        setShowPackageModal(false);
-                        setSelectedPackageFromRegister(null);
-                      }}
-                      disabled={loading}
-                      className={`w-full text-white font-semibold transition-all ${
-                        selectedPackageFromRegister === key
-                          ? 'bg-amber-600 hover:bg-amber-700'
-                          : 'bg-blue-600 hover:bg-blue-700'
-                      }`}
-                    >
-                      {selectedPackageFromRegister === key ? '✨ Bu Paketi Satın Al' : 'Seç'}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
