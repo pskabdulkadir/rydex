@@ -152,21 +152,25 @@ function AppLayout() {
     localStorage.getItem("systemInitialized") === "true"
   );
 
-  // Subscription kontrol et - /app altında subscription ZORUNLU
-  // Ama demo mode'da kontrolü skip et
+  // ==========================================
+  // /APP ALTINDA SÜRÜ KONTROL
+  // Demo mode VEYA Subscription gerekli
+  // ==========================================
   useEffect(() => {
     const checkSubscription = () => {
-      // Demo mode aktifse subscription kontrolünü skip et
+      // Demo mode aktifse subscription kontrolünü skip et (3 dakika demo süresi var)
       if (demoStatus.isActive) {
         console.log('✅ Demo mode aktif - Subscription kontrolü bypass edildi');
+        console.log(`   Kalan süre: ${demoStatus.minutesRemaining}:${demoStatus.secondsRemaining.toString().padStart(2, '0')}`);
         return;
       }
 
+      // Demo değilse subscription ZORUNLU
       const savedSub = localStorage.getItem('subscription');
 
       // Subscription yoksa pricing'e yönlendir
       if (!savedSub) {
-        console.warn('⏰ Subscription bulunamadı - paket satın alınması gerekli');
+        console.warn('⏰ Demo veya Subscription bulunamadı - paket satın alınması gerekli');
         navigate('/pricing', { replace: true });
         return;
       }
@@ -178,6 +182,7 @@ function AppLayout() {
         // Subscription süresi bitmiş ise pricing'e yönlendir
         if (daysRemaining <= 0) {
           console.warn('⏰ Subscription süresi bitti, paket satın alma sayfasına yönlendiriliyorsunuz');
+          localStorage.removeItem('subscription');
           navigate('/pricing', { replace: true });
           return;
         }

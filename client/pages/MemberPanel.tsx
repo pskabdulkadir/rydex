@@ -45,22 +45,38 @@ export default function MemberPanel() {
       return;
     }
 
-    // Abonelik geçerliliğini kontrol et (varsa)
+    // ==========================================
+    // SÜRÜ KONTROL: Subscription vs Demo
+    // ==========================================
+    const demoMode = localStorage.getItem('demoMode');
     const savedSub = localStorage.getItem('subscription');
+
+    // Demo süresi aktif ise demo timer'ı göster
+    if (demoMode === 'true') {
+      console.log('✅ Demo mode aktif - Subscription kontrol atlanıyor');
+      return;
+    }
+
+    // Demo değilse subscription kontrol et
     if (savedSub) {
       try {
         const sub = JSON.parse(savedSub);
         const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+
         if (daysRemaining <= 0) {
-          // Abonelik bitmiş - pricing sayfasına yönlendir
+          // Subscription süresi bitmiş - pricing sayfasına yönlendir
+          console.warn('⏰ Subscription süresi bitmiş - pricing sayfasına yönlendiriliyor');
+          localStorage.removeItem('subscription');
           navigate('/pricing', { replace: true });
           return;
         }
+
+        console.log(`✅ Subscription aktif, kalan gün: ${daysRemaining}`);
       } catch (e) {
-        console.error('Abonelik parse hatası:', e);
+        console.error('Subscription parse hatası:', e);
       }
     }
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
 
   // Ödeme doğrulama polling başlat

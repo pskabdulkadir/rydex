@@ -38,7 +38,7 @@ export function useDemo() {
     }
 
     // ==========================================
-    // ⏱️  DEMO TIMER
+    // ⏱️  DEMO TIMER - KENDİ BAĞIMSIZ SÜRÜ
     // ==========================================
     const interval = setInterval(() => {
       const now = Date.now();
@@ -46,23 +46,28 @@ export function useDemo() {
       const timeRemaining = Math.max(0, expireTime - now);
 
       if (timeRemaining <= 0) {
-        // Demo süresi bitmiş
+        // Demo süresi bitmiş - tam kontrol demo mode'un
         console.error('❌ DEMO SÜRESI DOLDU!');
-        
-        // localStorage'ı temizle
+
+        // localStorage'ı temizle - SADECE DEMO VERİLERİNİ
         localStorage.removeItem('demoMode');
         localStorage.removeItem('demoStartTime');
         localStorage.removeItem('demoExpireTime');
-        
+
+        // subscription'a dokunma - eğer varsa devam etsin
+
         clearInterval(interval);
-        
+
         toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.');
-        
-        // Ödeme sayfasına yönlendir
-        setTimeout(() => {
-          navigate('/pricing', { replace: true });
-        }, 1500);
-        
+
+        // Eğer subscription yoksa pricing'e yönlendir
+        const savedSub = localStorage.getItem('subscription');
+        if (!savedSub) {
+          setTimeout(() => {
+            navigate('/pricing', { replace: true });
+          }, 1500);
+        }
+
         return;
       }
 

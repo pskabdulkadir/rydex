@@ -98,6 +98,12 @@ export default function PaymentSuccess() {
             console.warn('⚠️  API\'den ödeme doğrulanamadı:', data);
           }
         }
+
+        // ✅ Demo mode'u devre dışı bırak
+        localStorage.removeItem('demoMode');
+        localStorage.removeItem('demoStartTime');
+        localStorage.removeItem('demoExpireTime');
+        console.log('✅ Demo mode devre dışı bırakıldı - Subscription süresi geçerli');
       } catch (error) {
         console.error('💥 Ödeme durumu kontrol hatası:', error);
       } finally {

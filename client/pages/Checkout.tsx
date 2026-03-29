@@ -514,7 +514,12 @@ export default function Checkout() {
       console.log(`   Bitiş: ${new Date(verificationResult.subscription.endDate).toLocaleString('tr-TR')}`);
       console.log(`   Kalan Gün: ${verificationResult.subscription.daysRemaining}`);
 
-      // localStorage'a kaydet (backup olarak)
+      // ✨ DEMO MODE'U DEVRE DIŞI BIRAK ve Subscription'ı localStorage'a kaydet
+      localStorage.removeItem('demoMode');
+      localStorage.removeItem('demoStartTime');
+      localStorage.removeItem('demoExpireTime');
+      console.log('✅ Demo mode devre dışı bırakıldı - Subscription süresi geçerli');
+
       localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
 
       toast.success('🎉 Ödemeniz başarıyla tamamlandı! Başarı sayfasına yönlendiriliyorsunuz...');
