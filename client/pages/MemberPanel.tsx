@@ -507,8 +507,8 @@ export default function MemberPanel() {
                           localStorage.removeItem('demoStartTime');
                           localStorage.removeItem('demoExpireTime');
 
-                          // Demo başlat
-                          startDemo(3);
+                          // Demo başlat (2 dakika)
+                          startDemo(2);
 
                           // Uygulamaya git
                           localStorage.setItem('systemInitialized', 'true');
@@ -518,7 +518,7 @@ export default function MemberPanel() {
                             });
                           }, 300);
 
-                          toast.success('🎮 Demo başlatıldı! 3 dakikanız var.');
+                          toast.success('🎮 Demo başlatıldı! 2 dakikanız var.');
                         }}
                         className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold px-6 py-3"
                       >
@@ -537,7 +537,7 @@ export default function MemberPanel() {
                     <h3 className="text-xl font-bold text-white mb-1">Abonelik Durumu</h3>
                     <p className="text-slate-400 text-sm">
                       {isDemoMode
-                        ? '🎮 Demo Modu Aktif - 3 Dakika Ücretsiz Deneme'
+                        ? '🎮 Demo Modu Aktif - 2 Dakika Ücretsiz Deneme'
                         : hasActiveSubscription
                         ? `Aktif - ${subscriptionPlan.toUpperCase()} Planı`
                         : 'Hiçbir aktif paket bulunmamaktadır'}
@@ -577,13 +577,27 @@ export default function MemberPanel() {
                     <p className="text-slate-300 text-sm">
                       Demo süresi bitince paket satın alabilir veya yazılımı kullanmaya devam edebilirsiniz.
                     </p>
-                    <Button
-                      onClick={() => navigate('/pricing')}
-                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      Paket Satın Al
-                    </Button>
+                    <div className="grid grid-cols-1 gap-2">
+                      <Button
+                        onClick={() => {
+                          // Uygulamaya erişimi aç
+                          localStorage.setItem('systemInitialized', 'true');
+                          navigate('/app', { state: { from: '/member-panel' } });
+                          toast.success('🎮 Uygulamaya 2 dakika erişim izni verildi');
+                        }}
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Uygulamayı Kullan (2 Dakika)
+                      </Button>
+                      <Button
+                        onClick={() => navigate('/pricing')}
+                        className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                      >
+                        <Package className="w-4 h-4 mr-2" />
+                        Paket Satın Al
+                      </Button>
+                    </div>
                   </div>
                 )}
 
