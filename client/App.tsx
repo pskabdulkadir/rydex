@@ -160,22 +160,11 @@ function AppLayout() {
 
   useEffect(() => {
     const checkSubscription = () => {
-      // Demo mode aktifse subscription kontrolünü skip et (3 dakika demo süresi var)
-      if (demoStatus.isActive) {
-        // Demo süresi biterse uyarı ver ve yönlendir
-        if (demoStatus.timeRemaining <= 0) {
-          console.error('❌ DEMO SÜRESI DOLDU!');
-          localStorage.removeItem('demoMode');
-          localStorage.removeItem('demoStartTime');
-          localStorage.removeItem('demoExpireTime');
-          toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.', {
-            description: 'Sisteme geri yönlendiriliyorsunuz...',
-            duration: 3000
-          });
-          setTimeout(() => {
-            navigate('/pricing', { replace: true, state: { from: location.pathname } });
-          }, 2000);
-        }
+      // localStorage'dan demo mode'u kontrol et (demoStatus değişkenine güvenmeyin)
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+
+      if (isDemoMode) {
+        // Demo mode aktif - subscription kontrolünü tamamen skip et
         return;
       }
 
@@ -252,7 +241,48 @@ function AppLayout() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [navigate, location.pathname, demoStatus.isActive, demoStatus.timeRemaining]);
+  }, [navigate, location.pathname]);
+
+  // Demo süresi bitişini kontrol et
+  useEffect(() => {
+    const checkDemoExpiry = () => {
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+      const demoExpireTime = localStorage.getItem('demoExpireTime');
+
+      if (!isDemoMode || !demoExpireTime) {
+        return;
+      }
+
+      const now = Date.now();
+      const expireTime = parseInt(demoExpireTime);
+      const timeRemaining = Math.max(0, expireTime - now);
+
+      if (timeRemaining <= 0) {
+        // Demo süresi bitmiş - localStorage temizle
+        console.error('❌ DEMO SÜRESI DOLDU (AppLayout)');
+        localStorage.removeItem('demoMode');
+        localStorage.removeItem('demoStartTime');
+        localStorage.removeItem('demoExpireTime');
+
+        toast.info('⏰ Demo süresi dolmuştur. Lütfen üye olun.', {
+          description: 'Kayıt sayfasına yönlendiriliyorsunuz...',
+          duration: 3000
+        });
+
+        setTimeout(() => {
+          navigate('/register', { replace: true });
+        }, 1500);
+      }
+    };
+
+    // İlk kontrol
+    checkDemoExpiry();
+
+    // Her saniye kontrol et
+    const interval = setInterval(checkDemoExpiry, 1000);
+
+    return () => clearInterval(interval);
+  }, [navigate]);
 
   useEffect(() => {
     const handleError = (event: ErrorEvent) => {
