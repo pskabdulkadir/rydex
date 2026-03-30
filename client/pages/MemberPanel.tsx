@@ -210,6 +210,53 @@ export default function MemberPanel() {
     }
   };
 
+  const handleCancelMembership = async () => {
+    // Onay dialog göster
+    const confirmed = window.confirm(
+      `⚠️ Dikkat!\n\n${subscriptionPlan.toUpperCase()} paketiniz iptal edilecektir.\n\nEmin misiniz?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Backend'e cancel isteği gönder
+      const response = await fetch('/api/subscription/cancel', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // localStorage'dan subscription'ı sil
+        localStorage.removeItem('subscription');
+
+        // State'i güncelle
+        setLocalSubscription(null);
+
+        toast.success('✅ Üyeliğiniz başarıyla iptal edilmiştir');
+
+        // Pricing sayfasına yönlendir
+        setTimeout(() => {
+          navigate('/pricing');
+        }, 1500);
+      } else {
+        toast.error(data.message || 'Üyelik iptali başarısız');
+      }
+    } catch (error) {
+      console.error('Üyelik iptali hatası:', error);
+      toast.error('Üyelik iptali sırasında hata oluştu');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handlePurchasePackage = (packageId: string) => {
     // Paketi seç ve direkt subscription oluştur (ödeme bypass)
     const pkg = PACKAGES[packageId as keyof typeof PACKAGES];
@@ -590,14 +637,24 @@ export default function MemberPanel() {
                     )}
 
                     {/* Extend Button */}
-                    <Button
-                      onClick={() => handleExtendSubscription(subscriptionPlan)}
-                      disabled={loading}
-                      className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
-                    >
-                      <CreditCard className="w-4 h-4 mr-2" />
-                      Süre Uzat
-                    </Button>
+                    <div className="grid grid-cols-1 gap-2">
+                      <Button
+                        onClick={() => handleExtendSubscription(subscriptionPlan)}
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
+                      >
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Süre Uzat
+                      </Button>
+                      <Button
+                        onClick={handleCancelMembership}
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Üyeliğimi İptal Et
+                      </Button>
+                    </div>
                   </div>
                 )}
 
@@ -925,13 +982,32 @@ export default function MemberPanel() {
               {/* Danger Zone */}
               <Card className="p-6 bg-red-500/5 border border-red-500/20">
                 <h3 className="text-xl font-bold text-red-400 mb-4">Tehlikeli İşlemler</h3>
-                <Button
-                  onClick={handleLogout}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Oturumu Kapat
-                </Button>
+                <div className="space-y-3">
+                  {hasActiveSubscription && (
+                    <>
+                      <div className="bg-red-900/20 rounded-lg p-4 border border-red-500/20">
+                        <p className="text-red-300 text-sm">
+                          <span className="font-semibold">⚠️ Dikkat:</span> Üyeliğinizi iptal ederseniz, aktif paketiniz sona erecektir.
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleCancelMembership}
+                        disabled={loading}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white"
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        Üyeliğimi İptal Et
+                      </Button>
+                    </>
+                  )}
+                  <Button
+                    onClick={handleLogout}
+                    className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Oturumu Kapat
+                  </Button>
+                </div>
               </Card>
             </div>
           )}
