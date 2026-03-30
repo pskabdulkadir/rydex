@@ -95,8 +95,7 @@ export default function BulkSelectionManager({
       <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-slate-200">
         <Checkbox
           id="select-all"
-          checked={selectAll && totalCount > 0}
-          indeterminate={selectedCount > 0 && selectedCount < totalCount}
+          checked={selectedCount > 0 && selectedCount < totalCount ? 'indeterminate' : selectAll && totalCount > 0}
           onCheckedChange={handleSelectAll}
         />
         <label

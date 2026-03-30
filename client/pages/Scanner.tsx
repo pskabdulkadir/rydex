@@ -74,6 +74,7 @@ export default function Index() {
             uid: deviceId,
             email: `${deviceId}@local.device`,
             displayName: 'Mobil Cihaz Kullanıcısı',
+            phone: '',
             createdAt: Date.now(),
             updatedAt: Date.now(),
             preferences: {
@@ -308,7 +309,7 @@ export default function Index() {
             anomalyDetected: false,
             anomalyConfidence: 0,
             noiseLevel: 0,
-            calibrationStatus: 'unknown',
+            calibrationStatus: 'poor',
           },
 
           // Jeoloji Verisi (USGS)
@@ -330,19 +331,6 @@ export default function Index() {
             faulting: 0,
             fracturing: 0,
             stabilityRating: 0,
-          },
-
-          // Arkeoloji Verisi (UNESCO/OpenContext)
-          archaeologyDatabase: realData.archaeologyData ? {
-            recordedFindings: realData.archaeologyData.unescoSites?.length || 0,
-            culturalHeritage: realData.archaeologyData.unescoSites?.length || 0,
-            historicalPeriods: 2,
-            siteSignificance: realData.archaeologyData.unescoSites?.length ? 85 : 0,
-          } : {
-            recordedFindings: 0,
-            culturalHeritage: 0,
-            historicalPeriods: 0,
-            siteSignificance: 0,
           },
 
           // Topografya (Open-Elevation)
@@ -403,11 +391,19 @@ export default function Index() {
 
           // Yer Altı Yapıları
           undergroundStructures: specialData[0]?.status === 'fulfilled' && specialData[0].value ? {
+            structuresDetected: (specialData[0].value.totalStructures || 0) > 0,
+            totalStructures: specialData[0].value.totalStructures || 0,
             structureCount: specialData[0].value.totalStructures || 0,
+            types: specialData[0].value.types || { walls: 0, pillars: 0, passages: 0, vaults: 0 },
             structures: specialData[0].value.structures || [],
+            overallIntegrity: specialData[0].value.overallIntegrity || 0,
           } : {
+            structuresDetected: false,
+            totalStructures: 0,
             structureCount: 0,
+            types: { walls: 0, pillars: 0, passages: 0, vaults: 0 },
             structures: [],
+            overallIntegrity: 0,
           },
 
           // Artefakt Tespiti
@@ -488,7 +484,6 @@ export default function Index() {
                 timestamp: d.timestamp || Date.now(),
               })) || [],
             clusterCount: Math.ceil((backendDetections.length || 0) / 5) || 1,
-            sourcesUsed: dataSources,
           },
 
           // Hazine Kataloğu
@@ -724,13 +719,16 @@ export default function Index() {
         status: 'completed',
         satelliteImageUrl: satelliteImage,
         measurements: backendDetections.map((det: any) => ({
-          type: det.type || det.resourceType,
-          value: det.magneticField || 0,
-          latitude: det.latitude,
-          longitude: det.longitude,
-          timestamp: det.timestamp,
-          confidence: det.confidence,
-        })),
+          timestamp: det.timestamp || Date.now(),
+          latitude: det.latitude || 0,
+          longitude: det.longitude || 0,
+          magneticX: det.magneticField || 0,
+          magneticY: det.magneticField || 0,
+          magneticZ: det.magneticField || 0,
+          magnitude: det.magneticField || 0,
+          accuracy: det.confidence || 0,
+          altitude: det.altitude || 0,
+        })) as any,
         anomalies: backendDetections.filter((d: any) => d.confidence > 0.7),
         depth: depthValue,
         area: areaValue,

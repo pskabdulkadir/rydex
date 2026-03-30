@@ -103,12 +103,9 @@ export async function setUserSubscription(
   try {
     const subDocRef = doc(db, 'users', uid, 'subscription', 'active');
     
-    // Ensure endDate is a Timestamp
     const subscriptionData = {
       ...subscription,
-      endDate: subscription.endDate instanceof Timestamp 
-        ? subscription.endDate 
-        : Timestamp.fromDate(new Date(subscription.endDate)),
+      endDate: Timestamp.fromDate(new Date(subscription.endDate)),
       updatedAt: Timestamp.now(),
     };
 

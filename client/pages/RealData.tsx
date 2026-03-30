@@ -26,7 +26,7 @@ export default function RealDataPage() {
   }, [offlineStorage.isReady]);
 
   return (
-    <PageLayout title="Gerçek Veri Taraması" showNav>
+    <PageLayout title="Gerçek Veri Taraması">
       <div className="space-y-6">
         {/* Açıklama Paneli */}
         <Card className="border-blue-200 bg-blue-50">

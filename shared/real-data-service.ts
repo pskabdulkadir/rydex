@@ -21,8 +21,12 @@ export interface MagneticFieldData {
   inclination: number; // derece
   horizontalIntensity: number;
   timestamp: string;
-  source: "NOAA";
+  source: string;
   accuracy?: string;
+  magneticIntensity?: number;
+  apiKeyRequired?: boolean;
+  anomalousDeposits?: number;
+  warning?: string;
 }
 
 // ============ JEOLOJİK VERİ (USGS) ============
@@ -58,6 +62,15 @@ export interface GeologyData {
     length: number;
     lastActivity: string;
   }>;
+  detectionAccuracy?: number;
+  soilComposition?: string;
+  rockType?: string;
+  mineralContent?: string;
+  rockComposition?: string;
+  mineralsDetected?: number;
+  mineralDensity?: number;
+  waterPresence?: string;
+  groundwaterLevel?: string;
 }
 
 // ============ ARKEOLOJİK VERİ ============
@@ -97,6 +110,13 @@ export interface ArchaeologyData {
     location: string;
     significance: number;
   }>;
+  artifactsDetected?: number;
+  totalArtifacts?: number;
+  artifacts?: string[];
+  siteType?: string;
+  culturalPeriod?: string;
+  siteInformation?: string;
+  structuresDetected?: number;
 }
 
 // ============ TOPOGRAFİK VERİ (DEM) ============

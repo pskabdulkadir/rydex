@@ -323,4 +323,4 @@ export const handleExportAuditLogs: RequestHandler = (req, res) => {
   }
 };
 
-export { AuditLog };
+export type { AuditLog };

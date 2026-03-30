@@ -291,7 +291,7 @@ export default function AdminPanel() {
   const [showNewCouponForm, setShowNewCouponForm] = useState(false);
   const [newCoupon, setNewCoupon] = useState({
     code: '',
-    discountType: 'percentage' as const,
+    discountType: 'percentage' as 'percentage' | 'fixed',
     discountValue: 0,
     maxUses: 100,
     expiryDate: '',
@@ -681,7 +681,7 @@ export default function AdminPanel() {
       result = result.filter(r => r.createdAt >= startDate);
     }
     if (filters.escrowEndDate) {
-      const endDate = new Date(filters.escrowEndDate).getTime();
+      const endDate = new Date(filters.escrowEndDate);
       endDate.setHours(23, 59, 59, 999); // Günün sonuna kadar
       result = result.filter(r => r.createdAt <= endDate.getTime());
     }
@@ -716,7 +716,7 @@ export default function AdminPanel() {
       result = result.filter(c => c.createdAt >= startDate);
     }
     if (filters.couponEndDate) {
-      const endDate = new Date(filters.couponEndDate).getTime();
+      const endDate = new Date(filters.couponEndDate);
       endDate.setHours(23, 59, 59, 999);
       result = result.filter(c => c.createdAt <= endDate.getTime());
     }
@@ -756,7 +756,7 @@ export default function AdminPanel() {
       result = result.filter(u => u.joinDate >= startDate);
     }
     if (filters.userJoinEndDate) {
-      const endDate = new Date(filters.userJoinEndDate).getTime();
+      const endDate = new Date(filters.userJoinEndDate);
       endDate.setHours(23, 59, 59, 999);
       result = result.filter(u => u.joinDate <= endDate.getTime());
     }

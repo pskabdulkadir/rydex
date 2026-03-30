@@ -28,11 +28,17 @@ export interface VerificationResult {
   success: boolean;
   message: string;
   subscription?: {
+    id: string;
+    userId: string;
+    packageId: string;
     plan: string;
     amount: number;
     startDate: number;
     endDate: number;
     daysRemaining: number;
+    paymentId: string;
+    status: 'active';
+    approvedAt?: number;
   };
 }
 
@@ -45,7 +51,7 @@ export function createPaymentRecord(
   amount: number,
   paymentMethod: 'credit-card' | 'bank-transfer'
 ): PaymentRecord {
-  const expiresAt = calculateExpiryTimestamp(packageId);
+  const expiresAt = calculateExpiryTimestamp(packageId as keyof typeof PACKAGES);
   
   const record: PaymentRecord = {
     id: `payment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -113,7 +119,7 @@ export function verifyPayment(paymentId: string, userId: string): VerificationRe
     localStorage.setItem('paymentRecords', JSON.stringify(updatedPayments));
 
     // Subscription oluştur
-    const subscription = {
+    const subscription: NonNullable<VerificationResult['subscription']> = {
       id: `sub_${Date.now()}`,
       userId,
       packageId: payment.packageId,
@@ -315,7 +321,7 @@ export function approvePayment(paymentId: string, adminId: string, adminNotes?: 
     localStorage.setItem('paymentRecords', JSON.stringify(updatedPayments));
 
     // Subscription oluştur
-    const subscription = {
+    const subscription: NonNullable<VerificationResult['subscription']> = {
       id: `sub_${Date.now()}`,
       userId: payment.userId,
       packageId: payment.packageId,

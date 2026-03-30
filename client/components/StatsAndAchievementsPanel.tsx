@@ -37,7 +37,7 @@ export default function StatsAndAchievementsPanel() {
     const loadData = () => {
       setStats(getScanStats());
       const favIds = getFavorites();
-      setFavorites(favIds.map((id) => STRUCTURES[id]));
+      setFavorites(favIds.map((fav) => STRUCTURES[fav.id]));
       const achs = getAchievements();
       setAchievements(achs.length > 0 ? achs : Object.values(ACHIEVEMENTS));
       setHistory(getScanHistory());

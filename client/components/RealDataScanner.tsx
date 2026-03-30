@@ -55,11 +55,9 @@ export const RealDataScanner: React.FC = () => {
 
       // Simüle edilen ilerleme (gerçek API çağrıları için ayarlanmalı)
       const progressInterval = setInterval(() => {
-        scanStateManager.updateProgress((prev) => {
-          const current = scanStateManager.getCurrentSession()?.progress || 0;
-          const newProgress = current + Math.random() * 20;
-          return Math.min(newProgress, 90);
-        });
+        const current = scanStateManager.getCurrentSession()?.progress || 0;
+        const newProgress = Math.min(current + Math.random() * 20, 90);
+        scanStateManager.updateProgress(newProgress);
       }, 500);
 
       // Gerçek verileri çek

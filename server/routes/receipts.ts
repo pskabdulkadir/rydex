@@ -164,8 +164,9 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
     }
 
     // Eğer onaylandıysa ve subscription varsa, subscription'ı aktif et
+    let receipt = null;
     if (status === 'approved') {
-      const receipt = await db.getReceipt(receiptId);
+      receipt = await db.getReceipt(receiptId);
       if (receipt) {
         console.log(`✅ Dekont onaylandı: ${receiptId} - Subscription aktif ediliyor...`);
 
@@ -179,7 +180,7 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
       success: true,
       message: `Dekont ${status === 'approved' ? 'onaylandı' : 'reddedildi'}`,
       receiptId,
-      receipt: receipt
+      receipt
     });
   } catch (error) {
     console.error('Dekont onaylama hatası:', error);
@@ -195,7 +196,10 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
  */
 export const handleGetReceipt: RequestHandler = async (req, res) => {
   try {
-    const { receiptId } = req.params;
+    let receiptId = req.params.receiptId;
+    if (Array.isArray(receiptId)) {
+      receiptId = receiptId[0];
+    }
 
     if (!receiptId) {
       return res.status(400).json({

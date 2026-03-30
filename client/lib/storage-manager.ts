@@ -44,10 +44,13 @@ export const addFavorite = (id: string, location?: Partial<SavedLocation>) => {
   if (!favorites.some(f => f.id === id)) {
     const newFavorite: SavedLocation = {
       id,
+      userId: location?.userId || 'local-user',
       name: location?.name || `Konum ${id}`,
       latitude: location?.latitude || 0,
       longitude: location?.longitude || 0,
       savedAt: Date.now(),
+      createdAt: Date.now(),
+      tags: location?.tags || [],
       ...location
     };
     favorites.push(newFavorite);
@@ -74,8 +77,9 @@ export const addComparison = (comparison: any) => {
 
 export interface Achievement {
   id: string;
-  title: string;
+  name: string;
   description: string;
   icon: string;
-  unlockedAt: number;
+  unlockedAt?: number;
+  progress?: number;
 }

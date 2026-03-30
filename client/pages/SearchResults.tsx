@@ -124,7 +124,7 @@ export default function SearchResults() {
   };
 
   return (
-    <PageLayout>
+    <PageLayout title="Arama Sonuçları">
       <div className="w-full max-w-6xl mx-auto px-4 py-8">
         {/* Başlık */}
         <div className="mb-8">

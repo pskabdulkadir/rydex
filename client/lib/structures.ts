@@ -79,10 +79,24 @@ export interface StructureDefinition {
   estimatedValue?: string;
   archaeologicalSignificance?: string;
   typicalAge?: string;
+  historicalPeriod?: string;
   geographicDistribution?: string;
   commonMaterials?: string[];
   characteristics?: string[];
   soilCompatibility?: string[];
+  typicalDensity?: number;
+  typicalStability?: number;
+  culturalValue?: 'none' | 'low' | 'medium' | 'high' | 'critical';
+  spectralColor?: string;
+  color?: string;
+  magneticPolarity?: string;
+  conductivity?: number;
+  thermalSignature?: number;
+  moistureRetention?: number;
+  gprReflection?: number;
+  resonanceFrequency?: number;
+  oxidationPotential?: number;
+  radioactivityLevel?: number;
 }
 
 // Helper function to convert materialComposition to commonMaterials

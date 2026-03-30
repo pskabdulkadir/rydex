@@ -2,6 +2,11 @@ import React from "react";
 import { MapContainer, TileLayer, Marker, Popup, Circle } from "react-leaflet";
 import L from "leaflet";
 
+const LeafletMapContainer = MapContainer as any;
+const LeafletTileLayer = TileLayer as any;
+const LeafletMarker = Marker as any;
+const LeafletCircle = Circle as any;
+
 interface Detection {
   id: string;
   timestamp: number;
@@ -35,8 +40,8 @@ const DetectionMapContainer: React.FC<DetectionMapContainerProps> = ({
   onDetectionSelect,
 }) => {
   return (
-    <MapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }}>
-      <TileLayer
+    <LeafletMapContainer center={center} zoom={zoom} style={{ height: "100%", width: "100%" }}>
+      <LeafletTileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
@@ -44,7 +49,7 @@ const DetectionMapContainer: React.FC<DetectionMapContainerProps> = ({
       {/* Kullanıcı Konumu */}
       {userLocation && (
         <>
-          <Marker
+          <LeafletMarker
             position={userLocation}
             icon={L.icon({
               iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-blue.png",
@@ -57,8 +62,8 @@ const DetectionMapContainer: React.FC<DetectionMapContainerProps> = ({
             <Popup>
               <p className="font-bold text-blue-600">Mevcut Konumunuz</p>
             </Popup>
-          </Marker>
-          <Circle
+          </LeafletMarker>
+          <LeafletCircle
             center={userLocation}
             radius={500}
             pathOptions={{ color: "blue", fillOpacity: 0.1 }}
@@ -68,7 +73,7 @@ const DetectionMapContainer: React.FC<DetectionMapContainerProps> = ({
 
       {/* Tespit Edilen Noktalar */}
       {detections.map((detection) => (
-        <Marker
+        <LeafletMarker
           key={detection.id}
           position={[detection.latitude, detection.longitude]}
           icon={L.divIcon({
@@ -93,9 +98,9 @@ const DetectionMapContainer: React.FC<DetectionMapContainerProps> = ({
               </p>
             </div>
           </Popup>
-        </Marker>
+        </LeafletMarker>
       ))}
-    </MapContainer>
+    </LeafletMapContainer>
   );
 };
 

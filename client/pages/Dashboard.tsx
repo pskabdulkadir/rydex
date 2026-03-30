@@ -240,7 +240,7 @@ export default function Dashboard() {
                   <Gauge className="w-5 h-5 text-blue-600" />
                   <p className="text-sm font-semibold text-slate-700">Günlük Tarama Limiti</p>
                 </div>
-                <p className="text-2xl font-bold text-blue-600">{features.scansPerDay}</p>
+                <p className="text-2xl font-bold text-blue-600">{subscription.packageId === 'starter' ? 3 : subscription.packageId === 'pro' ? 10 : subscription.packageId === 'deep' ? 50 : 'Sınırsız'}</p>
               </div>
 
               <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-4 border border-purple-200">
@@ -248,7 +248,7 @@ export default function Dashboard() {
                   <Clock className="w-5 h-5 text-purple-600" />
                   <p className="text-sm font-semibold text-slate-700">Maks Tarama Süresi</p>
                 </div>
-                <p className="text-2xl font-bold text-purple-600">{features.maxScanDuration}s</p>
+                <p className="text-2xl font-bold text-purple-600">{subscription.packageId === 'starter' ? '3600s' : subscription.packageId === 'pro' ? '10800s' : subscription.packageId === 'deep' ? '43200s' : 'Sınırsız'}</p>
               </div>
 
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 border border-green-200">
@@ -257,7 +257,7 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-slate-700">Özel Analiz</p>
                 </div>
                 <p className="text-lg font-bold text-green-600">
-                  {features.customAnalysis ? '✓ Etkin' : '✗ Devre Dışı'}
+                  {subscription.packageId === 'ultimate' || subscription.packageId === 'monthly' || subscription.packageId === 'master' ? '✓ Etkin' : '✗ Devre Dışı'}
                 </p>
               </div>
 
@@ -267,7 +267,7 @@ export default function Dashboard() {
                   <p className="text-sm font-semibold text-slate-700">Admin Paneli</p>
                 </div>
                 <p className="text-lg font-bold text-red-600">
-                  {features.adminAccess ? '✓ Etkin' : '✗ Devre Dışı'}
+                  {subscription.packageId === 'monthly' || subscription.packageId === 'master' ? '✓ Etkin' : '✗ Devre Dışı'}
                 </p>
               </div>
             </div>

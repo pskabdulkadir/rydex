@@ -53,7 +53,7 @@ export const initiatePayment: RequestHandler = async (req, res) => {
     }
 
     // Paket fiyatını doğrula
-    if (!validatePackagePrice(packageId, amount)) {
+    if (!validatePackagePrice(packageId as any, amount)) {
       return res.status(400).json({
         success: false,
         message: 'Geçersiz paket veya tutar'
@@ -411,4 +411,4 @@ export const escrowNotify: RequestHandler = async (req, res) => {
   }
 };
 
-export { PaymentResponse };
+export type { PaymentResponse };

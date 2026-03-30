@@ -260,7 +260,11 @@ export class RealDataFetcher {
 
       return {
         deposits,
-        rockTypes: ["Granite", "Limestone", "Sandstone"],
+        rockTypes: [
+          { type: "Granite", percentage: 40 },
+          { type: "Limestone", percentage: 35 },
+          { type: "Sandstone", percentage: 25 },
+        ],
         seismicHistory: [],
         faultLines: [],
       };

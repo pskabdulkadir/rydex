@@ -422,7 +422,7 @@ export default function MemberPanel() {
             <div className="space-y-6">
               {/* UseApp Component - Uygulamayı Kullan */}
               {hasActiveSubscription && (
-                <UseApp userId={user?.id} showExtendButton={true} compact={false} />
+                <UseApp userId={user?.uid} showExtendButton={true} compact={false} />
               )}
 
               {/* Demo Butonu - Subscription yoksa göster */}
@@ -723,7 +723,7 @@ export default function MemberPanel() {
                           method: 'POST',
                           headers: {
                             'Content-Type': 'application/json',
-                            'x-user-id': user?.id || '',
+                            'x-user-id': user?.uid || '',
                           },
                           body: JSON.stringify({
                             subscriptionId: activeSub?.id || '',

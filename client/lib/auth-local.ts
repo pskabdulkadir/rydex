@@ -72,6 +72,7 @@ export async function createLocalAccount(
     uid,
     email,
     displayName,
+    phone: '',
     createdAt: Date.now(),
     updatedAt: Date.now(),
     preferences: {

@@ -1,6 +1,9 @@
-import React from "react";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
+
+const LeafletMapContainer = MapContainer as any;
+const LeafletTileLayer = TileLayer as any;
+const LeafletMarker = Marker as any;
 
 interface Detection {
   id: string;
@@ -52,19 +55,19 @@ const MapContainerComponent: React.FC<MapContainerComponentProps> = ({
   height = "100%",
 }) => {
   return (
-    <MapContainer
+    <LeafletMapContainer
       center={center}
       zoom={zoom}
       style={{ height, width: "100%" }}
     >
-      <TileLayer
+      <LeafletTileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
       {/* Kullanıcı konumu */}
       {userLocation && (
-        <Marker position={userLocation} icon={defaultIcon}>
+        <LeafletMarker position={userLocation} icon={defaultIcon}>
           <Popup>
             <div className="text-center">
               <p className="font-bold">Mevcut Konum</p>
@@ -73,12 +76,12 @@ const MapContainerComponent: React.FC<MapContainerComponentProps> = ({
               </p>
             </div>
           </Popup>
-        </Marker>
+        </LeafletMarker>
       )}
 
       {/* Tespit edilen anomaliler */}
       {detections.map((detection) => (
-        <Marker
+        <LeafletMarker
           key={detection.id}
           position={[detection.latitude, detection.longitude]}
           icon={detectionIcon}
@@ -116,9 +119,9 @@ const MapContainerComponent: React.FC<MapContainerComponentProps> = ({
               </p>
             </div>
           </Popup>
-        </Marker>
+        </LeafletMarker>
       ))}
-    </MapContainer>
+    </LeafletMapContainer>
   );
 };
 

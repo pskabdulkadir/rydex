@@ -584,7 +584,10 @@ export const handleDeleteCoupon: RequestHandler = (req, res) => {
  */
 export const handleUpdatePackagePrice: RequestHandler = (req, res) => {
   try {
-    const { packageId } = req.params;
+    let packageId = req.params.packageId;
+    if (Array.isArray(packageId)) {
+      packageId = packageId[0];
+    }
     const { originalPrice, currentPrice, discount } = req.body;
 
     if (currentPrice === undefined) {

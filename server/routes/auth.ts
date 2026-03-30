@@ -11,6 +11,7 @@ function initializeDemoUsers() {
   const demoUserId = 'user_demo_001';
   const testUser: UserProfile & { password: string } = {
     uid: demoUserId,
+    email: 'demo@test.com',
     username: 'testuser',
     phone: '05551234567',
     password: Buffer.from('123456').toString('base64'),
@@ -134,6 +135,7 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
     // Bellek içi cache'de de tut
     const newUser: UserProfile & { password: string } = {
       uid: userId,
+      email: email || `user_${userId}@app.local`,
       username,
       phone,
       password: passwordHash,
@@ -202,27 +204,28 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
  */
 export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { email, password } = req.body;
     const db = getDatabase();
 
     // Validasyon
-    if (!username || !password) {
+    if (!email || !password) {
       return res.status(400).json({
         success: false,
-        message: "Kullanıcı adı ve şifre gerekli",
+        message: "E-posta ve şifre gerekli",
       });
     }
 
     // Önce bellek içi cache'de ara
-    let user = Array.from(users.values()).find(u => u.username === username);
+    let user = Array.from(users.values()).find(u => u.email === email);
 
     // Cache'de yoksa veritabanıdan ara
     if (!user) {
-      const dbUser = await db.getUserByUsername(username);
+      const dbUser = await db.getUserByUsername(email);
       if (dbUser) {
         // Veritabanı kaydından UserProfile oluştur
         user = {
           uid: dbUser.id,
+          email: dbUser.email || email,
           username: dbUser.username,
           phone: dbUser.phone,
           password: dbUser.password_hash,

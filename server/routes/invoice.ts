@@ -55,7 +55,7 @@ export const getInvoiceHandler: RequestHandler = (req, res) => {
       });
     }
 
-    const invoice = getInvoice(invoiceId);
+    const invoice = getInvoice(Array.isArray(invoiceId) ? invoiceId[0] : invoiceId);
 
     if (!invoice) {
       return res.status(404).json({
@@ -92,7 +92,7 @@ export const getUserInvoicesHandler: RequestHandler = (req, res) => {
       });
     }
 
-    const invoices = getUserInvoices(userId);
+    const invoices = getUserInvoices(Array.isArray(userId) ? userId[0] : userId);
 
     res.json({
       success: true,
@@ -124,7 +124,7 @@ export const updateInvoiceHandler: RequestHandler = (req, res) => {
       });
     }
 
-    const invoice = updateInvoice(invoiceId, updates);
+    const invoice = updateInvoice(Array.isArray(invoiceId) ? invoiceId[0] : invoiceId, updates);
 
     if (!invoice) {
       return res.status(404).json({
@@ -162,7 +162,7 @@ export const downloadInvoiceHandler: RequestHandler = (req, res) => {
       });
     }
 
-    const invoice = getInvoice(invoiceId);
+    const invoice = getInvoice(Array.isArray(invoiceId) ? invoiceId[0] : invoiceId);
 
     if (!invoice) {
       return res.status(404).json({
@@ -201,7 +201,7 @@ export const viewInvoiceHandler: RequestHandler = (req, res) => {
       });
     }
 
-    const invoice = getInvoice(invoiceId);
+    const invoice = getInvoice(Array.isArray(invoiceId) ? invoiceId[0] : invoiceId);
 
     if (!invoice) {
       return res.status(404).json({

@@ -347,8 +347,8 @@ const StructureScanner = () => {
                           <div className="flex items-center gap-2 text-sm">
                             <Thermometer className="w-4 h-4" /> Termal İmza
                           </div>
-                          <Badge variant="outline" className={getThermalColor(selectedStructure.thermalSignature || 'neutral')}>
-                            {(selectedStructure.thermalSignature || 'neutral').toUpperCase()}
+                          <Badge variant="outline" className={getThermalColor(String(selectedStructure.thermalSignature || 'neutral'))}>
+                            {String(selectedStructure.thermalSignature || 'neutral').toUpperCase()}
                           </Badge>
                         </div>
 
@@ -380,8 +380,8 @@ const StructureScanner = () => {
                       <CardContent className="space-y-3">
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">Oksitlenme Potansiyeli</span>
-                          <Badge variant={selectedStructure.oxidationPotential === 'high' ? 'destructive' : 'secondary'}>
-                            {selectedStructure.oxidationPotential?.toUpperCase()}
+                          <Badge variant={String(selectedStructure.oxidationPotential) === 'high' ? 'destructive' : 'secondary'}>
+                            {String(selectedStructure.oxidationPotential || '').toUpperCase() || 'NORMAL'}
                           </Badge>
                         </div>
 
@@ -430,8 +430,8 @@ const StructureScanner = () => {
                         </div>
                         <div className="flex justify-between items-center">
                           <span className="text-sm">Radyoaktivite</span>
-                          <Badge variant={selectedStructure.radioactivityLevel === 'none' ? 'outline' : 'destructive'}>
-                            {selectedStructure.radioactivityLevel?.toUpperCase()}
+                          <Badge variant={String(selectedStructure.radioactivityLevel) === 'none' ? 'outline' : 'destructive'}>
+                            {String(selectedStructure.radioactivityLevel || 'NONE').toUpperCase()}
                           </Badge>
                         </div>
                       </CardContent>

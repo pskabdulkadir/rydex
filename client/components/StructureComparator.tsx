@@ -25,7 +25,11 @@ export default function StructureComparator({ isOpen, onClose }: StructureCompar
 
   const handleCompare = () => {
     if (structure1 && structure2) {
-      addComparison(structure1, structure2);
+      addComparison({
+        structure1,
+        structure2,
+        comparedAt: Date.now(),
+      });
     }
   };
 
@@ -133,61 +137,33 @@ export default function StructureComparator({ isOpen, onClose }: StructureCompar
                 />
 
                 <ComparisonRow
-                  label="Tipik Yoğunluk"
-                  value1={
-                    <div className="flex items-center gap-2">
-                      <span>{s1.typicalDensity}%</span>
-                      <div className="flex-1 bg-slate-700 rounded h-2">
-                        <div
-                          className="bg-amber-500 h-2 rounded"
-                          style={{ width: `${s1.typicalDensity}%` }}
-                        />
-                      </div>
-                    </div>
-                  }
-                  value2={
-                    <div className="flex items-center gap-2">
-                      <span>{s2.typicalDensity}%</span>
-                      <div className="flex-1 bg-slate-700 rounded h-2">
-                        <div
-                          className="bg-amber-500 h-2 rounded"
-                          style={{ width: `${s2.typicalDensity}%` }}
-                        />
-                      </div>
-                    </div>
-                  }
+                  label="Malzeme"
+                  value1={s1.materialComposition || 'Belirtilmemiş'}
+                  value2={s2.materialComposition || 'Belirtilmemiş'}
                 />
 
                 <ComparisonRow
-                  label="Stabilite"
-                  value1={
-                    <div className="flex items-center gap-2">
-                      <span>{s1.typicalStability}%</span>
-                      <div className="flex-1 bg-slate-700 rounded h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded"
-                          style={{ width: `${s1.typicalStability}%` }}
-                        />
-                      </div>
-                    </div>
-                  }
-                  value2={
-                    <div className="flex items-center gap-2">
-                      <span>{s2.typicalStability}%</span>
-                      <div className="flex-1 bg-slate-700 rounded h-2">
-                        <div
-                          className="bg-green-500 h-2 rounded"
-                          style={{ width: `${s2.typicalStability}%` }}
-                        />
-                      </div>
-                    </div>
-                  }
+                  label="Arkeolojik Önemi"
+                  value1={s1.archaeologicalSignificance || 'Belirtilmemiş'}
+                  value2={s2.archaeologicalSignificance || 'Belirtilmemiş'}
                 />
 
                 <ComparisonRow
                   label="Tespit Doğruluğu"
                   value1={`${s1.detectionAccuracy}%`}
                   value2={`${s2.detectionAccuracy}%`}
+                />
+
+                <ComparisonRow
+                  label="Tipik Yaş"
+                  value1={s1.typicalAge || 'Belirtilmemiş'}
+                  value2={s2.typicalAge || 'Belirtilmemiş'}
+                />
+
+                <ComparisonRow
+                  label="Coğrafi Dağılım"
+                  value1={s1.geographicDistribution || 'Belirtilmemiş'}
+                  value2={s2.geographicDistribution || 'Belirtilmemiş'}
                 />
 
                 <ComparisonRow

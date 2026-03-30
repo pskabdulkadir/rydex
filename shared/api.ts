@@ -305,7 +305,8 @@ export interface ReceiptApprovalRequest {
 export interface UserProfile {
   uid: string;
   email: string;
-  username: string;
+  username?: string;
+  displayName?: string;
   phone: string;
   password?: string; // Hash'lenmiş, sadece server'da tutulur
   createdAt: number | string;
@@ -354,6 +355,7 @@ export interface LoginResponse {
 export interface RegisterRequest {
   username: string;
   phone: string;
+  email: string;
   password: string;
 }
 
@@ -424,11 +426,14 @@ export interface SavedLocation {
   id: string;
   userId: string;
   name: string;
-  location: {
+  latitude?: number;
+  longitude?: number;
+  location?: {
     latitude: number;
     longitude: number;
   };
   description?: string;
+  savedAt?: number;
   createdAt: number;
   lastVisited?: number;
   tags: string[];

@@ -103,6 +103,7 @@ export default function Dashboard() {
             uid: deviceId,
             email: `${deviceId}@local.device`,
             displayName: navigator.userAgent?.substring(0, 30) || 'Mobil Cihaz',
+            phone: '',
             createdAt: Date.now(),
             updatedAt: Date.now(),
             preferences: {
