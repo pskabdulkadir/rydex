@@ -609,9 +609,7 @@ export default function Landing() {
             <div>
               <h4 className="font-bold text-white mb-4">İletişim</h4>
               <ul className="space-y-2 text-sm text-slate-400">
-                <li>Email: info@geoscan-x.com</li>
-                <li className="hover:text-white transition-colors cursor-pointer">Destek</li>
-                <li className="mt-4">
+                <li>
                   <a
                     href="https://wa.me/905425783748"
                     target="_blank"

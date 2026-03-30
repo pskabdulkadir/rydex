@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PACKAGES, calculateExpiryTimestamp } from '@shared/packages';
+import { TERMS_AND_CONDITIONS } from '@shared/terms';
 import { Currency, CurrencyInfo } from '@shared/api';
-import { Shield, ArrowLeft, CreditCard, AlertCircle, Banknote, MessageCircle, DollarSign } from 'lucide-react';
+import { Shield, ArrowLeft, CreditCard, AlertCircle, Banknote, MessageCircle, DollarSign, X } from 'lucide-react';
 import { Invoice } from '@/components/Invoice';
 import { toast } from 'sonner';
 import {
@@ -11,6 +12,13 @@ import {
 } from '@/lib/payment-validation';
 import { createPaymentRecord, verifyPayment, startPaymentVerificationPolling } from '@/lib/payment-verification';
 import { useSubscriptionStatus } from '@/lib/hooks/useSubscriptionStatus';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogClose,
+} from '@/components/ui/dialog';
 
 type PaymentMethod = 'credit-card' | 'bank-transfer';
 
@@ -54,6 +62,8 @@ export default function Checkout() {
   const [paymentProcessing, setPaymentProcessing] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit-card');
   const [showInvoice, setShowInvoice] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
   const [selectedCurrency, setSelectedCurrency] = useState<Currency>('TRY');
   const [supportedCurrencies, setSupportedCurrencies] = useState<CurrencyInfo[]>([]);
   const [convertedPrice, setConvertedPrice] = useState(0);
@@ -674,14 +684,19 @@ export default function Checkout() {
               <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  defaultChecked
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
                   className="mt-1 w-4 h-4 accent-blue-500 rounded"
                 />
                 <span className="text-sm text-slate-400">
-                  Hizmet şartlarını ve gizlilik politikasını kabul ediyorum.
-                  <a href="#" className="text-blue-400 hover:text-blue-300 ml-1">
+                  Hizmet Şartlarını okudum ve bu uygulamanın eğlence amaçlı bir simülasyon olduğunu kabul ediyorum.
+                  <button
+                    type="button"
+                    onClick={() => setShowTermsModal(true)}
+                    className="text-blue-400 hover:text-blue-300 ml-1 underline"
+                  >
                     Şartları Oku
-                  </a>
+                  </button>
                 </span>
               </label>
             </div>
@@ -907,8 +922,8 @@ export default function Checkout() {
             {/* CTA Button */}
             <button
               onClick={handlePayment}
-              disabled={isLoading}
-              className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-slate-600 disabled:to-slate-600 text-white font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 mb-3"
+              disabled={isLoading || !termsAccepted}
+              className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 mb-3"
             >
               <CreditCard className="w-5 h-5" />
               {isLoading ? 'İşleniyor...' : 'Ödemeyi Tamamla'}
@@ -955,21 +970,152 @@ export default function Checkout() {
         </div>
       </div>
 
+      {/* Terms and Conditions Modal */}
+      <Dialog open={showTermsModal} onOpenChange={setShowTermsModal}>
+        <DialogContent className="max-h-[80vh] overflow-y-auto bg-slate-900 border-slate-700">
+          <DialogHeader className="sticky top-0 bg-slate-900 pb-4 border-b border-slate-700">
+            <DialogTitle className="text-2xl font-bold text-white">
+              HİZMET ŞARTLARI VE KULLANICI SÖZLEŞMESİ
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="pr-6 space-y-6 text-slate-300">
+            {/* Section 1 */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">1. TARAFLAR VE ONAY</h3>
+              <p className="text-sm leading-relaxed">
+                Bu Kullanıcı Sözleşmesi ("Sözleşme"), Rydex App ("Uygulama") ile bu Uygulamayı kullanan veya Uygulama üzerinden satın alım gerçekleştiren kişi ("Kullanıcı") arasında akdedilmiştir. Kullanıcı, uygulamayı indirerek, hesap oluşturarak veya herhangi bir dijital içerik/hizmet satın alarak bu sözleşmedeki tüm maddeleri okuduğunu, anladığını ve kayıtsız şartsız kabul ettiğini beyan eder.
+              </p>
+            </div>
+
+            {/* Section 2 */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">2. HİZMETİN MAHİYETİ VE SİMÜLASYON BEYANI</h3>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-white mb-2">2.1 Simülasyon Niteliği</h4>
+                  <p className="text-sm leading-relaxed">
+                    Kullanıcı, bu Uygulamanın tamamen eğlence amaçlı bir simülasyon olduğunu, gerçek dünya verileriyle benzerlik gösterse dahi elde edilen sonuçların, görsellerin veya verilerin herhangi bir yatırım, kazanç veya somut bulgu vaat etmediğini bildiğini kabul eder.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">2.2 Dijital İçerik</h4>
+                  <p className="text-sm leading-relaxed">
+                    Uygulama içerisinde sunulan tüm özellikler, analizler ve görselleştirmeler birer dijital oyun ve simülasyon öğesidir. Kullanıcı, bu içeriği bilerek ve isteyerek, sadece eğlence/vakit geçirme amacıyla satın aldığını beyan eder.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 3 */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">3. SORUMLULUK REDDİ (DISCLAIMER)</h3>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-white mb-2">3.1 Zarardan Muafiyet</h4>
+                  <p className="text-sm leading-relaxed">
+                    Satıcı (Uygulama Geliştiricileri ve Sahipleri), simülasyonun sonuçlarından doğabilecek hiçbir maddi, manevi veya hukuki zarardan sorumlu tutulamaz.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">3.2 Kullanım Sorumluluğu</h4>
+                  <p className="text-sm leading-relaxed">
+                    Uygulama üzerinden yapılan satın alımlar, dijital bir eğlence hizmetinin açılmasına yöneliktir. Satıcının, Kullanıcı'nın bu simülasyonu kullanım şekli veya simülasyondan çıkardığı anlamlar üzerinde hiçbir mesuliyeti ve yükümlülüğü bulunmamaktadır.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">3.3 Doğruluk Garantisi Yok</h4>
+                  <p className="text-sm leading-relaxed">
+                    Uygulama kapsamında sunulan içeriklerin doğruluğu, kesinliği veya gerçek hayatta bir karşılığının olması garanti edilmez. Tüm risk ve kullanım sorumluluğu münhasıran Kullanıcıya aittir.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 4 */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">4. SATIN ALMA VE İADE KOŞULLARI</h3>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-white mb-2">4.1 Satın Alma Koşulları</h4>
+                  <p className="text-sm leading-relaxed">
+                    Kullanıcı, dijital içeriklerin ve simülasyon hizmetlerinin satın alındığı anda anında ifa edilen hizmetler kapsamında olduğunu, bu nedenle 6502 sayılı Tüketicinin Korunması Hakkında Kanun ve Mesafeli Sözleşmeler Yönetmeliği gereği cayma hakkının bulunmadığını peşinen kabul eder.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">4.2 İade Politikası</h4>
+                  <p className="text-sm leading-relaxed">
+                    Satın alma işlemi "nihai" bir işlemdir. Kullanıcı, satın aldığı içeriğin bir simülasyon olduğunu bildiği için, beklentisinin karşılanmaması veya benzeri kişisel nedenlerle iade talebinde bulunmayacağını taahhüt eder.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 5 */}
+            <div>
+              <h3 className="text-lg font-bold text-white mb-3">5. HAK TALEBİ VE TAAHHÜTNAME</h3>
+              <div className="space-y-3">
+                <div>
+                  <h4 className="font-semibold text-white mb-2">5.1 Hak Talebinin Kaldırılması</h4>
+                  <p className="text-sm leading-relaxed">
+                    Kullanıcı, bu sözleşmeyi onaylayarak; satıcıdan, uygulama yöneticilerinden veya bağlı iştiraklerden hiçbir isim altında (maddi tazminat, manevi tazminat, iade vb.) hak talep etmeyeceğini kesin ve geri dönülemez bir şekilde taahhüt eder.
+                  </p>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-white mb-2">5.2 Risk Kabulü</h4>
+                  <p className="text-sm leading-relaxed">
+                    Kullanıcı, uygulamanın kullanımından kaynaklanan tüm risklerin farkında olduğunu ve tüm hukuki yükümlülükleri kendi üzerine aldığını beyan eder.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Section 6 */}
+            <div className="pb-4">
+              <h3 className="text-lg font-bold text-white mb-3">6. YÜRÜRLÜK</h3>
+              <p className="text-sm leading-relaxed">
+                Bu sözleşme, Kullanıcı'nın uygulama üzerindeki "Kabul Ediyorum" butonuna tıklaması veya satın alma işlemini onaylaması ile birlikte yürürlüğe girer. Satıcı, bu şartları dilediği zaman güncelleme hakkını saklı tutar.
+              </p>
+            </div>
+          </div>
+
+          <div className="sticky bottom-0 bg-slate-900 pt-4 border-t border-slate-700 mt-6">
+            <button
+              onClick={() => setShowTermsModal(false)}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors"
+            >
+              Anlaşıldı
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Footer - WhatsApp İletişim */}
       <footer className="border-t border-slate-700/30 py-8 px-4 sm:px-6 lg:px-8 bg-slate-950/50 mt-12">
-        <div className="max-w-7xl mx-auto text-center">
-          <h3 className="text-lg font-bold text-white mb-4">Sorularınız Mı Var?</h3>
-          <p className="text-slate-400 mb-6">Ödeme sırasında yardıma ihtiyacınız varsa, hemen WhatsApp'tan iletişime geçin!</p>
-          <a
-            href="https://wa.me/905425783748"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-lg"
-          >
-            <MessageCircle className="w-5 h-5" />
-            WhatsApp: +90 542 578 37 48
-          </a>
-          <p className="text-slate-500 text-sm mt-6">Canlı destek ekibimiz size yardımcı olmak için hazır</p>
+        <div className="max-w-7xl mx-auto">
+          <div className="text-center mb-8">
+            <h3 className="text-lg font-bold text-white mb-4">Sorularınız Mı Var?</h3>
+            <p className="text-slate-400 mb-6">Ödeme sırasında yardıma ihtiyacınız varsa, hemen WhatsApp'tan iletişime geçin!</p>
+            <a
+              href="https://wa.me/905425783748"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors font-semibold shadow-lg"
+            >
+              <MessageCircle className="w-5 h-5" />
+              WhatsApp: +90 542 578 37 48
+            </a>
+            <p className="text-slate-500 text-sm mt-6">Canlı destek ekibimiz size yardımcı olmak için hazır</p>
+          </div>
+
+          <div className="border-t border-slate-700/30 pt-6 text-center">
+            <button
+              onClick={() => setShowTermsModal(true)}
+              className="text-blue-400 hover:text-blue-300 transition-colors font-semibold text-sm"
+            >
+              📋 Hizmet Şartları
+            </button>
+          </div>
         </div>
       </footer>
     </div>
