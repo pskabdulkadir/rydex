@@ -50,6 +50,7 @@ export default function MemberPanel() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [localSubscription, setLocalSubscription] = useState<any>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   // Eğer kullanıcı giriş yapmamışsa redirect et (ama auth loading'i bekle)
   useEffect(() => {
@@ -64,11 +65,15 @@ export default function MemberPanel() {
     const demoMode = localStorage.getItem('demoMode');
     const savedSub = localStorage.getItem('subscription');
 
-    // Demo süresi aktif ise demo timer'ı göster
+    // Demo süresi aktif ise - Subscription kontrolünü atla (UseApp gösterilecek)
     if (demoMode === 'true') {
       console.log('✅ Demo mode aktif - Subscription kontrol atlanıyor');
+      setIsDemoMode(true);
+      // Demo mode'da UseApp'ı gösteriyoruz, subscription kontrolü yapma
       return;
     }
+
+    setIsDemoMode(false);
 
     // Demo değilse subscription kontrol et
     if (savedSub) {
@@ -420,13 +425,13 @@ export default function MemberPanel() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <div className="space-y-6">
-              {/* UseApp Component - Uygulamayı Kullan */}
-              {hasActiveSubscription && (
+              {/* UseApp Component - Demo aktif VEYA Subscription varsa göster */}
+              {(hasActiveSubscription || isDemoMode) && (
                 <UseApp userId={user?.uid} showExtendButton={true} compact={false} />
               )}
 
-              {/* Demo Butonu - Subscription yoksa göster */}
-              {!hasActiveSubscription && (
+              {/* Demo Butonu - Subscription yoksa ve demo mode de aktif değilse göster */}
+              {!hasActiveSubscription && !isDemoMode && (
                 <Card className="p-6 bg-gradient-to-br from-green-600/20 to-emerald-600/20 border border-green-500/30">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -484,19 +489,25 @@ export default function MemberPanel() {
                   <div>
                     <h3 className="text-xl font-bold text-white mb-1">Abonelik Durumu</h3>
                     <p className="text-slate-400 text-sm">
-                      {hasActiveSubscription
+                      {isDemoMode
+                        ? '🎮 Demo Modu Aktif - 3 Dakika Ücretsiz Deneme'
+                        : hasActiveSubscription
                         ? `Aktif - ${subscriptionPlan.toUpperCase()} Planı`
                         : 'Hiçbir aktif paket bulunmamaktadır'}
                     </p>
                   </div>
                   <div
                     className={`p-3 rounded-full ${
-                      hasActiveSubscription
+                      isDemoMode
+                        ? 'bg-purple-500/20'
+                        : hasActiveSubscription
                         ? 'bg-green-500/20'
                         : 'bg-yellow-500/20'
                     }`}
                   >
-                    {hasActiveSubscription ? (
+                    {isDemoMode ? (
+                      <AlertCircle className="w-6 h-6 text-purple-400" />
+                    ) : hasActiveSubscription ? (
                       <CheckCircle className="w-6 h-6 text-green-400" />
                     ) : (
                       <AlertCircle className="w-6 h-6 text-yellow-400" />
@@ -504,7 +515,32 @@ export default function MemberPanel() {
                   </div>
                 </div>
 
-                {hasActiveSubscription && (
+                {isDemoMode && (
+                  <div className="space-y-4 border-t border-slate-700/50 pt-4">
+                    <div className="bg-purple-900/30 rounded-lg p-4 border border-purple-500/20">
+                      <p className="text-purple-200 text-sm">
+                        <span className="font-semibold">🎮 Demo Modunda Eksik İşlemler:</span>
+                      </p>
+                      <ul className="mt-2 space-y-1 text-xs text-purple-300">
+                        <li>• Tarama sonuçları kaydedilmez</li>
+                        <li>• Export/İndirme özelliği devre dışı</li>
+                        <li>• Bulut senkronizasyonu yapılmaz</li>
+                      </ul>
+                    </div>
+                    <p className="text-slate-300 text-sm">
+                      Demo süresi bitince paket satın alabilir veya yazılımı kullanmaya devam edebilirsiniz.
+                    </p>
+                    <Button
+                      onClick={() => navigate('/pricing')}
+                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      Paket Satın Al
+                    </Button>
+                  </div>
+                )}
+
+                {hasActiveSubscription && !isDemoMode && (
                   <div className="space-y-4 border-t border-slate-700/50 pt-4">
                     {/* Kalan Gün */}
                     <div>
@@ -565,7 +601,7 @@ export default function MemberPanel() {
                   </div>
                 )}
 
-                {!hasActiveSubscription && (
+                {!hasActiveSubscription && !isDemoMode && (
                   <Button
                     onClick={handleOpenPackagesModal}
                     className="w-full mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"

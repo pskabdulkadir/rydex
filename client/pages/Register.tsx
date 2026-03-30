@@ -62,12 +62,19 @@ export default function Register() {
       });
 
       toast.success('Kayıt başarılı!', {
-        description: 'Yönetici onayı bekleniyor. Giriş sayfasına yönlendiriliyorsunuz...'
+        description: 'Yönetici onayı bekleniyor. Demo moduna yönlendiriliyorsunuz...'
       });
-      
-      // Giriş sayfasına yönlendir
+
+      // Eğer demoMode aktif ise, üye paneline yönlendir (demo uygulamasını göster)
+      // Değilse giriş sayfasına yönlendir
+      const isDemoMode = localStorage.getItem('demoMode') === 'true';
+
       setTimeout(() => {
-        navigate('/login');
+        if (isDemoMode) {
+          navigate('/member-panel');
+        } else {
+          navigate('/login');
+        }
       }, 2000);
 
     } catch (error: any) {
