@@ -58,14 +58,14 @@ export function useDemo() {
 
         clearInterval(interval);
 
-        toast.error('⏰ Demo süresi dolmuştur. Lütfen paket satın alın.', {
-          description: 'Paket satın alma sayfasına yönlendiriliyorsunuz...',
+        toast.info('⏰ Demo süresi dolmuştur. Lütfen üye olun.', {
+          description: 'Kayıt sayfasına yönlendiriliyorsunuz...',
           duration: 3000
         });
 
-        // HER DURUMDA pricing'e yönlendir (subscription varsa da varsa da)
+        // Kayıt sayfasına yönlendir
         setTimeout(() => {
-          navigate('/pricing', { replace: true });
+          navigate('/register', { replace: true });
         }, 1500);
 
         return;
@@ -107,9 +107,9 @@ export function useDemo() {
   }, [navigate]);
 
   /**
-   * Demo modunu başlat (3 dakika)
+   * Demo modunu başlat (2 dakika varsayılan)
    */
-  const startDemo = (durationMinutes = 3) => {
+  const startDemo = (durationMinutes = 2) => {
     const startTime = Date.now();
     const expireTime = startTime + (durationMinutes * 60 * 1000);
 

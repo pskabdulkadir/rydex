@@ -127,7 +127,7 @@ export default function Landing() {
                 <button
                   onClick={() => {
                     // ==========================================
-                    // 🎯 DEMO TEST BAŞLAT (3 DAKİKA)
+                    // 🎯 DEMO TEST BAŞLAT (2 DAKİKA)
                     // Her tarayıcıda yeni demo başlat (localStorage temiz yap)
                     // ==========================================
                     // Önceki demo verilerini temizle
@@ -136,7 +136,7 @@ export default function Landing() {
                     localStorage.removeItem('demoExpireTime');
 
                     // Yeni demo başlat
-                    startDemo(3); // 3 dakika
+                    startDemo(2); // 2 dakika
 
                     // localStorage'e kaydedildiğini doğrula
                     console.log('✅ Demo kaydedildi - localStorage kontrol:', {
@@ -144,9 +144,9 @@ export default function Landing() {
                       demoExpireTime: localStorage.getItem('demoExpireTime')
                     });
 
-                    // Üye kayıt formuna yönlendir (Demo için kaydolmayan kullanıcılar)
+                    // Uygulamaya yönlendir (Demo modu aktif halde)
                     setTimeout(() => {
-                      navigate('/member-register', {
+                      navigate('/app', {
                         state: { demoMode: true }
                       });
                     }, 300);
@@ -157,7 +157,7 @@ export default function Landing() {
                   <div className="absolute inset-0 bg-gradient-to-r from-green-400/0 via-white/10 to-green-400/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
 
                   <Play className="w-5 h-5 group-hover:animate-bounce" />
-                  <span>🎮 3 Dakika Demo Test Et</span>
+                  <span>🎮 2 Dakika Demo Test Et</span>
 
                   {/* Pulse indicator */}
                   <span className="absolute top-2 right-2 w-2 h-2 bg-green-300 rounded-full animate-pulse"></span>
