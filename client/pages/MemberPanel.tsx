@@ -650,7 +650,7 @@ export default function MemberPanel() {
                       </div>
                     )}
 
-                    {/* Extend Button */}
+                    {/* Extend Button + Demo Button */}
                     <div className="grid grid-cols-1 gap-2">
                       <Button
                         onClick={() => handleExtendSubscription(subscriptionPlan)}
@@ -659,6 +659,22 @@ export default function MemberPanel() {
                       >
                         <CreditCard className="w-4 h-4 mr-2" />
                         Süre Uzat
+                      </Button>
+                      <Button
+                        onClick={() => {
+                          // Demo başlat (2 dakika)
+                          startDemo(2);
+
+                          // Uygulamaya git
+                          localStorage.setItem('systemInitialized', 'true');
+                          navigate('/app', { state: { from: '/member-panel' } });
+                          toast.success('🎮 Demo başlatıldı! 2 dakikanız var.');
+                        }}
+                        disabled={loading}
+                        className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                      >
+                        <Play className="w-4 h-4 mr-2" />
+                        Demo Dene (2 Dakika)
                       </Button>
                       <Button
                         onClick={handleCancelMembership}
@@ -673,13 +689,31 @@ export default function MemberPanel() {
                 )}
 
                 {!hasActiveSubscription && !isDemoMode && (
-                  <Button
-                    onClick={handleOpenPackagesModal}
-                    className="w-full mt-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
-                  >
-                    <Package className="w-4 h-4 mr-2" />
-                    Paket Satın Al
-                  </Button>
+                  <div className="space-y-2 mt-4 border-t border-slate-700/50 pt-4">
+                    <Button
+                      onClick={() => {
+                        // Demo başlat (2 dakika)
+                        startDemo(2);
+
+                        // Uygulamaya git
+                        localStorage.setItem('systemInitialized', 'true');
+                        navigate('/app', { state: { from: '/member-panel' } });
+                        toast.success('🎮 Demo başlatıldı! 2 dakikanız var.');
+                      }}
+                      disabled={loading}
+                      className="w-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      Demo Dene (2 Dakika)
+                    </Button>
+                    <Button
+                      onClick={handleOpenPackagesModal}
+                      className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
+                    >
+                      <Package className="w-4 h-4 mr-2" />
+                      Paket Satın Al
+                    </Button>
+                  </div>
                 )}
               </Card>
 
