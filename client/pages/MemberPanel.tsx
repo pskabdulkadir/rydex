@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -29,8 +29,10 @@ import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks
 
 export default function MemberPanel() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, subscription, loading: authLoading, token } = useAuth();
   const { startDemo } = useDemo();
+  const [justPurchased, setJustPurchased] = useState(false);
 
   const handleGoBack = () => {
     // Eğer history içinde önceki sayfa varsa geri git
@@ -54,6 +56,14 @@ export default function MemberPanel() {
 
   // Eğer kullanıcı giriş yapmamışsa redirect et (ama auth loading'i bekle)
   useEffect(() => {
+    // Location state'ten kaydolduktan sonra mı yoksa satın alma sonrasında mı geldiğini kontrol et
+    const locationState = location.state as { subscriptionCompleted?: boolean } | null;
+    if (locationState?.subscriptionCompleted) {
+      setJustPurchased(true);
+      // State'i temizle
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (!authLoading && !user && !token) {
       navigate('/member-login');
       return;

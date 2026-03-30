@@ -36,6 +36,11 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
   // Onay bekleyen üyeleri yükle
   useEffect(() => {
     loadPendingMembers();
+
+    // Her 3 saniyede bir otomatik yenile (anlık güncelleme)
+    const interval = setInterval(loadPendingMembers, 3000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const loadPendingMembers = async () => {

@@ -62,20 +62,16 @@ export default function Register() {
       });
 
       toast.success('Kayıt başarılı!', {
-        description: 'Yönetici onayı bekleniyor. Demo moduna yönlendiriliyorsunuz...'
+        description: 'Üye paneline yönlendiriliyorsunuz...'
       });
 
-      // Eğer demoMode aktif ise, üye paneline yönlendir (demo uygulamasını göster)
-      // Değilse giriş sayfasına yönlendir
-      const isDemoMode = localStorage.getItem('demoMode') === 'true';
-
+      // Kaydolduktan sonra direkt üye paneline yönlendir
       setTimeout(() => {
-        if (isDemoMode) {
-          navigate('/member-panel');
-        } else {
-          navigate('/login');
-        }
-      }, 2000);
+        navigate('/member-panel', {
+          replace: true,
+          state: { fromRegister: true }
+        });
+      }, 1500);
 
     } catch (error: any) {
       console.error('Kayıt Hatası:', error.message);

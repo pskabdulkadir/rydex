@@ -522,15 +522,17 @@ export default function Checkout() {
 
       localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
 
-      toast.success('🎉 Ödemeniz başarıyla tamamlandı! Başarı sayfasına yönlendiriliyorsunuz...');
+      toast.success('🎉 Ödemeniz başarıyla tamamlandı! Üye paneline yönlendiriliyorsunuz...');
 
       // ─────────────────────────────────────────
-      // 5️⃣  BAŞARI SAYFASINA YÖNLENDİR
+      // 5️⃣  ÜYE PANELİNE YÖNLENDİR (ÖDEME BAŞARISI)
       // ─────────────────────────────────────────
       setTimeout(() => {
-        console.log('🔄 Başarı sayfasına yönlendiriliyor...');
-        navigate(`/payment-success?packageId=${pkg.id}&paymentId=${paymentRecord.id}`, {
+        console.log('🔄 Üye paneline yönlendiriliyor...');
+        navigate(`/member-panel`, {
+          replace: true,
           state: {
+            subscriptionCompleted: true,
             subscription: verificationResult.subscription,
             paymentRecord
           }

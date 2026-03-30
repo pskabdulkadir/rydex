@@ -34,7 +34,6 @@ const Register = lazy(() => import("./pages/Register"));
 const MemberPanel = lazy(() => import("./pages/MemberPanel"));
 const Pricing = lazy(() => import("./pages/Pricing"));
 const PaymentExpired = lazy(() => import("./pages/PaymentExpired"));
-const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
 const Checkout = lazy(() => import("./pages/Checkout"));
 const PaymentPending = lazy(() => import("./pages/PaymentPending"));
 const AdminPanel = lazy(() => import("./pages/AdminPanel"));
@@ -338,7 +337,6 @@ function RootRouter() {
       <Route path="/pricing" element={<Pricing />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/payment-pending" element={<PaymentPending />} />
-      <Route path="/payment-success" element={<PaymentSuccess />} />
       <Route path="/payment-expired" element={<PaymentExpired />} />
       <Route path="/admin-login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminPanel />} />

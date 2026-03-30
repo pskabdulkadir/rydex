@@ -1736,8 +1736,25 @@ export default function AdminPanel() {
         </div>
         )}
 
-        {/* Requests Table - Pending ve All tabs için */}
-        {(selectedTab === 'pending' || selectedTab === 'all') && (
+        {/* All Tab - Tüm Üyeler ve Satın Almalar */}
+        {selectedTab === 'all' && (
+          <div className="space-y-12">
+            {/* Tüm Üyeler */}
+            <div className="space-y-4">
+              <h2 className="text-2xl font-bold text-white">Tüm Üyeler</h2>
+              <PendingMembersPanel adminId={adminUser?.adminId || 'admin'} />
+            </div>
+
+            {/* Tüm Satın Almalar */}
+            <div className="space-y-4 pt-8 border-t border-slate-700/30">
+              <h2 className="text-2xl font-bold text-white">Tüm Satın Alma İşlemleri (Anlık)</h2>
+              <PaymentControlPanel />
+            </div>
+          </div>
+        )}
+
+        {/* Requests Table - Pending tab için */}
+        {selectedTab === 'pending' && (
         <div className="space-y-6">
           {/* Search Panel */}
           <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-4">
