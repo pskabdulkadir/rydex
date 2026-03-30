@@ -131,7 +131,7 @@ export default function Viewer3DPage() {
 
   const handleStartScan = (structureId: StructureType) => {
     setSelectedStructure(structureId);
-    navigate(`/structure-scanner?id=${structureId}&depth=${depthMin}&area=${areaRadius}`);
+    navigate(`/app/structure-scanner?id=${structureId}&depth=${depthMin}&area=${areaRadius}`);
   };
 
   return (

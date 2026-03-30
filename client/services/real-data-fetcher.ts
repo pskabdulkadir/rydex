@@ -109,17 +109,60 @@ export class RealDataFetcher {
         this.fetchTerrainData(request),
       ]);
 
+      // ==========================================
+      // Başarısız API'ler için fallback values
+      // ==========================================
+      const getMagneticFallback = (lat: number, lon: number) => ({
+        latitude: lat,
+        longitude: lon,
+        totalIntensity: 45000,
+        declination: 0,
+        inclination: 60,
+        horizontalIntensity: 30000,
+        timestamp: new Date().toISOString(),
+        source: 'Fallback (API başarısız)',
+        apiKeyRequired: false,
+      });
+
+      const getGeologyFallback = (lat: number, lon: number) => ({
+        latitude: lat,
+        longitude: lon,
+        dominantRock: 'Bilinmiyor',
+        deposits: [],
+        mineralDensity: 2.65,
+        rockAge: 'Bilinmiyor',
+        source: 'Fallback (API başarısız)',
+      });
+
+      const getArchaeologyFallback = (lat: number, lon: number) => ({
+        latitude: lat,
+        longitude: lon,
+        unescoSites: [],
+        historicalSites: [],
+        archaeologicalContext: 'Bilinmiyor',
+        source: 'Fallback (API başarısız)',
+      });
+
+      const getTerrainFallback = (lat: number, lon: number) => ({
+        latitude: lat,
+        longitude: lon,
+        elevation: 0,
+        slope: 0,
+        aspect: 0,
+        source: 'Fallback (API başarısız)',
+      });
+
       const response: RealDataResponse = {
         location: {
           latitude: request.latitude,
           longitude: request.longitude,
         },
         timestamp: new Date().toISOString(),
-        dataQuality: "high",
-        magneticData: magneticData.status === "fulfilled" ? magneticData.value : undefined,
-        geologyData: geologyData.status === "fulfilled" ? geologyData.value : undefined,
-        archaeologyData: archaeologyData.status === "fulfilled" ? archaeologyData.value : undefined,
-        terrainData: terrainData.status === "fulfilled" ? terrainData.value : undefined,
+        dataQuality: magneticData.status === 'fulfilled' && geologyData.status === 'fulfilled' ? 'high' : 'low',
+        magneticData: magneticData.status === "fulfilled" ? magneticData.value : getMagneticFallback(request.latitude, request.longitude),
+        geologyData: geologyData.status === "fulfilled" ? geologyData.value : getGeologyFallback(request.latitude, request.longitude),
+        archaeologyData: archaeologyData.status === "fulfilled" ? archaeologyData.value : getArchaeologyFallback(request.latitude, request.longitude),
+        terrainData: terrainData.status === "fulfilled" ? terrainData.value : getTerrainFallback(request.latitude, request.longitude),
         metadata: {
           sourcesUsed: this.getActiveSources(magneticData, geologyData, archaeologyData, terrainData),
           requestTime: Date.now() - startTime,

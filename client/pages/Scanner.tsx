@@ -250,6 +250,45 @@ export default function Index() {
           location: { latitude: location!.latitude, longitude: location!.longitude },
           timestamp: new Date().toISOString(),
           dataQuality: 'low',
+          // ==========================================
+          // FALLBACK VERİLERİ - Boş sonuç olmasın diye
+          // ==========================================
+          magneticData: {
+            latitude: location!.latitude,
+            longitude: location!.longitude,
+            totalIntensity: 45000,
+            declination: 0,
+            inclination: 60,
+            horizontalIntensity: 30000,
+            timestamp: new Date().toISOString(),
+            source: 'Fallback Değerler',
+            apiKeyRequired: false,
+          },
+          geologyData: {
+            latitude: location!.latitude,
+            longitude: location!.longitude,
+            dominantRock: 'Bilinmiyor',
+            deposits: [],
+            mineralDensity: 2.65,
+            rockAge: 'Bilinmiyor',
+            source: 'Fallback Değerler',
+          },
+          terrainData: {
+            latitude: location!.latitude,
+            longitude: location!.longitude,
+            elevation: elevation || 0,
+            slope: Math.random() * 30,
+            aspect: Math.random() * 360,
+            source: 'Fallback Değerler',
+          },
+          archaeologyData: {
+            latitude: location!.latitude,
+            longitude: location!.longitude,
+            unescoSites: [],
+            historicalSites: [],
+            archaeologicalContext: 'Bilinmiyor',
+            source: 'Fallback Değerler',
+          },
         };
         setScanProgress(30);
       }
@@ -357,7 +396,8 @@ export default function Index() {
             pressure: additionalData[0].value.pressure_msl || 0,
             windDirection: 0,
           } : {
-            temperature: 'Bulunamamıştır',
+            dataFound: false,
+            temperature: 'Veri bulunamadı',
             humidity: 0,
             pressure: 0,
             windDirection: 0,
@@ -370,6 +410,7 @@ export default function Index() {
             strength: Math.round((additionalData[1].value.speed || 0) / 5 * 100),
             gusts: (additionalData[1].value.speed || 0) * 1.5,
           } : {
+            dataFound: false,
             speed: 0,
             direction: 0,
             strength: 0,
@@ -383,6 +424,7 @@ export default function Index() {
             organicContent: additionalData[2].value.organicContent || 0,
             carbonContent: additionalData[2].value.carbonContent || 0,
           } : {
+            dataFound: false,
             pH: 0,
             mineralDensity: 0,
             organicContent: 0,
@@ -398,6 +440,7 @@ export default function Index() {
             structures: specialData[0].value.structures || [],
             overallIntegrity: specialData[0].value.overallIntegrity || 0,
           } : {
+            dataFound: false,
             structuresDetected: false,
             totalStructures: 0,
             structureCount: 0,
@@ -414,6 +457,7 @@ export default function Index() {
             estimatedTotalValue: specialData[1].value.estimatedTotalValue || 0,
             archaeologicalSignificance: specialData[1].value.archaeologicalSignificance || 0,
           } : {
+            dataFound: false,
             artifactsDetected: false,
             totalArtifacts: 0,
             artifacts: [],
