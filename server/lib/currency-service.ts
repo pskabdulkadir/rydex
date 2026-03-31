@@ -157,23 +157,6 @@ export function isValidCurrency(currency: any): currency is Currency {
   return ['TRY', 'USD', 'EUR', 'GBP'].includes(currency);
 }
 
-/**
- * PayTR için ödeme tutarını kuruş cinsine dönüştür
- * @param amount Tutar (TRY)
- * @returns Kuruş cinsinden tutar
- */
-export function convertToPayTRFormat(amount: number): number {
-  return Math.round(amount * 100); // 100 kuruş = 1 TRY
-}
-
-/**
- * PayTR tarafından gelen kuruş cinsindeki tutarı TRY'ye dönüştür
- * @param amountInKurus Tutar (kuruş)
- * @returns TRY cinsinden tutar
- */
-export function convertFromPayTRFormat(amountInKurus: number): number {
-  return Math.round((amountInKurus / 100) * 100) / 100; // 2 ondalık basamak
-}
 
 /**
  * Invoice numarası oluştur

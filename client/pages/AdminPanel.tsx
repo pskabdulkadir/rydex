@@ -9,6 +9,7 @@ import { createAuditLog, getAuditLogs, formatAuditLogForTimeline } from '@/lib/a
 import CheckoutSettingsAdmin from '@/components/admin/CheckoutSettingsAdmin';
 import PendingMembersPanel from '@/components/admin/PendingMembersPanel';
 import PaymentControlPanel from '@/components/admin/PaymentControlPanel';
+import ReceiptManagementAdmin from '@/components/admin/ReceiptManagementAdmin';
 import Breadcrumb from '@/components/Breadcrumb';
 
 interface EscrowRequest {
@@ -1952,8 +1953,14 @@ export default function AdminPanel() {
 
             {/* Tüm Satın Almalar */}
             <div className="space-y-4 pt-8 border-t border-slate-700/30">
-              <h2 className="text-2xl font-bold text-white">Tüm Satın Alma İşlemleri (Anlık)</h2>
+              <h2 className="text-2xl font-bold text-white">Satın Alma İşlemleri</h2>
               <PaymentControlPanel />
+            </div>
+
+            {/* Dekont Yönetimi */}
+            <div className="space-y-4 pt-8 border-t border-slate-700/30">
+              <h2 className="text-2xl font-bold text-white">💳 Dekont (Havale) Yönetimi</h2>
+              <ReceiptManagementAdmin />
             </div>
           </div>
         )}

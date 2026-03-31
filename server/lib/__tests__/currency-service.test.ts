@@ -6,8 +6,6 @@ import {
   convertToTRY,
   convertCurrency,
   formatCurrency,
-  convertToPayTRFormat,
-  convertFromPayTRFormat,
   generateInvoiceNumber,
   isValidCurrency,
 } from '../currency-service';
@@ -142,32 +140,6 @@ describe('Currency Service', () => {
     it('Ondalık basamakları doğru göstermeli', () => {
       const formatted = formatCurrency(99.99, 'TRY');
       expect(formatted).toContain('99');
-    });
-  });
-
-  describe('convertToPayTRFormat', () => {
-    it('TRY tutarını kuruş cinsine dönüştürmeli', () => {
-      expect(convertToPayTRFormat(1)).toBe(100);
-      expect(convertToPayTRFormat(100)).toBe(10000);
-      expect(convertToPayTRFormat(1000)).toBe(100000);
-    });
-
-    it('Ondalık tutarları doğru işlemeli', () => {
-      expect(convertToPayTRFormat(1.50)).toBe(150);
-      expect(convertToPayTRFormat(99.99)).toBe(9999);
-    });
-  });
-
-  describe('convertFromPayTRFormat', () => {
-    it('Kuruş cinsini TRY\'ye dönüştürmeli', () => {
-      expect(convertFromPayTRFormat(100)).toBe(1);
-      expect(convertFromPayTRFormat(10000)).toBe(100);
-      expect(convertFromPayTRFormat(100000)).toBe(1000);
-    });
-
-    it('Küçük tutarları doğru işlemeli', () => {
-      expect(convertFromPayTRFormat(1)).toBe(0.01);
-      expect(convertFromPayTRFormat(50)).toBe(0.5);
     });
   });
 

@@ -47,44 +47,17 @@ export const verifyPaymentStatus: RequestHandler = async (req, res) => {
 };
 
 /**
- * POST /api/payment/initiate
- * Ödemeyi başlat (ödeme gateway entegrasyonu)
+ * POST /api/payment/initiate (DEPRECATED)
+ * Bu endpoint artık kullanılmamaktadır.
+ * IBAN/Havale sistemi için /api/payment/initiate'ı (payment.ts) kullanınız.
  */
-export const initiatePayment: RequestHandler = async (req, res) => {
-  try {
-    const { userId, packageId, amount, email, paymentId, returnUrl } = req.body;
-
-    if (!userId || !packageId || !amount || !email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Gerekli alanlar eksik'
-      });
-    }
-
-    console.log(`💳 Ödeme başlatılıyor: ${packageId} - ${amount}₺ (${email})`);
-
-    // Demo sistem: Anında başarılı dön
-    // Gerçek sistemde burada:
-    // - Stripe, PayTR, Iyzico vb. payment gateway API'lerine çağrı yapılmalı
-    // - Session oluşturulmalı
-    // - Ödeme sayfasına yönlendirme yapılmalı
-
-    const sessionToken = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    res.json({
-      success: true,
-      message: 'Ödeme başlatıldı',
-      sessionToken,
-      paymentUrl: `${returnUrl}?payment=${paymentId}`,
-      paymentId
-    });
-  } catch (error) {
-    console.error('Ödeme başlatma hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Ödeme başlatılamadı'
-    });
-  }
+export const initiatePaymentDeprecated: RequestHandler = async (req, res) => {
+  return res.status(410).json({
+    success: false,
+    message: 'Bu endpoint artık kullanılmamaktadır. IBAN/Havale sistemini kullanınız.',
+    newEndpoint: '/api/payment/initiate (payment.ts)',
+    system: 'IBAN/Havale Tabanlı Ödeme'
+  });
 };
 
 /**
@@ -123,52 +96,22 @@ export const checkPaymentStatus: RequestHandler = async (req, res) => {
 };
 
 /**
- * POST /api/payment/webhook
- * Payment gateway webhook (Stripe, PayTR vb.)
- * Ödeme sonuçları buraya gelir
+ * POST /api/payment/webhook (DEPRECATED)
+ * Payment gateway webhook (IBAN/Havale sistemi kullanıyor)
+ * Not: Havale/Transfer için webhook gerekmez, dekont yükleme sistemi kullanılır
  */
 export const paymentWebhook: RequestHandler = async (req, res) => {
-  try {
-    const { event, data } = req.body;
-
-    console.log(`📨 Payment webhook alındı: ${event}`);
-
-    // Webhook event'ine göre işlem yap
-    switch (event) {
-      case 'payment.success':
-      case 'charge.success':
-        // Ödeme başarılı - Subscription oluştur
-        console.log(`✅ Ödeme başarılı webhook: ${data.paymentId}`);
-        break;
-
-      case 'payment.failed':
-      case 'charge.failed':
-        // Ödeme başarısız
-        console.log(`❌ Ödeme başarısız webhook: ${data.paymentId}`);
-        break;
-
-      case 'payment.pending':
-        // Ödeme bekleme aşamasında
-        console.log(`⏳ Ödeme bekleme webhook: ${data.paymentId}`);
-        break;
-    }
-
-    res.json({
-      success: true,
-      message: 'Webhook işlendi'
-    });
-  } catch (error) {
-    console.error('Webhook işleme hatası:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Webhook işlenemedi'
-    });
-  }
+  // IBAN/Havale sistemi webhooks kullanmaz
+  // Dekont yükleme → Admin onayı → Subscription aktivasyonu akışı kullanılır
+  res.json({
+    success: true,
+    message: 'IBAN/Havale sistemi webhooks kullanmaz'
+  });
 };
 
 /**
  * POST /api/payment/refund
- * Ödeme iadesi işlemi
+ * Ödeme iadesi işlemi (IBAN/Havale sistemi için)
  */
 export const refundPayment: RequestHandler = async (req, res) => {
   try {
@@ -182,9 +125,10 @@ export const refundPayment: RequestHandler = async (req, res) => {
     }
 
     console.log(`💰 İade işlemi başlatılıyor: ${paymentId} - ${amount}₺`);
+    console.log(`   Sebep: ${reason}`);
 
-    // İade işlemi yapılmalı
-    // Gerçek sistemde: Payment gateway'den iadesi istenebilir
+    // IBAN/Havale sisteminde iade, admin panel'den manuel olarak yönetilir
+    // Subscription'ı iptal et ve ödeme talebini güncelle
 
     const refundId = `refund_${Date.now()}`;
 
@@ -194,7 +138,8 @@ export const refundPayment: RequestHandler = async (req, res) => {
       refundId,
       paymentId,
       amount,
-      status: 'completed'
+      status: 'completed',
+      note: 'Admin tarafından manuel ödeme iadesi yapılacaktır'
     });
   } catch (error) {
     console.error('İade işlemi hatası:', error);

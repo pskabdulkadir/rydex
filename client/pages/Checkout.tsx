@@ -411,147 +411,91 @@ export default function Checkout() {
 
     try {
       // ==========================================
-      // 🔄 DEMO ÖDEME AKIŞI (TEST MODU)
+      // 💳 IBAN/HAVALE ÖDEME AKIŞI
       // ==========================================
-      // Notlar:
-      // - Kart/Banka bilgisi doğrulaması YAPILMIYOR (demo test için)
-      // - Ödeme entegrasyonu DEVRE DIŞI (Stripe/PayPal)
-      // - Anında başarı akışı başlatılıyor
-      // - Gerçek entegrasyon için: verifyPayment() yerine
-      //   gerçek POS API çağrısı yapılacak
-      // ==========================================
-
       const userId = localStorage.getItem('userId') || 'demo-user';
       const userEmail = localStorage.getItem('userEmail') || 'demo@example.com';
 
-      console.log('💳 DEMO ÖDEME BAŞLADI');
+      console.log('💳 IBAN/Havale Ödeme Başlatıldı');
       console.log(`📦 Paket: ${pkg.name} (${pkg.id})`);
       console.log(`💰 Tutar: ${pkg.price} TRY`);
-      console.log(`🌐 Seçilen Para Birimi: ${selectedCurrency}`);
+      console.log(`🏦 Ödeme Yöntemi: ${paymentMethod === 'bank-transfer' ? 'IBAN Transferi' : 'Kredi Kartı'}`);
 
       // ─────────────────────────────────────────
-      // 1️⃣  ÖDEME KAYDI OLUŞTUR
+      // 1️⃣  ÖDEMEYİ BAŞLAT (BANKA BİLGİLERİNİ AL)
       // ─────────────────────────────────────────
-      const paymentRecord = createPaymentRecord(userId, pkg.id, pkg.price, paymentMethod);
-      console.log('✅ Ödeme kaydı oluşturuldu');
-      console.log(`   ID: ${paymentRecord.id}`);
-      console.log(`   Durum: ${paymentRecord.status}`);
-      console.log(`   Süresi Bitiş: ${new Date(paymentRecord.expiresAt).toLocaleString('tr-TR')}`);
-
-      // ─────────────────────────────────────────
-      // 2️⃣  FATURA OLUŞTUR (İsteğe Bağlı)
-      // ─────────────────────────────────────────
-      try {
-        const invoiceResponse = await fetch('/api/invoice/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId,
-            paymentId: paymentRecord.id,
-            packageId: pkg.id,
-            amount: convertedPrice,
-            currency: selectedCurrency,
-            userEmail,
-            userName: localStorage.getItem('userName') || 'Müşteri'
-          })
-        });
-
-        if (invoiceResponse.ok) {
-          const invoiceData = await invoiceResponse.json();
-          console.log('📄 Fatura oluşturuldu');
-          console.log(`   Numara: ${invoiceData.invoiceNumber}`);
-          localStorage.setItem('lastInvoiceId', invoiceData.invoiceId);
-          localStorage.setItem('lastInvoiceNumber', invoiceData.invoiceNumber);
-        }
-      } catch (invoiceError) {
-        console.warn('⚠️  Fatura oluşturulamadı (devam ediliyor):', invoiceError);
-        // Ödeme işlemi devam et, fatura isteğe bağlı
-      }
-
-      // ─────────────────────────────────────────
-      // 3️⃣  ÖDEMEYİ DOĞRULA VE SUBSCRIPTION OLUŞTUR
-      // ─────────────────────────────────────────
-      console.log('⏳ Ödeme doğrulanıyor...');
-
-      const verificationResult = verifyPayment(paymentRecord.id, userId);
-
-      if (!verificationResult.success || !verificationResult.subscription) {
-        console.error('❌ Ödeme doğrulama başarısız:', verificationResult.message);
-        setError(verificationResult.message || 'Ödeme doğrulanamadı');
-        toast.error('Ödeme doğrulanamadı');
+      if (paymentMethod !== 'bank-transfer') {
+        // Kredi kartı ödeme sistem dışı (sadece IBAN/havale)
+        toast.error('Şu anda sadece IBAN/Havale ile ödeme kabul edilmektedir');
+        setError('Sadece IBAN/Havale ödeme yöntemi aktif');
         return;
       }
 
-      // ─────────────────────────────────────────
-      // 3️⃣  API VIA SUBSCRIPTION OLUŞTUR
-      // ─────────────────────────────────────────
-      try {
-        console.log('📡 API\'ye subscription kaydı gönderiliyor...');
+      const initiateResponse = await fetch('/api/payment/initiate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          packageId: pkg.id,
+          amount: pkg.price,
+          email: userEmail,
+          currency: selectedCurrency,
+          returnUrl: window.location.origin + '/member-panel'
+        })
+      });
 
-        const token = localStorage.getItem('authToken');
-        const subscriptionResponse = await fetch('/api/subscription/create', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : ''
-          },
-          body: JSON.stringify({
-            userId,
-            plan: pkg.id
-          })
-        });
+      const initiateData = await initiateResponse.json();
 
-        if (!subscriptionResponse.ok) {
-          console.error('❌ Subscription API hatası:', subscriptionResponse.status);
-          // API başarısız olsa da devam et - localStorage'a kayıtlı olan kullanılacak
-        } else {
-          const subData = await subscriptionResponse.json();
-          console.log('✅ API\'ye subscription kaydedildi:', subData);
-        }
-      } catch (subError) {
-        console.warn('⚠️  Subscription API çağrısında hata (devam ediliyor):', subError);
-        // Error olsa da devam et
+      if (!initiateData.success) {
+        throw new Error(initiateData.message || 'Ödeme başlatma başarısız');
       }
 
-      // ─────────────────────────────────────────
-      // 4️⃣  BAŞARILI - SUBSCRIPTION AKTIF ET
-      // ─────────────────────────────────────────
-      console.log('✅ ÖDEMEYİ TAMAMLANDI!');
-      console.log('🔐 Subscription bilgileri:');
-      console.log(`   Plan: ${verificationResult.subscription.plan}`);
-      console.log(`   Tutar: ${verificationResult.subscription.amount} TRY`);
-      console.log(`   Başlangıç: ${new Date(verificationResult.subscription.startDate).toLocaleString('tr-TR')}`);
-      console.log(`   Bitiş: ${new Date(verificationResult.subscription.endDate).toLocaleString('tr-TR')}`);
-      console.log(`   Kalan Gün: ${verificationResult.subscription.daysRemaining}`);
+      const referenceCode = initiateData.referenceCode;
+      const bankAccount = initiateData.bankAccount;
 
-      // ✨ DEMO MODE'U DEVRE DIŞI BIRAK ve Subscription'ı localStorage'a kaydet
-      localStorage.removeItem('demoMode');
-      localStorage.removeItem('demoStartTime');
-      localStorage.removeItem('demoExpireTime');
-      console.log('✅ Demo mode devre dışı bırakıldı - Subscription süresi geçerli');
-
-      localStorage.setItem('subscription', JSON.stringify(verificationResult.subscription));
-
-      toast.success('🎉 Ödemeniz başarıyla tamamlandı! Üye paneline yönlendiriliyorsunuz...');
+      console.log('✅ Ödeme Başlatıldı');
+      console.log(`   Referans Kodu: ${referenceCode}`);
+      console.log(`   IBAN: ${bankAccount.iban}`);
+      console.log(`   Tutar: ${initiateData.amount} TRY`);
 
       // ─────────────────────────────────────────
-      // 5️⃣  ÜYE PANELİNE YÖNLENDİR (ÖDEME BAŞARISI)
+      // 2️⃣  ÖDEME TALEBİNİ LOCALSTORAGE'A KAYDET
       // ─────────────────────────────────────────
+      const paymentRequest = {
+        referenceCode,
+        userId,
+        packageId: pkg.id,
+        amount: pkg.price,
+        email: userEmail,
+        status: 'pending_receipt', // Dekont yükleme bekleniyor
+        createdAt: Date.now(),
+        bankAccount
+      };
+
+      localStorage.setItem('currentPaymentRequest', JSON.stringify(paymentRequest));
+
+      console.log('💾 Ödeme talebi kaydedildi');
+
+      // ─────────────────────────────────────────
+      // 3️⃣  DEKONT YÜKLEME SAYFASINA YÖNLENDİR
+      // ─────────────────────────────────────────
+      toast.success('Lütfen belirtilen IBAN\'a havale yapıp dekont yükleyiniz');
+
       setTimeout(() => {
-        console.log('🔄 Üye paneline yönlendiriliyor...');
-        navigate(`/member-panel`, {
+        console.log('🔄 Dekont yükleme sayfasına yönlendiriliyor...');
+        navigate('/member-panel', {
           replace: true,
           state: {
-            subscriptionCompleted: true,
-            subscription: verificationResult.subscription,
-            paymentRecord
+            activeTab: 'receipts',
+            pendingPaymentRequest: paymentRequest,
+            message: '💳 Havale yapıp dekont yükleyin'
           }
         });
       }, 1500);
 
     } catch (err) {
-      console.error('💥 Ödeme işleminde hata:', err);
-      const errorMsg = 'Bir hata oluştu. Lütfen tekrar deneyin.';
+      console.error('💥 Ödeme başlatma hatası:', err);
+      const errorMsg = err instanceof Error ? err.message : 'Ödeme başlatılırken hata oluştu';
       setError(errorMsg);
       toast.error(errorMsg);
     } finally {
@@ -798,36 +742,58 @@ export default function Checkout() {
 
             {paymentMethod === 'bank-transfer' && (
               <div className="space-y-4 mb-8 pb-6 border-b border-slate-700/50">
-                <h4 className="text-sm font-semibold text-amber-400">Banka Transferi Bilgileri</h4>
+                <h4 className="text-sm font-semibold text-amber-400">💳 IBAN Transferi Talimatları</h4>
                 {checkoutSettings.bankAccounts.filter(b => b.isActive).length > 0 ? (
                   <>
-                    {checkoutSettings.bankAccounts.filter(b => b.isActive).map((bank, idx) => (
-                      <div key={bank.id} className={`bg-amber-500/5 border-l-4 border-l-amber-500 p-4 rounded space-y-3 text-sm text-slate-300 ${idx > 0 ? 'mt-4' : ''}`}>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Alıcı Adı:</p>
-                          <p className="font-semibold">{bank.accountHolder}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">IBAN:</p>
-                          <p className="font-semibold font-mono">{bank.iban}</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-500 text-xs mb-1">Banka:</p>
-                          <p className="font-semibold">{bank.bankName}</p>
-                        </div>
+                    <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-lg space-y-4">
+                      <div className="space-y-2">
+                        <p className="text-xs text-slate-500 font-semibold">1. ÖDEME YAPACAĞINIZ HESAP:</p>
+                        {checkoutSettings.bankAccounts.filter(b => b.isActive).map((bank) => (
+                          <div key={bank.id} className="bg-slate-800/50 p-3 rounded border border-slate-700/50">
+                            <div className="mb-2">
+                              <p className="text-xs text-slate-400">Alıcı Adı:</p>
+                              <p className="text-sm font-semibold text-white">{bank.accountHolder}</p>
+                            </div>
+                            <div className="mb-2">
+                              <p className="text-xs text-slate-400">IBAN (Kopyalamak için tıklayın):</p>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(bank.iban);
+                                  toast.success('IBAN kopyalandı!');
+                                }}
+                                className="w-full text-left text-sm font-mono font-semibold text-blue-400 hover:text-blue-300 bg-slate-900/50 p-2 rounded border border-slate-700/50 transition-colors"
+                              >
+                                {bank.iban} 📋
+                              </button>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-400">Banka:</p>
+                              <p className="text-sm font-semibold text-white">{bank.bankName}</p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                    <input
-                      type="text"
-                      placeholder="Dekontu Referans (İsteğe Bağlı)"
-                      value={bankDetails.accountHolder}
-                      onChange={(e) => setBankDetails({ ...bankDetails, accountHolder: e.target.value })}
-                      className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder-slate-500 focus:border-blue-500 outline-none"
-                    />
+
+                      <div className="border-t border-amber-500/20 pt-3">
+                        <p className="text-xs text-slate-500 font-semibold">2. TARIFELİ İŞLEM:</p>
+                        <ul className="text-xs text-slate-300 space-y-1 mt-2">
+                          <li>• Tutar: <span className="font-semibold text-yellow-400">{pkg.price} TRY</span></li>
+                          <li>• Referans/Notlar kısmına yazınız (ödeme başlatıldığında gösterilecek)</li>
+                          <li>• İhtiyaç halinde telefonla da yapabilirsiniz</li>
+                        </ul>
+                      </div>
+
+                      <div className="border-t border-amber-500/20 pt-3">
+                        <p className="text-xs text-slate-500 font-semibold">3. DEKONT YÜKLEME:</p>
+                        <p className="text-xs text-slate-300 mt-2">
+                          Havalesi yaptıktan sonra dekont/fatura belgesini panelde yükleyiniz. Admin onayı sonrasında paketiniz otomatik aktive olur.
+                        </p>
+                      </div>
+                    </div>
                   </>
                 ) : (
                   <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                    ⚠️ Banka transfer bilgileri şu anda kullanılamıyor. Lütfen başka bir ödeme yöntemi seçin.
+                    ⚠️ Banka transfer bilgileri şu anda kullanılamıyor. Lütfen destek ekibi ile iletişime geçin.
                   </div>
                 )}
               </div>
@@ -957,15 +923,6 @@ export default function Checkout() {
               📄 Faturayı Göster/İndir
             </button>
 
-            {/* Master License Notice */}
-            {pkg.requiresEscrow && (
-              <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg text-center">
-                <p className="text-xs text-amber-400 font-semibold mb-1">🔐 Master License</p>
-                <p className="text-xs text-slate-400">
-                  Emanet süreci başlatılacak. Admin onayı sonrası kaynak kodu alacaksınız.
-                </p>
-              </div>
-            )}
           </div>
         </div>
       </div>

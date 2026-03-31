@@ -813,9 +813,78 @@ export default function MemberPanel() {
           {/* Receipts Tab */}
           {activeTab === 'receipts' && (
             <div className="space-y-6">
+              {/* Pending Ödeme Talebi - Havale Talimatları */}
+              {(() => {
+                const pendingPayment = localStorage.getItem('currentPaymentRequest');
+                if (!pendingPayment) return null;
+
+                try {
+                  const payment = JSON.parse(pendingPayment);
+                  return (
+                    <Card className="p-6 bg-amber-500/10 border border-amber-500/30 rounded-xl">
+                      <div className="flex items-start gap-4 mb-6">
+                        <div className="p-3 bg-amber-500/20 rounded-full">
+                          <AlertCircle className="w-6 h-6 text-amber-400" />
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-bold text-white mb-1">⏳ Havale Bekleniyor</h3>
+                          <p className="text-amber-300 text-sm">
+                            Ödeme talebiniz oluşturuldu. Lütfen aşağıdaki IBAN'a havale yapıp dekont yükleyiniz.
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* IBAN ve Tutar Bilgisi */}
+                      <div className="bg-slate-900/50 rounded-lg p-4 mb-4 space-y-3 border border-amber-500/20">
+                        <div>
+                          <p className="text-xs text-slate-400 font-semibold mb-2">IBAN (Kopyalamak için tıklayın):</p>
+                          <button
+                            onClick={() => {
+                              if (payment.bankAccount?.iban) {
+                                navigator.clipboard.writeText(payment.bankAccount.iban);
+                                toast.success('IBAN kopyalandı!');
+                              }
+                            }}
+                            className="w-full text-left p-3 bg-slate-800/50 border border-slate-700/50 rounded-lg font-mono text-sm font-semibold text-blue-400 hover:text-blue-300 transition-colors"
+                          >
+                            {payment.bankAccount?.iban} 📋
+                          </button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-xs text-slate-400 mb-1">Alıcı Adı:</p>
+                            <p className="text-white font-semibold">{payment.bankAccount?.accountHolder}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-slate-400 mb-1">Banka:</p>
+                            <p className="text-white font-semibold">{payment.bankAccount?.bankName}</p>
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 mb-1">Tutar:</p>
+                          <p className="text-xl font-bold text-yellow-400">{payment.amount.toLocaleString('tr-TR')} TRY</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400 mb-1">Referans Kodu (Notlar kısmına yazın):</p>
+                          <p className="text-sm font-mono font-semibold text-blue-300 bg-slate-800/30 p-2 rounded">
+                            {payment.referenceCode || payment.id}
+                          </p>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-amber-300 text-center">
+                        ✓ Havalesi yaptıktan sonra dekont/fatura dosyasını aşağıdan yükleyiniz
+                      </p>
+                    </Card>
+                  );
+                } catch (e) {
+                  return null;
+                }
+              })()}
+
               {/* Dekont Yükleme Alanı */}
               <Card className="p-6 bg-slate-800/50 border border-slate-700/50">
-                <h3 className="text-xl font-bold text-white mb-4">Dekont Yükle</h3>
+                <h3 className="text-xl font-bold text-white mb-4">📄 Dekont Yükle</h3>
                 <p className="text-slate-400 text-sm mb-4">
                   Ödemenizi kanıtlamak için dekont (fatura, banka ekstres, ödeme belgesi) yükleyiniz.
                   Dosya formatı: PDF, JPG, PNG. Maksimum boyut: 10 MB
