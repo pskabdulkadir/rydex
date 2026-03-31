@@ -3,13 +3,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { PACKAGES, calculateExpiryTimestamp } from '@shared/packages';
 import { TERMS_AND_CONDITIONS } from '@shared/terms';
 import { Currency, CurrencyInfo } from '@shared/api';
-import { Shield, ArrowLeft, CreditCard, AlertCircle, Banknote, MessageCircle, DollarSign, X } from 'lucide-react';
+import { Shield, ArrowLeft, AlertCircle, Banknote, MessageCircle, DollarSign, X } from 'lucide-react';
 import { Invoice } from '@/components/Invoice';
 import { toast } from 'sonner';
-import {
-  maskCardNumber,
-  getCardType
-} from '@/lib/payment-validation';
 import { createPaymentRecord, verifyPayment, startPaymentVerificationPolling } from '@/lib/payment-verification';
 import { useSubscriptionStatus } from '@/lib/hooks/useSubscriptionStatus';
 import {
@@ -20,7 +16,7 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 
-type PaymentMethod = 'credit-card' | 'bank-transfer';
+type PaymentMethod = 'bank-transfer';
 
 interface BankAccount {
   id: string;
@@ -34,7 +30,7 @@ interface BankAccount {
 
 interface PaymentMethodType {
   id: string;
-  type: 'credit-card' | 'bank-transfer';
+  type: 'bank-transfer';
   isEnabled: boolean;
   label: string;
   description: string;
@@ -60,7 +56,7 @@ export default function Checkout() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('credit-card');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank-transfer');
   const [showInvoice, setShowInvoice] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
@@ -68,12 +64,6 @@ export default function Checkout() {
   const [supportedCurrencies, setSupportedCurrencies] = useState<CurrencyInfo[]>([]);
   const [convertedPrice, setConvertedPrice] = useState(0);
   const [currencyLoading, setCurrencyLoading] = useState(false);
-  const [cardDetails, setCardDetails] = useState({
-    cardName: '',
-    cardNumber: '',
-    expiryDate: '',
-    cvv: ''
-  });
   const [bankDetails, setBankDetails] = useState({
     accountHolder: '',
     iban: ''
@@ -91,7 +81,7 @@ export default function Checkout() {
 
   // Banka transferi seçildiğinde otomatik ilk aktif bankayı doldur
   useEffect(() => {
-    if (paymentMethod === 'bank-transfer' && checkoutSettings.bankAccounts.length > 0) {
+    if (checkoutSettings.bankAccounts.length > 0) {
       const activeBank = checkoutSettings.bankAccounts.find(b => b.isActive);
       if (activeBank && !bankDetails.iban) {
         setBankDetails({
@@ -100,7 +90,7 @@ export default function Checkout() {
         });
       }
     }
-  }, [paymentMethod, checkoutSettings.bankAccounts]);
+  }, [checkoutSettings.bankAccounts]);
 
   // Para birimlerini yükle
   useEffect(() => {
@@ -194,14 +184,6 @@ export default function Checkout() {
       // Mock ödeme yöntemleri ve banka hesapları
       const mockPaymentMethods: PaymentMethodType[] = [
         {
-          id: 'pm_credit_card',
-          type: 'credit-card',
-          isEnabled: true,
-          label: 'Kredi Kartı',
-          description: 'Visa, Mastercard, American Express',
-          updatedAt: Date.now()
-        },
-        {
           id: 'pm_bank_transfer',
           type: 'bank-transfer',
           isEnabled: true,
@@ -215,8 +197,8 @@ export default function Checkout() {
         {
           id: 'bank_001',
           accountHolder: 'Abdulkadir Kan',
-          iban: 'TR93 0001 0009 9999 9999 9999 99',
-          bankName: 'İş Bankası',
+          iban: 'TR32 0015 7000 0000 0091 7751 22',
+          bankName: 'QNB Finans Bank',
           isActive: true,
           createdAt: Date.now() - 86400000,
           updatedAt: Date.now()
@@ -252,12 +234,8 @@ export default function Checkout() {
           coupons: ((couponData.data || []) as CouponType[]).filter((c: CouponType) => c.isActive)
         });
 
-        // İlk etkin ödeme yöntemini seç
-        const allPaymentMethods = paymentData.data?.length ? paymentData.data : mockPaymentMethods;
-        const enabledPayments = (allPaymentMethods as PaymentMethodType[]).filter((pm: PaymentMethodType) => pm.isEnabled);
-        if (enabledPayments.length > 0) {
-          setPaymentMethod(enabledPayments[0].type);
-        }
+        // Banka transferi'ni seç (tek seçenek)
+        setPaymentMethod('bank-transfer');
       } catch (fetchErr) {
         // API başarısız olursa localStorage'dan oku
         console.warn('API\'den veriler yüklenemedi, localStorage kullanılıyor:', fetchErr);
@@ -269,7 +247,7 @@ export default function Checkout() {
           paymentMethods: mockPaymentMethods,
           coupons: []
         });
-        setPaymentMethod('credit-card');
+        setPaymentMethod('bank-transfer');
       }
 
       setIsLoading(false);
@@ -419,17 +397,11 @@ export default function Checkout() {
       console.log('💳 IBAN/Havale Ödeme Başlatıldı');
       console.log(`📦 Paket: ${pkg.name} (${pkg.id})`);
       console.log(`💰 Tutar: ${pkg.price} TRY`);
-      console.log(`🏦 Ödeme Yöntemi: ${paymentMethod === 'bank-transfer' ? 'IBAN Transferi' : 'Kredi Kartı'}`);
+      console.log(`🏦 Ödeme Yöntemi: IBAN Transferi`);
 
       // ─────────────────────────────────────────
       // 1️⃣  ÖDEMEYİ BAŞLAT (BANKA BİLGİLERİNİ AL)
       // ─────────────────────────────────────────
-      if (paymentMethod !== 'bank-transfer') {
-        // Kredi kartı ödeme sistem dışı (sadece IBAN/havale)
-        toast.error('Şu anda sadece IBAN/Havale ile ödeme kabul edilmektedir');
-        setError('Sadece IBAN/Havale ödeme yöntemi aktif');
-        return;
-      }
 
       const initiateResponse = await fetch('/api/payment/initiate', {
         method: 'POST',
@@ -652,152 +624,60 @@ export default function Checkout() {
           <div className="bg-slate-900/50 border border-slate-700/50 rounded-xl p-8 backdrop-blur-sm sticky top-6">
             <h3 className="text-xl font-bold text-white mb-6">Ödeme Yöntemi</h3>
 
-            {/* Supported Methods */}
-            <div className="space-y-3 mb-8">
-              {isLoading ? (
-                <div className="text-slate-400 text-sm text-center py-4">Ödeme yöntemleri yükleniyor...</div>
-              ) : checkoutSettings.paymentMethods.filter(pm => pm.isEnabled).length > 0 ? (
-                checkoutSettings.paymentMethods
-                  .filter(pm => pm.isEnabled)
-                  .map(method => (
-                    <label key={method.id} className={`block p-4 border-2 rounded-lg cursor-pointer transition-all ${
-                      paymentMethod === method.type
-                        ? 'border-blue-500 bg-blue-500/5'
-                        : 'border-slate-700/50 hover:border-slate-600'
-                    }`}>
-                      <input
-                        type="radio"
-                        name="payment"
-                        checked={paymentMethod === method.type}
-                        onChange={() => setPaymentMethod(method.type)}
-                        className="accent-blue-500"
-                      />
-                      <span className="ml-3 text-white font-semibold flex items-center gap-2">
-                        {method.type === 'credit-card' && <CreditCard className="w-4 h-4" />}
-                        {method.type === 'bank-transfer' && <Banknote className="w-4 h-4" />}
-                        {method.label}
-                      </span>
-                      <p className="text-xs text-slate-400 ml-7 mt-1">{method.description}</p>
-                    </label>
-                  ))
-              ) : (
-                <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                  <p className="font-semibold mb-1">⚠️ Ödeme Yöntemi Kullanılamıyor</p>
-                  <p>Şu anda aktif bir ödeme yöntemi bulunmamaktadır. Lütfen destek ekibi ile iletişime geçin.</p>
-                </div>
-              )}
-            </div>
-
-            {/* Payment Forms */}
-            {paymentMethod === 'credit-card' && (
-              <div className="space-y-4 mb-8 pb-6 border-b border-slate-700/50">
-                <h4 className="text-sm font-semibold text-slate-300">Kart Bilgileri</h4>
-                <input
-                  type="text"
-                  placeholder="Kart Sahibinin Adı"
-                  value={cardDetails.cardName}
-                  onChange={(e) => setCardDetails({ ...cardDetails, cardName: e.target.value })}
-                  className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder-slate-500 focus:border-blue-500 outline-none"
-                />
-                <div>
-                  <input
-                    type="text"
-                    placeholder="Kart Numarası (13-19 haneli)"
-                    value={cardDetails.cardNumber}
-                    onChange={(e) => {
-                      const cleaned = e.target.value.replace(/\D/g, '').slice(0, 19);
-                      setCardDetails({ ...cardDetails, cardNumber: cleaned });
-                    }}
-                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder-slate-500 focus:border-blue-500 outline-none"
-                  />
-                  {cardDetails.cardNumber && (
-                    <div className="mt-2 flex items-center justify-between text-xs">
-                      <span className="text-slate-400">
-                        {getCardType(cardDetails.cardNumber)}
-                      </span>
-                      <span className={cardDetails.cardNumber.length >= 13 && cardDetails.cardNumber.length <= 19 ? 'text-green-400' : 'text-yellow-400'}>
-                        {cardDetails.cardNumber.length} hane
-                      </span>
+            {/* IBAN Transfer Instructions */}
+            <div className="space-y-4 mb-8">
+              <div className="bg-green-500/10 border border-green-500/30 p-4 rounded-lg space-y-4">
+                <div className="space-y-2">
+                  <p className="text-xs text-slate-300 font-semibold">1. ÖDEME YAPACAĞINIZ HESAP:</p>
+                  {checkoutSettings.bankAccounts.filter(b => b.isActive).length > 0 ? (
+                    checkoutSettings.bankAccounts.filter(b => b.isActive).map((bank) => (
+                      <div key={bank.id} className="bg-slate-800/50 p-3 rounded border border-slate-700/50">
+                        <div className="mb-2">
+                          <p className="text-xs text-slate-400">Alıcı Adı:</p>
+                          <p className="text-sm font-semibold text-white">{bank.accountHolder}</p>
+                        </div>
+                        <div className="mb-2">
+                          <p className="text-xs text-slate-400">IBAN (Kopyalamak için tıklayın):</p>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(bank.iban);
+                              toast.success('IBAN kopyalandı!');
+                            }}
+                            className="w-full text-left text-sm font-mono font-semibold text-blue-400 hover:text-blue-300 bg-slate-900/50 p-2 rounded border border-slate-700/50 transition-colors"
+                          >
+                            {bank.iban} 📋
+                          </button>
+                        </div>
+                        <div>
+                          <p className="text-xs text-slate-400">Banka:</p>
+                          <p className="text-sm font-semibold text-white">{bank.bankName}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
+                      ⚠️ Banka transfer bilgileri şu anda kullanılamıyor. Lütfen destek ekibi ile iletişime geçin.
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <input
-                    type="text"
-                    placeholder="MM/YY"
-                    value={cardDetails.expiryDate}
-                    onChange={(e) => setCardDetails({ ...cardDetails, expiryDate: e.target.value })}
-                    className="px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder-slate-500 focus:border-blue-500 outline-none"
-                  />
-                  <input
-                    type="text"
-                    placeholder="CVV"
-                    value={cardDetails.cvv}
-                    onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value.replace(/\D/g, '').slice(0, 3) })}
-                    className="px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white text-sm placeholder-slate-500 focus:border-blue-500 outline-none"
-                  />
+
+                <div className="border-t border-green-500/20 pt-3">
+                  <p className="text-xs text-slate-300 font-semibold">2. TARİFELİ İŞLEM:</p>
+                  <ul className="text-xs text-slate-300 space-y-1 mt-2">
+                    <li>• Tutar: <span className="font-semibold text-yellow-400">{pkg.price} TRY</span></li>
+                    <li>• Referans/Notlar kısmına yazınız (ödeme başlatıldığında gösterilecek)</li>
+                    <li>• İhtiyaç halinde telefonla da yapabilirsiniz</li>
+                  </ul>
+                </div>
+
+                <div className="border-t border-green-500/20 pt-3">
+                  <p className="text-xs text-slate-300 font-semibold">3. DEKONT YÜKLEME:</p>
+                  <p className="text-xs text-slate-300 mt-2">
+                    Havalesi yaptıktan sonra dekont/fatura belgesini panelde yükleyiniz. Admin onayı sonrasında paketiniz otomatik aktive olur.
+                  </p>
                 </div>
               </div>
-            )}
-
-            {paymentMethod === 'bank-transfer' && (
-              <div className="space-y-4 mb-8 pb-6 border-b border-slate-700/50">
-                <h4 className="text-sm font-semibold text-amber-400">💳 IBAN Transferi Talimatları</h4>
-                {checkoutSettings.bankAccounts.filter(b => b.isActive).length > 0 ? (
-                  <>
-                    <div className="bg-amber-500/10 border border-amber-500/30 p-4 rounded-lg space-y-4">
-                      <div className="space-y-2">
-                        <p className="text-xs text-slate-500 font-semibold">1. ÖDEME YAPACAĞINIZ HESAP:</p>
-                        {checkoutSettings.bankAccounts.filter(b => b.isActive).map((bank) => (
-                          <div key={bank.id} className="bg-slate-800/50 p-3 rounded border border-slate-700/50">
-                            <div className="mb-2">
-                              <p className="text-xs text-slate-400">Alıcı Adı:</p>
-                              <p className="text-sm font-semibold text-white">{bank.accountHolder}</p>
-                            </div>
-                            <div className="mb-2">
-                              <p className="text-xs text-slate-400">IBAN (Kopyalamak için tıklayın):</p>
-                              <button
-                                onClick={() => {
-                                  navigator.clipboard.writeText(bank.iban);
-                                  toast.success('IBAN kopyalandı!');
-                                }}
-                                className="w-full text-left text-sm font-mono font-semibold text-blue-400 hover:text-blue-300 bg-slate-900/50 p-2 rounded border border-slate-700/50 transition-colors"
-                              >
-                                {bank.iban} 📋
-                              </button>
-                            </div>
-                            <div>
-                              <p className="text-xs text-slate-400">Banka:</p>
-                              <p className="text-sm font-semibold text-white">{bank.bankName}</p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      <div className="border-t border-amber-500/20 pt-3">
-                        <p className="text-xs text-slate-500 font-semibold">2. TARIFELİ İŞLEM:</p>
-                        <ul className="text-xs text-slate-300 space-y-1 mt-2">
-                          <li>• Tutar: <span className="font-semibold text-yellow-400">{pkg.price} TRY</span></li>
-                          <li>• Referans/Notlar kısmına yazınız (ödeme başlatıldığında gösterilecek)</li>
-                          <li>• İhtiyaç halinde telefonla da yapabilirsiniz</li>
-                        </ul>
-                      </div>
-
-                      <div className="border-t border-amber-500/20 pt-3">
-                        <p className="text-xs text-slate-500 font-semibold">3. DEKONT YÜKLEME:</p>
-                        <p className="text-xs text-slate-300 mt-2">
-                          Havalesi yaptıktan sonra dekont/fatura belgesini panelde yükleyiniz. Admin onayı sonrasında paketiniz otomatik aktive olur.
-                        </p>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400 text-sm">
-                    ⚠️ Banka transfer bilgileri şu anda kullanılamıyor. Lütfen destek ekibi ile iletişime geçin.
-                  </div>
-                )}
-              </div>
-            )}
+            </div>
 
             {/* Processing Message */}
             {paymentProcessing && (
@@ -891,7 +771,7 @@ export default function Checkout() {
               disabled={isLoading || !termsAccepted}
               className="w-full py-3 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 disabled:from-slate-600 disabled:to-slate-600 disabled:cursor-not-allowed text-white font-bold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-blue-500/30 mb-3"
             >
-              <CreditCard className="w-5 h-5" />
+              <Banknote className="w-5 h-5" />
               {isLoading ? 'İşleniyor...' : 'Ödemeyi Tamamla'}
             </button>
 

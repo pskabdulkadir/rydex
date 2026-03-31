@@ -49,15 +49,15 @@ export default function Login() {
         const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
         if (userDoc.exists()) {
           const userData = userDoc.data();
-          // Eğer adminse admin paneline, değilse dashboard'a yönlendir
+          // Eğer adminse admin paneline, değilse üye paneline yönlendir
           if (userData.role === 'admin') {
             navigate('/admin');
           } else {
-            navigate('/dashboard');
+            navigate('/member-panel');
           }
         } else {
-          // Kullanıcı dokümanı bulunamadıysa dashboard'a yönlendir
-          navigate('/dashboard');
+          // Kullanıcı dokümanı bulunamadıysa üye paneline yönlendir
+          navigate('/member-panel');
         }
       }
     } catch (error) {

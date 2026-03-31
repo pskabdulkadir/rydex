@@ -79,15 +79,6 @@ import {
   handleExportExcel
 } from "./routes/export";
 import {
-  handleValidateLuhn,
-  handleDetectCardType,
-  handleValidateCreditCard,
-  handleMaskCardNumber,
-  handleCalculateChecksum,
-  handleFormatCardNumber,
-  handleGetTestCards
-} from "./routes/card-validation";
-import {
   handleEnable2FA,
   handleVerify2FA,
   handleDisable2FA,
@@ -483,14 +474,6 @@ export function createServer() {
   app.get("/api/export/json", handleExportJSON);
   app.get("/api/export/excel", handleExportExcel);
 
-  // ============ CARD VALIDATION ROUTES (GÖREV 9) ============
-  app.post("/api/payment/validate-luhn", handleValidateLuhn);
-  app.post("/api/payment/detect-card-type", handleDetectCardType);
-  app.post("/api/payment/validate-card", handleValidateCreditCard);
-  app.post("/api/payment/mask-card", handleMaskCardNumber);
-  app.post("/api/payment/calculate-checksum", handleCalculateChecksum);
-  app.post("/api/payment/format-card", handleFormatCardNumber);
-  app.get("/api/payment/test-cards", handleGetTestCards);
 
   // ============ TWO-FACTOR AUTH ROUTES (GÖREV 10) ============
   // Strict rate limiting for 2FA operations

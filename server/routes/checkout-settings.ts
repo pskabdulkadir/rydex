@@ -13,7 +13,7 @@ interface BankAccount {
 
 interface PaymentMethod {
   id: string;
-  type: 'credit-card' | 'bank-transfer';
+  type: 'bank-transfer';
   isEnabled: boolean;
   label: string;
   description: string;
@@ -56,7 +56,7 @@ const defaultCheckoutSettings: CheckoutSettings = {
       id: 'bank_1',
       accountHolder: 'Abdulkadir Kan',
       iban: 'TR32 0015 7000 0000 0091 7751 22',
-      bankName: 'QNB Finansbank',
+      bankName: 'QNB Finans Bank',
       isActive: true,
       createdAt: Date.now(),
       updatedAt: Date.now(),
@@ -64,19 +64,11 @@ const defaultCheckoutSettings: CheckoutSettings = {
   ],
   paymentMethods: [
     {
-      id: 'pm_creditcard',
-      type: 'credit-card',
-      isEnabled: true,
-      label: 'Kredi Kartı',
-      description: 'Visa, Mastercard, American Express',
-      updatedAt: Date.now(),
-    },
-    {
       id: 'pm_banktransfer',
       type: 'bank-transfer',
       isEnabled: true,
       label: 'Banka Transferi',
-      description: 'Türk bankalarına banka transferi',
+      description: 'EFT / Havale ile ödeme',
       updatedAt: Date.now(),
     },
   ],

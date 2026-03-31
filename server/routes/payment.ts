@@ -63,9 +63,9 @@ export const initiatePayment: RequestHandler = async (req, res) => {
     const bankAccounts: BankAccount[] = [
       {
         id: 'bank_001',
-        accountHolder: 'Rydex Yazılım',
-        iban: 'TR93 0001 0009 9999 9999 9999 99',
-        bankName: 'İş Bankası',
+        accountHolder: 'Abdulkadir Kan',
+        iban: 'TR32 0015 7000 0000 0091 7751 22',
+        bankName: 'QNB Finans Bank',
         isActive: true,
         createdAt: Date.now() - 86400000,
         updatedAt: Date.now()

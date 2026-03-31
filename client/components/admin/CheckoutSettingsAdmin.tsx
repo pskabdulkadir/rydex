@@ -17,7 +17,7 @@ interface BankAccount {
 
 interface PaymentMethod {
   id: string;
-  type: 'credit-card' | 'bank-transfer';
+  type: 'bank-transfer';
   isEnabled: boolean;
   label: string;
   description: string;
@@ -59,7 +59,7 @@ export default function CheckoutSettingsAdmin() {
   const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
   const [editingPaymentId, setEditingPaymentId] = useState<string | null>(null);
   const [newPaymentMethod, setNewPaymentMethod] = useState({
-    type: 'credit-card' as 'credit-card' | 'bank-transfer',
+    type: 'bank-transfer' as 'bank-transfer',
     label: '',
     description: '',
     isEnabled: true
@@ -604,10 +604,9 @@ export default function CheckoutSettingsAdmin() {
                 <label className="text-sm text-slate-300 mb-2 block">Ödeme Türü</label>
                 <select
                   value={newPaymentMethod.type}
-                  onChange={(e) => setNewPaymentMethod({ ...newPaymentMethod, type: e.target.value as 'credit-card' | 'bank-transfer' })}
+                  onChange={(e) => setNewPaymentMethod({ ...newPaymentMethod, type: e.target.value as 'bank-transfer' })}
                   className="w-full bg-slate-700/50 border border-slate-600 text-white rounded px-3 py-2"
                 >
-                  <option value="credit-card">Kredi Kartı</option>
                   <option value="bank-transfer">Banka Transferi</option>
                 </select>
               </div>
