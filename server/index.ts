@@ -612,7 +612,6 @@ export function createServer() {
 
   // ============ PAYMENT VERIFICATION ROUTES ============
   app.post("/api/payment/verify", verifyPaymentStatus);
-  app.post("/api/payment/initiate", initiatePaymentV2);
   app.get("/api/payment/status/:orderId", checkPaymentStatusV2);
   app.post("/api/payment/webhook", paymentWebhookV2);
   app.post("/api/payment/refund", refundPayment);
