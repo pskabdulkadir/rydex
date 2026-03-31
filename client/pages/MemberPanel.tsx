@@ -161,6 +161,11 @@ export default function MemberPanel() {
           'x-user-id': user?.uid || '',
         },
       });
+
+      if (!response.ok) {
+        throw new Error(`API Hatası: ${response.status}`);
+      }
+
       const data = await response.json();
       if (data.success) {
         setReceipts(data.receipts || []);
@@ -174,7 +179,16 @@ export default function MemberPanel() {
         }
       }
     } catch (error) {
-      console.error('Dekont getirme hatası:', error);
+      // API başarısız - fallback (localStorage'dan oku)
+      console.warn('⚠️ Dekonlar API\'den alınamadı, localStorage kullanılıyor:', error);
+
+      try {
+        const savedReceipts = JSON.parse(localStorage.getItem('userReceipts') || '[]');
+        setReceipts(savedReceipts);
+      } catch (e) {
+        console.error('Dekont getirme hatası:', error);
+        setReceipts([]);
+      }
     }
   };
 

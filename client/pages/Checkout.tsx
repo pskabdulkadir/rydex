@@ -403,27 +403,79 @@ export default function Checkout() {
       // 1️⃣  ÖDEMEYİ BAŞLAT (BANKA BİLGİLERİNİ AL)
       // ─────────────────────────────────────────
 
-      const initiateResponse = await fetch('/api/payment/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId,
-          packageId: pkg.id,
+      let referenceCode: string;
+      let bankAccount: any;
+      let initiateData: any;
+
+      try {
+        const initiateResponse = await fetch('/api/payment/initiate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId,
+            packageId: pkg.id,
+            amount: pkg.price,
+            email: userEmail,
+            currency: selectedCurrency,
+            returnUrl: window.location.origin + '/member-panel'
+          })
+        });
+
+        // API başarılı yanıt verdi
+        if (initiateResponse.ok) {
+          initiateData = await initiateResponse.json();
+
+          if (!initiateData.success) {
+            throw new Error(initiateData.message || 'Ödeme başlatma başarısız');
+          }
+
+          referenceCode = initiateData.referenceCode;
+          bankAccount = initiateData.bankAccount;
+
+          console.log('✅ API\'den ödeme bilgileri alındı');
+        } else {
+          throw new Error(`API Hatası: ${initiateResponse.status}`);
+        }
+      } catch (apiError) {
+        // API başarısız - fallback (mock) kullan
+        console.warn('⚠️ API\'ye erişilemedi, mock data kullanılıyor:', apiError);
+
+        // checkoutSettings'ten banka hesabını al
+        const activeBanks = checkoutSettings.bankAccounts.filter(b => b.isActive);
+        bankAccount = activeBanks.length > 0 ? activeBanks[0] : {
+          id: 'bank_001',
+          accountHolder: 'Abdulkadir Kan',
+          iban: 'TR32 0015 7000 0000 0091 7751 22',
+          bankName: 'QNB Finans Bank',
+          isActive: true,
+          createdAt: Date.now() - 86400000,
+          updatedAt: Date.now()
+        };
+
+        // Referans kodu lokal oluştur
+        referenceCode = `RYDEX-${Date.now()}-${userId.substring(0, 6)}-${pkg.id.substring(0, 3)}`.toUpperCase();
+
+        // Mock initiateData oluştur
+        initiateData = {
+          success: true,
+          message: 'Ödeme bilgileri hazırlandı (Offline Mode)',
+          referenceCode,
+          bankAccount,
           amount: pkg.price,
-          email: userEmail,
+          packageId: pkg.id,
           currency: selectedCurrency,
-          returnUrl: window.location.origin + '/member-panel'
-        })
-      });
+          instructions: {
+            step1: 'Belirtilen IBAN\'a belirtilen tutar kadar havale/transfer yapınız',
+            step2: `Gönderenin ismine referans kodu yazınız: ${referenceCode}`,
+            step3: 'Dekont (fatura, banka ekstres) yükleyiniz',
+            step4: 'Admin onayını bekleyiniz'
+          }
+        };
 
-      const initiateData = await initiateResponse.json();
-
-      if (!initiateData.success) {
-        throw new Error(initiateData.message || 'Ödeme başlatma başarısız');
+        toast.warning('⚠️ Çevrimdışı Mode: Mock veriler kullanılıyor', {
+          duration: 3000
+        });
       }
-
-      const referenceCode = initiateData.referenceCode;
-      const bankAccount = initiateData.bankAccount;
 
       console.log('✅ Ödeme Başlatıldı');
       console.log(`   Referans Kodu: ${referenceCode}`);
