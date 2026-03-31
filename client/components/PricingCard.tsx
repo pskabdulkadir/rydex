@@ -43,14 +43,27 @@ export function PricingCard({ package: pkg, onSelect, isPopular = false }: Prici
 
         {/* Price */}
         <div className="mb-6">
-          <div className="flex items-baseline">
-            <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
-              {pkg.price.toLocaleString('tr-TR')}
-            </span>
-            <span className="text-slate-400 ml-2">₺</span>
-          </div>
-          {!pkg.isLifetime && (
-            <p className="text-xs text-slate-500 mt-1">Paket başına</p>
+          {pkg.requiresEscrow ? (
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-amber-400 italic">
+                Lütfen fiyat bilgisi alınız
+              </p>
+              <p className="text-xs text-slate-400">
+                Emanet Süreci protokolü ile müzakere edilir
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="flex items-baseline">
+                <span className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">
+                  {pkg.price.toLocaleString('tr-TR')}
+                </span>
+                <span className="text-slate-400 ml-2">₺</span>
+              </div>
+              {!pkg.isLifetime && (
+                <p className="text-xs text-slate-500 mt-1">Paket başına</p>
+              )}
+            </>
           )}
         </div>
 
