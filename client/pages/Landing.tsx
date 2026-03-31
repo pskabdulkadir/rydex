@@ -542,7 +542,7 @@ export default function Landing() {
             </div>
 
             {/* Pricing Cards Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
               {packages.map((pkg) => (
                 <PricingCard
                   key={pkg.id}
@@ -551,6 +551,141 @@ export default function Landing() {
                   isPopular={pkg.id === 'ultimate' || pkg.id === 'monthly'}
                 />
               ))}
+            </div>
+
+            {/* ÜRÜN VE HİZMET AYRINTILARI Bölümü */}
+            <div className="bg-gradient-to-br from-slate-900/80 to-slate-800/80 border border-slate-700/50 rounded-xl p-8 sm:p-12 mb-12">
+              <h3 className="text-2xl sm:text-3xl font-bold text-white mb-8">📋 ÜRÜN VE HİZMET AYRINTILARI</h3>
+
+              <div className="text-slate-300 mb-12 leading-relaxed">
+                <p className="mb-6">
+                  Aşağıdaki tüm paketler, <span className="font-semibold text-amber-400">Rydex Yeraltı Dünyası Simülasyon Yazılımı</span> içerisinde belirli sürelerle tanımlanan dijital kullanım haklarını kapsamaktadır. Satın alınan her paket, kullanıcının seçtiği süre boyunca ilgili teknik araçlara erişimini sağlar.
+                </p>
+              </div>
+
+              {/* Service Packages Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Starter */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">📦 1. Starter Scan (Temel Tarama)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>1 Saat kesintisiz erişim.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>Yazılım içindeki temel 3D görselleştirme motoruna erişim, standart harita katmanlarını görüntüleme ve analiz sonuçlarına manuel işaretçi (marker) yerleştirme yetkisidir.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Çıktı:</p>
+                      <p>Temel düzeyde simülasyon raporu görüntüleme.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Pro */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">📦 2. Pro Explorer (Profesyonel Kaşif)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>3 Saat kesintisiz erişim.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>Starter paketindeki tüm özelliklere ek olarak; simülasyon algoritmasında Metal Ayrımı fonksiyonunun aktif edilmesi ve yeraltı katmanlarının dijital olarak birbirinden ayrıştırılması (Katman Analizi) hizmetidir.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Çıktı:</p>
+                      <p>Verilerin dijital olarak dışa aktarılması (Export) imkanı.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Deep */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">📦 3. Deep Analyser (Derin Analiz)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>12 Saat kesintisiz erişim.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>Pro paketine ek olarak; GPR (Yer Radarı) simülasyon modülünün aktif edilmesi, çok katmanlı veri analitiği ve yazılımın veri tabanına sınırlı API erişimi sağlanmasıdır.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Çıktı:</p>
+                      <p>İleri seviye analitik grafikler ve derinlik kestirim modelleri.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Ultimate */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">📦 4. Ultimate Access (Tam Erişim)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>24 Saat kesintisiz erişim.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>Yazılımın tüm modülleri (GPR, Metal Ayrımı, Sensör Verisi) sınırsız olarak kullanıma açılır. Gerçek zamanlı veri akışı simülasyonu ve öncelikli teknik destek hattı dahildir.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Çıktı:</p>
+                      <p>Tüm ileri seviye analitik araçları ve özel raporlama modülleri.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Monthly */}
+                <div className="bg-slate-800/40 border border-slate-700/50 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">🏢 5. Monthly Corp (Kurumsal Aylık)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>30 Takvim Günü.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>5 kullanıcıya kadar ekip yönetimi, 100GB Bulut veri depolama alanı ve kurumsal raporlama modülüdür. Yazılımın API v2 versiyonu ile dış sistemlerle tam entegrasyon hakkı tanınır.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Çıktı:</p>
+                      <p>Kurumsal düzey analitik ve ekip işbirliği araçları.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Master */}
+                <div className="bg-gradient-to-br from-amber-600/20 to-orange-600/20 border border-amber-500/30 rounded-lg p-6">
+                  <h4 className="text-lg font-bold text-white mb-4">🔐 6. Master License (Ömür Boyu & Ticari Haklar)</h4>
+                  <div className="space-y-3 text-sm text-slate-300">
+                    <div>
+                      <p className="font-semibold text-amber-400">Hizmet Süresi:</p>
+                      <p>Sınırsız / Ömür Boyu.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Teknik Kapsam:</p>
+                      <p>Yazılımın kaynak kod erişimi, ticari amaçla yeniden markalandırma (White-Label) hakkı ve yazılımın ticari mülkiyet haklarının devridir.</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold text-amber-400">Güvence:</p>
+                      <p>Bu işlem <span className="text-amber-400 font-semibold">Emanet Süreci (Escrow) protokolü</span> ile yasal güvence altına alınarak tamamlanmaktadır.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer Note */}
+              <div className="mt-8 p-4 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                <p className="text-sm text-slate-300">
+                  <span className="font-semibold text-blue-400">💡 Bilgi:</span> Fiyatlara KDV dahildir. Master License gibi yüksek tutar işlemlerde müşteri hizmetlerimiz ile iletişime geçerek en uygun koşulları belirleyebilirsiniz.
+                </p>
+              </div>
             </div>
 
             {/* Pricing note */}
