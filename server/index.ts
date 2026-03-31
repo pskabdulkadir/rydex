@@ -2,10 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { initializeDatabase, getDatabase } from "./database";
-import { initiatePayment, paymentWebhook, getPaymentStatus, escrowNotify } from "./routes/payment";
+import { initiatePayment, getPaymentStatus, escrowNotify } from "./routes/payment";
 import {
   verifyPaymentStatus,
-  initiatePayment as initiatePaymentV2,
   checkPaymentStatus as checkPaymentStatusV2,
   paymentWebhook as paymentWebhookV2,
   refundPayment
@@ -1459,7 +1458,7 @@ export function createServer() {
   app.post("/api/payment/initiate", strictRateLimiter, initiatePayment);
 
   // Webhook handler (Payment Gateway'den callback) - daha rahat
-  app.post("/api/payment/webhook", normalRateLimiter, paymentWebhook);
+  app.post("/api/payment/webhook", normalRateLimiter, paymentWebhookV2);
 
   // Ödeme durumunu kontrol et - relaxed
   app.get("/api/payment/status/:orderId", relaxedRateLimiter, getPaymentStatus);

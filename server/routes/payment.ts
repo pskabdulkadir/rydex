@@ -365,6 +365,63 @@ export const rejectReceipt: RequestHandler = async (req, res) => {
 };
 
 /**
+ * Master License Escrow Bildirimi
+ * POST /api/payment/escrow-notify
+ * Escrow sistem tarafından çağrılır
+ */
+export const escrowNotify: RequestHandler = async (req, res) => {
+  try {
+    const { transactionId, status, amount, licenseeId } = req.body;
+
+    if (!transactionId || !status) {
+      return res.status(400).json({
+        success: false,
+        message: 'transactionId ve status gereklidir'
+      });
+    }
+
+    console.log(`🔐 Escrow Bildirimi Alındı:`);
+    console.log(`   Transaction: ${transactionId}`);
+    console.log(`   Status: ${status}`);
+    console.log(`   Amount: ${amount}`);
+    console.log(`   Licensee: ${licenseeId}`);
+
+    // Escrow durumunu kaydet (demo sistem)
+    const escrowRecord = {
+      id: transactionId,
+      status,
+      amount,
+      licenseeId,
+      receivedAt: Date.now(),
+      acknowledged: true
+    };
+
+    // localStorage'a kaydet
+    try {
+      const escrowRecords = JSON.parse(localStorage.getItem('escrow_records') || '[]');
+      escrowRecords.push(escrowRecord);
+      localStorage.setItem('escrow_records', JSON.stringify(escrowRecords));
+    } catch (e) {
+      console.warn('Escrow record localStorage kayıt hatası:', e);
+    }
+
+    res.json({
+      success: true,
+      message: 'Escrow bildirimi başarıyla alındı',
+      acknowledged: true,
+      recordId: transactionId
+    });
+  } catch (error) {
+    console.error('Escrow notification hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Escrow bildirimi işlenirken hata oluştu',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
+
+/**
  * Sistem health check
  * GET /api/payment/health
  */
@@ -377,7 +434,8 @@ export const healthCheck: RequestHandler = (req, res) => {
       'IBAN transferi',
       'Dekont yükleme',
       'Admin onayı',
-      'Subscription aktivasyonu'
+      'Subscription aktivasyonu',
+      'Escrow Bildirimi'
     ]
   });
 };
