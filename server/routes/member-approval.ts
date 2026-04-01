@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { getDatabase } from "../database";
 import { getAdminDb } from "../lib/firebase-admin";
+import { PACKAGES, calculateExpiryTimestamp, PackageType } from "@shared/packages";
 
 const toISOTime = (value: any): string => {
   if (!value) return new Date().toISOString();
@@ -28,19 +29,24 @@ export const handleGetPendingMembers: RequestHandler = async (req, res) => {
   try {
     const firestoreDb = getAdminDb();
     if (firestoreDb) {
-      const snapshot = await firestoreDb
+      // Önce tüm kullanıcıları al
+      const allSnapshot = await firestoreDb
         .collection('users')
-        .where('approval_status', '==', 'pending')
         .get();
 
-      const firestoreMembers = snapshot.docs
+      // Pending ve approved olanları ayrıştır
+      const allMembers = allSnapshot.docs
         .map(mapFirestoreMember)
         .sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
 
+      // Pending olanları döndür (ama tüm kullanıcılar da döndür)
+      const pendingMembers = allMembers.filter((m: any) => m.approval_status === 'pending');
+
       return res.json({
         success: true,
-        count: firestoreMembers.length,
-        members: firestoreMembers,
+        count: pendingMembers.length,
+        members: pendingMembers,
+        allMembers: allMembers, // Admin panelinde göstermek için tüm üyeleri de döndür
       });
     }
 
@@ -72,11 +78,97 @@ export const handleGetPendingMembers: RequestHandler = async (req, res) => {
 };
 
 /**
+ * Eski kullanıcıları getir (Reddedilen, Suspended, vb.) - Admin için
+ */
+export const handleGetOldUsers: RequestHandler = async (req, res) => {
+  try {
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      // Tüm kullanıcıları al
+      const allSnapshot = await firestoreDb
+        .collection('users')
+        .get();
+
+      // Tüm kullanıcıları map et
+      const allMembers = allSnapshot.docs
+        .map((doc) => {
+          const data = doc.data() || {};
+          return {
+            id: doc.id,
+            username: data.username || data.displayName || data.email || doc.id,
+            email: data.email || '',
+            phone: data.phone || data.phoneNumber || '',
+            created_at: toISOTime(data.createdAt || data.created_at),
+            approval_status: data.approval_status || data.approvalStatus || 'pending',
+            is_active: data.is_active !== false,
+            subscription_end: data.subscription_end ? toISOTime(data.subscription_end) : null,
+            rejection_reason: data.rejection_reason || null,
+            approved_at: data.approved_at ? toISOTime(data.approved_at) : null,
+            approved_by: data.approved_by || null,
+          };
+        })
+        .sort((a: any, b: any) => a.created_at.localeCompare(b.created_at));
+
+      // Eski kullanıcıları filter et (reddedilen, inactive, subscription süresi geçen)
+      const oldUsers = allMembers.filter((user: any) => {
+        // 1. Reddedilen kullanıcılar
+        if (user.approval_status === 'rejected') return true;
+
+        // 2. İnaktif kullanıcılar
+        if (!user.is_active) return true;
+
+        // 3. Subscription'ı geçen kullanıcılar
+        if (user.subscription_end && new Date(user.subscription_end) < new Date()) return true;
+
+        return false;
+      });
+
+      return res.json({
+        success: true,
+        count: oldUsers.length,
+        oldUsers: oldUsers,
+        stats: {
+          total: allMembers.length,
+          rejected: allMembers.filter((u: any) => u.approval_status === 'rejected').length,
+          inactive: allMembers.filter((u: any) => !u.is_active).length,
+          subscriptionExpired: allMembers.filter((u: any) =>
+            u.subscription_end && new Date(u.subscription_end) < new Date()
+          ).length,
+        }
+      });
+    }
+
+    const db = getDatabase();
+    const pendingUsers = await db.getPendingUsers();
+
+    res.json({
+      success: true,
+      count: 0,
+      oldUsers: [],
+      stats: {
+        total: 0,
+        rejected: 0,
+        inactive: 0,
+        subscriptionExpired: 0,
+      }
+    });
+  } catch (error) {
+    console.error('Eski kullanıcıları getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Eski kullanıcılar alınamadı',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
+
+/**
  * Kullanıcı onayını güncelle (Admin işlemi)
+ * Onay yapıldığında otomatik olarak paket açılır
  */
 export const handleApproveUser: RequestHandler = async (req, res) => {
   try {
-    const { userId, status, reason } = req.body;
+    const { userId, status, reason, packageId = 'starter' } = req.body;
     const adminId = (req as any).adminId || 'admin';
 
     if (!userId || !['approved', 'rejected'].includes(status)) {
@@ -86,29 +178,59 @@ export const handleApproveUser: RequestHandler = async (req, res) => {
       });
     }
 
+    // Paket validasyonu
+    if (status === 'approved' && !PACKAGES[packageId as PackageType]) {
+      return res.status(400).json({
+        success: false,
+        error: `Geçersiz paket: ${packageId}`
+      });
+    }
+
     const firestoreDb = getAdminDb();
     if (firestoreDb) {
       const userRef = firestoreDb.collection('users').doc(userId);
       const userSnap = await userRef.get();
 
       if (userSnap.exists) {
-        await userRef.set({
+        // Paket bilgisini al
+        const pkg = PACKAGES[packageId as PackageType];
+        const startTime = Date.now();
+        const expiryTime = calculateExpiryTimestamp(packageId as PackageType, startTime);
+
+        // Update data
+        const updateData: any = {
           approval_status: status,
           approved_by: adminId,
           approved_at: new Date().toISOString(),
           rejection_reason: status === 'rejected' ? (reason || null) : null,
           is_active: status === 'approved',
-        }, { merge: true });
+        };
+
+        // Onay yapıldıysa subscription set et
+        if (status === 'approved' && pkg) {
+          updateData.current_package = packageId;
+          updateData.subscription_start = new Date(startTime).toISOString();
+          updateData.subscription_end = new Date(expiryTime).toISOString();
+          updateData.package_activated_at = new Date().toISOString();
+          updateData.package_activated_by = adminId;
+        }
+
+        await userRef.set(updateData, { merge: true });
 
         console.log(`✅ Üye ${status}: ${userId} (Firestore, Admin: ${adminId})`);
+        if (status === 'approved') {
+          console.log(`📦 Paket açıldı: ${packageId} (Süresi: ${pkg?.duration})`);
+        }
 
         return res.json({
           success: true,
           message: status === 'approved'
-            ? 'Üye başarıyla onaylandı'
+            ? `Üye onaylandı ve ${pkg?.name} paketi otomatik açıldı`
             : 'Üye başarıyla reddedildi',
           userId,
-          status
+          status,
+          packageId: status === 'approved' ? packageId : undefined,
+          subscriptionEnd: status === 'approved' ? new Date(expiryTime).toISOString() : undefined
         });
       }
     }
@@ -128,16 +250,29 @@ export const handleApproveUser: RequestHandler = async (req, res) => {
       });
     }
 
-    // Onay başarılı ise log tutuş
+    // Onay başarılı ise paket data al ve subscription set et
+    let subscriptionEnd = undefined;
+    if (status === 'approved') {
+      const pkg = PACKAGES[packageId as PackageType];
+      if (pkg) {
+        const startTime = Date.now();
+        const expiryTime = calculateExpiryTimestamp(packageId as PackageType, startTime);
+        subscriptionEnd = new Date(expiryTime).toISOString();
+        console.log(`📦 Paket açıldı: ${packageId} (Süresi: ${pkg.duration})`);
+      }
+    }
+
     console.log(`✅ Üye ${status}: ${userId} (Admin: ${adminId})`);
 
     res.json({
       success: true,
-      message: status === 'approved' 
-        ? 'Üye başarıyla onaylandı'
+      message: status === 'approved'
+        ? `Üye onaylandı ve paket otomatik açıldı`
         : 'Üye başarıyla reddedildi',
       userId,
-      status
+      status,
+      packageId: status === 'approved' ? packageId : undefined,
+      subscriptionEnd: subscriptionEnd
     });
   } catch (error) {
     console.error('Üye onay hatası:', error);

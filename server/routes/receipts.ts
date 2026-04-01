@@ -2,6 +2,7 @@ import { RequestHandler } from 'express';
 import { getDatabase, ReceiptRecord } from '../database';
 import { getAdminDb } from '../lib/firebase-admin';
 import { Receipt, ReceiptApprovalRequest } from '@shared/api';
+import { PACKAGES, calculateExpiryTimestamp, PackageType } from '@shared/packages';
 
 const toISOTime = (value: any): string => {
   if (!value) return new Date().toISOString();
@@ -177,6 +178,7 @@ export const handleGetPendingReceipts: RequestHandler = async (req, res) => {
 
 /**
  * Dekont onayı veya reddi
+ * Onay yapıldığında otomatik olarak user'a subscription set edilir
  */
 export const handleApproveReceipt: RequestHandler = async (req, res) => {
   try {
@@ -204,22 +206,71 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
       });
     }
 
-    const firestoreDb = getAdminDb();
-    if (firestoreDb) {
-      const receiptRef = firestoreDb.collection('receipts').doc(receiptId);
-      const receiptSnap = await receiptRef.get();
+    // Önce dekont bilgisini al
+    const db = getDatabase();
+    let receipt = await db.getReceipt(receiptId);
 
+    const firestoreDb = getAdminDb();
+    if (firestoreDb && !receipt) {
+      const receiptSnap = await firestoreDb.collection('receipts').doc(receiptId).get();
       if (receiptSnap.exists) {
-        await receiptRef.set({
-          status,
-          approved_by: adminId,
-          approval_notes: notes,
-          approved_at: new Date().toISOString()
-        }, { merge: true });
+        receipt = mapFirestoreReceipt(receiptSnap);
       }
     }
 
-    const db = getDatabase();
+    if (!receipt) {
+      return res.status(404).json({
+        success: false,
+        message: 'Dekont bulunamadı'
+      });
+    }
+
+    // Firestore'a güncelle
+    if (firestoreDb) {
+      const receiptRef = firestoreDb.collection('receipts').doc(receiptId);
+
+      const updateData: any = {
+        status,
+        approved_by: adminId,
+        approval_notes: notes,
+        approved_at: new Date().toISOString()
+      };
+
+      // Onay yapıldıysa user'a subscription set et
+      if (status === 'approved' && receipt.user_id) {
+        const userRef = firestoreDb.collection('users').doc(receipt.user_id);
+        const userSnap = await userRef.get();
+
+        if (userSnap.exists) {
+          // Paket bilgisini al
+          const packageId = (receipt.plan as PackageType) || 'starter';
+          const pkg = PACKAGES[packageId];
+
+          if (pkg) {
+            const startTime = Date.now();
+            const expiryTime = calculateExpiryTimestamp(packageId, startTime);
+
+            // User'a subscription set et
+            await userRef.set({
+              current_package: packageId,
+              subscription_start: new Date(startTime).toISOString(),
+              subscription_end: new Date(expiryTime).toISOString(),
+              package_activated_at: new Date().toISOString(),
+              package_activated_by: adminId,
+              last_receipt_approved: receiptId,
+              is_active: true,
+            }, { merge: true });
+
+            console.log(`✅ Dekont onaylandı: ${receiptId}`);
+            console.log(`📦 User ${receipt.user_id}'e paket açıldı: ${packageId} (Süresi: ${pkg.duration})`);
+          }
+        }
+      }
+
+      await receiptRef.set(updateData, { merge: true });
+    }
+
+    // Database'e de güncelle
     const result = await db.updateReceiptStatus(receiptId, status, adminId, notes);
 
     if (!result.success) {
@@ -229,23 +280,14 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
       });
     }
 
-    // Eğer onaylandıysa ve subscription varsa, subscription'ı aktif et
-    let receipt = null;
-    if (status === 'approved') {
-      receipt = await db.getReceipt(receiptId);
-      if (receipt) {
-        console.log(`✅ Dekont onaylandı: ${receiptId} - Subscription aktif ediliyor...`);
-
-        // Subscription'ı aktif et
-        // Bu işlem client tarafından da yapılacak, ama server tarafında da yapılabilir
-        // Şimdilik client tarafında yapıldığını varsayıyorum
-      }
-    }
-
     res.json({
       success: true,
-      message: `Dekont ${status === 'approved' ? 'onaylandı' : 'reddedildi'}`,
+      message: status === 'approved'
+        ? `Dekont onaylandı ve kullanıcıya paket otomatik açıldı`
+        : 'Dekont reddedildi',
       receiptId,
+      userId: receipt.user_id,
+      plan: receipt.plan,
       receipt
     });
   } catch (error) {

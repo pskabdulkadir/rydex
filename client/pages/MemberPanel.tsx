@@ -929,13 +929,42 @@ export default function MemberPanel() {
 
                 {/* Yükleme Bilgisi */}
                 <div className="bg-slate-900/50 rounded-lg p-4 mb-4 border border-slate-700/30">
-                  <p className="text-slate-300 text-sm">
-                    <span className="font-semibold">Aktif Paket:</span> {activeSub?.plan?.toUpperCase() || 'Yok'}
-                    {activeSub && <span className="text-green-400 ml-2">Aktif ✓</span>}
-                  </p>
-                  <p className="text-slate-300 text-sm mt-1">
-                    <span className="font-semibold">Ödeme Miktarı:</span> {activeSub?.amount?.toLocaleString('tr-TR') || '-'} ₺
-                  </p>
+                  {(() => {
+                    // Bilgi için pending payment veya subscription kullan
+                    let displayPlan = 'Yok';
+                    let displayAmount = '-';
+                    let isPending = false;
+
+                    const pendingPayment = localStorage.getItem('currentPaymentRequest');
+                    if (pendingPayment) {
+                      try {
+                        const payment = JSON.parse(pendingPayment);
+                        displayPlan = payment.plan?.toUpperCase() || 'BEKLEMEDE';
+                        displayAmount = payment.amount?.toLocaleString('tr-TR') || '-';
+                        isPending = true;
+                      } catch (e) {
+                        console.warn('Pending payment parse hatası:', e);
+                      }
+                    } else if (activeSub) {
+                      displayPlan = activeSub?.plan?.toUpperCase() || 'AKTİF';
+                      displayAmount = (activeSub?.amount || activeSub?.price)?.toLocaleString('tr-TR') || '-';
+                    }
+
+                    return (
+                      <>
+                        <p className="text-slate-300 text-sm">
+                          <span className="font-semibold">
+                            {isPending ? 'Beklemede Olan Paket:' : 'Aktif Paket:'}
+                          </span> {displayPlan}
+                          {!isPending && activeSub && <span className="text-green-400 ml-2">Aktif ✓</span>}
+                          {isPending && <span className="text-amber-400 ml-2">Onay Bekleniyor ⏳</span>}
+                        </p>
+                        <p className="text-slate-300 text-sm mt-1">
+                          <span className="font-semibold">Ödeme Miktarı:</span> {displayAmount} ₺
+                        </p>
+                      </>
+                    );
+                  })()}
                 </div>
 
                 <Button
@@ -943,6 +972,33 @@ export default function MemberPanel() {
                     if (!selectedFile) {
                       toast.error('Lütfen bir dosya seçiniz');
                       return;
+                    }
+
+                    // Pending ödeme veya subscription'dan bilgi al
+                    let paymentInfo = { subscriptionId: '', plan: 'free', amount: 0 };
+
+                    // 1. Pending ödeme varsa kullan
+                    const pendingPayment = localStorage.getItem('currentPaymentRequest');
+                    if (pendingPayment) {
+                      try {
+                        const payment = JSON.parse(pendingPayment);
+                        paymentInfo = {
+                          subscriptionId: payment.id || '',
+                          plan: payment.plan || 'free',
+                          amount: payment.amount || 0
+                        };
+                      } catch (e) {
+                        console.warn('Pending payment parse hatası:', e);
+                      }
+                    }
+
+                    // 2. Subscription varsa kullan
+                    if (activeSub) {
+                      paymentInfo = {
+                        subscriptionId: activeSub?.id || '',
+                        plan: activeSub?.plan || 'free',
+                        amount: activeSub?.amount || activeSub?.price || 0
+                      };
                     }
 
                     setUploadingReceipt(true);
@@ -960,9 +1016,9 @@ export default function MemberPanel() {
                             'x-user-id': user?.uid || '',
                           },
                           body: JSON.stringify({
-                            subscriptionId: activeSub?.id || '',
-                            plan: activeSub?.plan || 'free',
-                            amount: activeSub?.price || 0,
+                            subscriptionId: paymentInfo.subscriptionId,
+                            plan: paymentInfo.plan,
+                            amount: paymentInfo.amount,
                             currency: 'TRY',
                             fileName: selectedFile.name,
                             fileUrl: `data:${selectedFile.type};base64,${base64}`,
@@ -988,7 +1044,7 @@ export default function MemberPanel() {
                       setUploadingReceipt(false);
                     }
                   }}
-                  disabled={!selectedFile || uploadingReceipt || !activeSub}
+                  disabled={!selectedFile || uploadingReceipt}
                   className="w-full bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white"
                 >
                   {uploadingReceipt ? 'Yükleniyor...' : 'Dekont Yükle'}

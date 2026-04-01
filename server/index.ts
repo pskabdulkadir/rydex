@@ -164,7 +164,8 @@ import {
   handleGetPendingMembers,
   handleApproveUser,
   handleDeleteUser,
-  handleUpdateUserSubscription
+  handleUpdateUserSubscription,
+  handleGetOldUsers
 } from "./routes/member-approval";
 import {
   getSupportedCurrenciesHandler,
@@ -534,6 +535,7 @@ export function createServer() {
 
   // ============ ÜYE ONAY (MEMBER APPROVAL) ROUTES ============
   app.get("/api/admin/members/pending", handleGetPendingMembers);
+  app.get("/api/admin/members/old", handleGetOldUsers);
   app.post("/api/admin/members/approve", requireAdminAuth, handleApproveUser);
   app.post("/api/admin/members/delete", requireAdminAuth, handleDeleteUser);
   app.post("/api/admin/members/update-subscription", requireAdminAuth, handleUpdateUserSubscription);

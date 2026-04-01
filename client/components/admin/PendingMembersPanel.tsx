@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, CheckCircle2, XCircle, Trash2, AlertCircle, RefreshCw, Mail } from 'lucide-react';
 import { toast } from 'sonner';
+import { PACKAGES } from '@shared/packages';
 
 interface PendingMember {
   id: string;
@@ -20,6 +21,7 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
   const [selectedMember, setSelectedMember] = useState<PendingMember | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [selectedPackage, setSelectedPackage] = useState<string>('master'); // Onay verirken seçilecek paket
 
   // Demo üyeleri temizle
   const clearDemoMembers = () => {
@@ -49,13 +51,24 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
 
       // Önce localStorage'dan oku (demo amaçlı)
       const pendingFromStorage = JSON.parse(localStorage.getItem('pending_members') || '[]') as PendingMember[];
-      
-      // API'den de kontrol et
+
+      // API'den kontrol et - Firebase'deki tüm üyeleri al
       try {
         const response = await fetch('/api/admin/members/pending');
         if (response.ok) {
           const data = await response.json();
-          setMembers(data.members || pendingFromStorage);
+          // Önce pending üyeleri göster, sonra tüm üyeleri de dahil et
+          const membersToShow = data.members || [];
+
+          // Firebase'den gelen tüm üyeleri de dahil et (pending olmayanlar da dahil)
+          if (data.allMembers && Array.isArray(data.allMembers)) {
+            // Pending olanlar zaten var, approved olanları ekle
+            const approvedMembers = data.allMembers.filter((m: PendingMember) => m.approval_status === 'approved');
+            membersToShow.push(...approvedMembers);
+          }
+
+          setMembers(membersToShow.length > 0 ? membersToShow : pendingFromStorage);
+          console.log(`✅ ${membersToShow.length} üye yüklendi (API)`);
         } else {
           setMembers(pendingFromStorage);
         }
@@ -75,6 +88,7 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
     try {
       setApprovingId(memberId);
 
+      // 1. Üyeyi onayla
       const response = await fetch('/api/admin/members/approve', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +102,32 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
       const data = await response.json();
 
       if (data.success) {
-        // localStorage'da güncelle
+        // 2. Subscription oluştur (seçilen paket ile)
+        const selectedPkg = PACKAGES[selectedPackage as any];
+        if (selectedPkg) {
+          try {
+            const subResponse = await fetch('/api/subscription/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: memberId,
+                planId: selectedPackage,
+                durationDays: 365, // 1 yıllık subscription
+              })
+            });
+
+            const subData = await subResponse.json();
+            if (subData.success) {
+              console.log(`✅ Subscription oluşturuldu: ${memberId}`);
+            } else {
+              console.warn(`⚠️ Subscription oluşturulamadı: ${subData.message}`);
+            }
+          } catch (subError) {
+            console.warn('Subscription oluşturma hatası (devam ediliyor):', subError);
+          }
+        }
+
+        // 3. localStorage'da güncelle
         const updatedMembers = members.filter(m => m.id !== memberId);
         localStorage.setItem('pending_members', JSON.stringify(updatedMembers));
         setMembers(updatedMembers);
@@ -106,7 +145,7 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
           localStorage.setItem('approved_members', JSON.stringify(approvedMembers));
         }
 
-        toast.success(`✅ ${approved?.username} onaylandı!`);
+        toast.success(`✅ ${approved?.username} onaylandı ve ${selectedPkg?.name} paketi atandı!`);
         setSelectedMember(null);
       } else {
         toast.error('Onay işlemi başarısız: ' + (data.error || 'Bilinmeyen hata'));
@@ -294,19 +333,38 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
         ))}
       </div>
 
-      {/* Rejection Modal */}
+      {/* Approval/Rejection Modal */}
       {selectedMember && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-slate-900 border border-slate-700 rounded-lg max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <AlertCircle className="w-6 h-6 text-red-400" />
-              <h3 className="text-lg font-bold text-white">Üye Reddetme</h3>
+              <Clock className="w-6 h-6 text-amber-400" />
+              <h3 className="text-lg font-bold text-white">Üye Yönetimi</h3>
             </div>
 
             <p className="text-slate-300 mb-4">
-              <strong>{selectedMember.username}</strong> kullanıcısını reddetmek istediğinize emin misiniz?
+              <strong>{selectedMember.username}</strong> kullanıcısı için işlem seçin
             </p>
 
+            {/* Paket Seçimi (Onay için) */}
+            <div className="mb-4">
+              <label className="block text-slate-300 text-sm font-semibold mb-2">
+                Verilecek Paket (Onay için)
+              </label>
+              <select
+                value={selectedPackage}
+                onChange={(e) => setSelectedPackage(e.target.value)}
+                className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700/50 rounded-lg text-white focus:border-blue-500 outline-none text-sm"
+              >
+                {Object.values(PACKAGES).map(pkg => (
+                  <option key={pkg.id} value={pkg.id}>
+                    {pkg.name} - {pkg.price.toLocaleString('tr-TR')} ₺
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Red Sebebi (Red için) */}
             <div className="mb-4">
               <label className="block text-slate-300 text-sm font-semibold mb-2">
                 Red Sebebi (İsteğe Bağlı)
@@ -333,9 +391,16 @@ export default function PendingMembersPanel({ adminId = 'admin' }: PendingMember
               <button
                 onClick={() => handleRejectMember(selectedMember.id)}
                 disabled={approvingId === selectedMember.id}
-                className="flex-1 px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white font-semibold rounded transition-colors"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-slate-600 text-white font-semibold rounded transition-colors text-sm"
               >
-                {approvingId === selectedMember.id ? 'İşleniyor...' : 'Reddet'}
+                {approvingId === selectedMember.id ? '...' : 'Reddet'}
+              </button>
+              <button
+                onClick={() => handleApproveMember(selectedMember.id)}
+                disabled={approvingId === selectedMember.id}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-slate-600 text-white font-semibold rounded transition-colors text-sm"
+              >
+                {approvingId === selectedMember.id ? '...' : 'Onayla'}
               </button>
             </div>
           </div>
