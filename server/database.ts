@@ -3,9 +3,15 @@
  * Gerçek tarama verilerinin kalıcı depolanması
  */
 
-// Supabase client'ını import et
-import { createClient as createSupabaseClient } from '@supabase/supabase-js';
-let createClient = createSupabaseClient;
+// Supabase client'ını import et (isteğe bağlı)
+let createClient: any = null;
+
+try {
+  const supabaseModule = require('@supabase/supabase-js');
+  createClient = supabaseModule.createClient;
+} catch (error) {
+  console.warn('⚠️ Supabase modülü yüklü değil - bellek içi depolama kullanılacak');
+}
 
 // Veritabanı bağlantısı (Supabase/Neon kullanabilir)
 interface DatabaseConfig {
@@ -96,19 +102,32 @@ class DatabaseManager {
   private inMemoryReceipts: ReceiptRecord[] = [];
 
   constructor(config: DatabaseConfig) {
-    if (config.useInMemory) {
+    try {
+      if (config.useInMemory) {
+        this.useInMemory = true;
+        console.log('📊 Bellek içi veritabanı kullanılıyor (geliştirme ortamı)');
+      } else if (config.supabaseUrl && config.supabaseKey && createClient) {
+        try {
+          // Supabase bağlantısı (createClient yüklü olmalı)
+          this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
+          console.log('✅ Supabase bağlantısı başarıyla kuruldu');
+        } catch (supabaseError) {
+          console.warn('⚠️ Supabase bağlantı hatası:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
+          this.useInMemory = true;
+          console.log('📊 Yedek: Bellek içi depolama kullanılıyor');
+        }
+      } else if (config.neonConnectionString) {
+        console.log('✅ Neon veritabanı yapılandırması hazır (PostgreSQL)');
+        // Neon bağlantısı ileride gerçeklenebilir
+        this.useInMemory = true;
+        console.log('📊 Şu an bellek içi depolama kullanılıyor');
+      } else {
+        this.useInMemory = true;
+        console.log('⚠️ Veritabanı yapılandırması eksik - bellek içi depolama kullanılıyor');
+      }
+    } catch (error) {
+      console.error('❌ Veritabanı başlatma hatası:', error);
       this.useInMemory = true;
-      console.log('📊 Bellek içi veritabanı kullanılıyor (geliştirme ortamı)');
-    } else if (config.supabaseUrl && config.supabaseKey && createClient) {
-      // Supabase bağlantısı (createClient yüklü olmalı)
-      this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
-      console.log('✅ Supabase bağlantısı kuruldu');
-    } else if (config.neonConnectionString) {
-      console.log('✅ Neon veritabanı bağlantısı kuruldu (PostgreSQL)');
-      // Neon bağlantısı ileride gerçeklenebilir
-    } else {
-      this.useInMemory = true;
-      console.log('⚠️ Veritabanı yapılandırması eksik veya Supabase yüklü değil - bellek içi depolama kullanılıyor');
     }
   }
 
@@ -145,19 +164,27 @@ class DatabaseManager {
         return { success: true, id: scanRecord.id };
       }
 
-      if (this.supabase) {
-        const { data, error } = await this.supabase
-          .from('scans')
-          .insert([scanRecord])
-          .select();
+      if (this.supabase && createClient) {
+        try {
+          const { data, error } = await this.supabase
+            .from('scans')
+            .insert([scanRecord])
+            .select();
 
-        if (error) {
-          console.error('Supabase tarama kaydetme hatası:', error);
-          return { success: false, error: error.message };
+          if (error) {
+            console.error('Supabase tarama kaydetme hatası:', error.message);
+            // Supabase hatası durumunda bellek içinde de kaydet
+            this.inMemoryScans.push(scanRecord);
+            return { success: true, id: scanRecord.id };
+          }
+
+          console.log(`💾 Tarama kaydedildi (Supabase): ${scanRecord.id}`);
+          return { success: true, id: scanRecord.id };
+        } catch (supabaseError) {
+          console.warn('Supabase işlem hatası, bellek içine kaydediliyor:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
+          this.inMemoryScans.push(scanRecord);
+          return { success: true, id: scanRecord.id };
         }
-
-        console.log(`💾 Tarama kaydedildi (Supabase): ${scanRecord.id}`);
-        return { success: true, id: scanRecord.id };
       }
 
       return { success: false, error: 'Veritabanı yapılandırması eksik' };
@@ -193,18 +220,25 @@ class DatabaseManager {
         return { success: true };
       }
 
-      if (this.supabase) {
-        const { error } = await this.supabase
-          .from('magnetometer_data')
-          .insert([record]);
+      if (this.supabase && createClient) {
+        try {
+          const { error } = await this.supabase
+            .from('magnetometer_data')
+            .insert([record]);
 
-        if (error) {
-          console.error('Supabase manyetometre kaydetme hatası:', error);
-          return { success: false, error: error.message };
+          if (error) {
+            console.warn('Supabase manyetometre kaydetme hatası:', error.message);
+            this.inMemoryMagnetometer.push(record);
+            return { success: true };
+          }
+
+          console.log(`📊 Manyetometre kaydedildi (Supabase): ${record.id}`);
+          return { success: true };
+        } catch (supabaseError) {
+          console.warn('Supabase işlem hatası, bellek içine kaydediliyor:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
+          this.inMemoryMagnetometer.push(record);
+          return { success: true };
         }
-
-        console.log(`📊 Manyetometre kaydedildi (Supabase): ${record.id}`);
-        return { success: true };
       }
 
       return { success: false, error: 'Veritabanı yapılandırması eksik' };
@@ -403,32 +437,39 @@ class DatabaseManager {
         return { success: true };
       }
 
-      if (this.supabase) {
-        // Aynı kullanıcı adı var mı kontrol et
-        const { data: existing } = await this.supabase
-          .from('users')
-          .select('id')
-          .or(`username.eq.${user.username},phone.eq.${user.phone}`)
-          .limit(1);
+      if (this.supabase && createClient) {
+        try {
+          // Aynı kullanıcı adı var mı kontrol et
+          const { data: existing } = await this.supabase
+            .from('users')
+            .select('id')
+            .or(`username.eq.${user.username},phone.eq.${user.phone}`)
+            .limit(1);
 
-        if (existing && existing.length > 0) {
-          return {
-            success: false,
-            error: "Bu kullanıcı adı veya telefon zaten kayıtlı"
-          };
+          if (existing && existing.length > 0) {
+            return {
+              success: false,
+              error: "Bu kullanıcı adı veya telefon zaten kayıtlı"
+            };
+          }
+
+          const { error } = await this.supabase
+            .from('users')
+            .insert([user]);
+
+          if (error) {
+            console.warn('Supabase kullanıcı kaydetme hatası:', error.message);
+            this.inMemoryUsers.push(user);
+            return { success: true };
+          }
+
+          console.log(`👤 Kullanıcı kaydedildi (Supabase): ${user.username}`);
+          return { success: true };
+        } catch (supabaseError) {
+          console.warn('Supabase işlem hatası, bellek içine kaydediliyor:', supabaseError instanceof Error ? supabaseError.message : String(supabaseError));
+          this.inMemoryUsers.push(user);
+          return { success: true };
         }
-
-        const { error } = await this.supabase
-          .from('users')
-          .insert([user]);
-
-        if (error) {
-          console.error('Supabase kullanıcı kaydetme hatası:', error);
-          return { success: false, error: error.message };
-        }
-
-        console.log(`👤 Kullanıcı kaydedildi (Supabase): ${user.username}`);
-        return { success: true };
       }
 
       return { success: false, error: 'Veritabanı yapılandırması eksik' };

@@ -454,177 +454,177 @@ export function createServer() {
   // Arama verisini başlat
   seedSearchData();
 
-  app.get("/api/search", handleGlobalSearch);
-  app.get("/api/search/users", handleSearchUsers);
-  app.get("/api/search/payments", handleSearchPayments);
-  app.get("/api/search/subscriptions", handleSearchSubscriptions);
-  app.get("/api/search/scans", handleSearchScans);
+  app.get("/api/search", asyncHandler(handleGlobalSearch));
+  app.get("/api/search/users", asyncHandler(handleSearchUsers));
+  app.get("/api/search/payments", asyncHandler(handleSearchPayments));
+  app.get("/api/search/subscriptions", asyncHandler(handleSearchSubscriptions));
+  app.get("/api/search/scans", asyncHandler(handleSearchScans));
 
   // ============ BULK OPERATIONS ROUTES (GÖREV 7) ============
-  app.post("/api/bulk/delete", handleBulkDelete);
-  app.post("/api/bulk/update", handleBulkUpdate);
-  app.post("/api/bulk/status", handleBulkStatusChange);
-  app.post("/api/bulk/tag", handleBulkTag);
-  app.post("/api/bulk/untag", handleBulkUntag);
-  app.get("/api/bulk/status/:operationId", handleGetBulkOperationStatus);
-  app.post("/api/bulk/validate", handleValidateBulkSelection);
+  app.post("/api/bulk/delete", asyncHandler(handleBulkDelete));
+  app.post("/api/bulk/update", asyncHandler(handleBulkUpdate));
+  app.post("/api/bulk/status", asyncHandler(handleBulkStatusChange));
+  app.post("/api/bulk/tag", asyncHandler(handleBulkTag));
+  app.post("/api/bulk/untag", asyncHandler(handleBulkUntag));
+  app.get("/api/bulk/status/:operationId", asyncHandler(handleGetBulkOperationStatus));
+  app.post("/api/bulk/validate", asyncHandler(handleValidateBulkSelection));
 
   // ============ EXPORT ROUTES (GÖREV 8) ============
-  app.get("/api/export/csv", handleExportCSV);
-  app.get("/api/export/pdf", handleExportPDF);
-  app.get("/api/export/json", handleExportJSON);
-  app.get("/api/export/excel", handleExportExcel);
+  app.get("/api/export/csv", asyncHandler(handleExportCSV));
+  app.get("/api/export/pdf", asyncHandler(handleExportPDF));
+  app.get("/api/export/json", asyncHandler(handleExportJSON));
+  app.get("/api/export/excel", asyncHandler(handleExportExcel));
 
 
   // ============ TWO-FACTOR AUTH ROUTES (GÖREV 10) ============
   // Strict rate limiting for 2FA operations
-  app.post("/api/auth/2fa/enable", strictRateLimiter, handleEnable2FA);
-  app.post("/api/auth/2fa/verify", strictRateLimiter, handleVerify2FA);
-  app.post("/api/auth/2fa/disable", strictRateLimiter, handleDisable2FA);
-  app.post("/api/auth/2fa/send-otp", strictRateLimiter, handleSendOTP);
-  app.post("/api/auth/2fa/verify-otp", strictRateLimiter, handleVerifyOTP);
-  app.get("/api/auth/2fa/status", normalRateLimiter, handleGet2FAStatus);
-  app.post("/api/auth/2fa/regenerate-backup-codes", strictRateLimiter, handleRegenerateBackupCodes);
+  app.post("/api/auth/2fa/enable", strictRateLimiter, asyncHandler(handleEnable2FA));
+  app.post("/api/auth/2fa/verify", strictRateLimiter, asyncHandler(handleVerify2FA));
+  app.post("/api/auth/2fa/disable", strictRateLimiter, asyncHandler(handleDisable2FA));
+  app.post("/api/auth/2fa/send-otp", strictRateLimiter, asyncHandler(handleSendOTP));
+  app.post("/api/auth/2fa/verify-otp", strictRateLimiter, asyncHandler(handleVerifyOTP));
+  app.get("/api/auth/2fa/status", normalRateLimiter, asyncHandler(handleGet2FAStatus));
+  app.post("/api/auth/2fa/regenerate-backup-codes", strictRateLimiter, asyncHandler(handleRegenerateBackupCodes));
 
   // ============ REFUND MANAGEMENT ROUTES (GÖREV 11) ============
-  app.post("/api/refund/create", handleCreateRefundRequest);
-  app.get("/api/refund/:refundId", handleGetRefundRequest);
-  app.get("/api/refund/user/:userId", handleGetUserRefunds);
-  app.get("/api/refund/order/:orderId", handleGetOrderRefunds);
-  app.post("/api/refund/approve", handleApproveRefund);
-  app.post("/api/refund/reject", handleRejectRefund);
-  app.post("/api/refund/process", handleProcessRefund);
-  app.get("/api/refund/transaction/:transactionId", handleGetRefundTransactionStatus);
-  app.get("/api/admin/refunds/all", handleGetAllRefunds);
-  app.get("/api/admin/refunds/statistics", handleGetRefundStatistics);
+  app.post("/api/refund/create", asyncHandler(handleCreateRefundRequest));
+  app.get("/api/refund/:refundId", asyncHandler(handleGetRefundRequest));
+  app.get("/api/refund/user/:userId", asyncHandler(handleGetUserRefunds));
+  app.get("/api/refund/order/:orderId", asyncHandler(handleGetOrderRefunds));
+  app.post("/api/refund/approve", asyncHandler(handleApproveRefund));
+  app.post("/api/refund/reject", asyncHandler(handleRejectRefund));
+  app.post("/api/refund/process", asyncHandler(handleProcessRefund));
+  app.get("/api/refund/transaction/:transactionId", asyncHandler(handleGetRefundTransactionStatus));
+  app.get("/api/admin/refunds/all", asyncHandler(handleGetAllRefunds));
+  app.get("/api/admin/refunds/statistics", asyncHandler(handleGetRefundStatistics));
 
   // ============ PAYMENT RECONCILIATION ROUTES (GÖREV 13) ============
-  app.post("/api/admin/reconciliation/start", handleStartReconciliation);
-  app.get("/api/admin/reconciliation/report/:reportId", handleGetReconciliationReport);
-  app.get("/api/admin/reconciliation/reports", handleGetAllReconciliationReports);
-  app.get("/api/admin/reconciliation/discrepancy/:discrepancyId", handleGetDiscrepancy);
-  app.post("/api/admin/reconciliation/resolve", handleResolveDiscrepancy);
-  app.get("/api/admin/reconciliation/unresolved", handleGetUnresolvedDiscrepancies);
-  app.get("/api/admin/reconciliation/payment/:paymentId", handleGetPaymentDetails);
-  app.get("/api/admin/reconciliation/stats", handleGetReconciliationStats);
+  app.post("/api/admin/reconciliation/start", asyncHandler(handleStartReconciliation));
+  app.get("/api/admin/reconciliation/report/:reportId", asyncHandler(handleGetReconciliationReport));
+  app.get("/api/admin/reconciliation/reports", asyncHandler(handleGetAllReconciliationReports));
+  app.get("/api/admin/reconciliation/discrepancy/:discrepancyId", asyncHandler(handleGetDiscrepancy));
+  app.post("/api/admin/reconciliation/resolve", asyncHandler(handleResolveDiscrepancy));
+  app.get("/api/admin/reconciliation/unresolved", asyncHandler(handleGetUnresolvedDiscrepancies));
+  app.get("/api/admin/reconciliation/payment/:paymentId", asyncHandler(handleGetPaymentDetails));
+  app.get("/api/admin/reconciliation/stats", asyncHandler(handleGetReconciliationStats));
 
   // ============ SUPPORT TICKET ROUTES (GÖREV 14) ============
-  app.post("/api/support/create", strictRateLimiter, handleCreateTicket);
-  app.get("/api/support/ticket/:ticketId", normalRateLimiter, handleGetTicket);
-  app.get("/api/support/user/:userId", normalRateLimiter, handleGetUserTickets);
-  app.post("/api/support/message", normalRateLimiter, handleAddTicketMessage);
-  app.post("/api/support/status", strictRateLimiter, handleUpdateTicketStatus);
-  app.post("/api/support/assign", strictRateLimiter, handleAssignTicket);
-  app.get("/api/admin/support/tickets", handleGetAllTickets);
-  app.get("/api/admin/support/stats", handleGetTicketStatistics);
-  app.get("/api/support/search", normalRateLimiter, handleSearchTickets);
+  app.post("/api/support/create", strictRateLimiter, asyncHandler(handleCreateTicket));
+  app.get("/api/support/ticket/:ticketId", normalRateLimiter, asyncHandler(handleGetTicket));
+  app.get("/api/support/user/:userId", normalRateLimiter, asyncHandler(handleGetUserTickets));
+  app.post("/api/support/message", normalRateLimiter, asyncHandler(handleAddTicketMessage));
+  app.post("/api/support/status", strictRateLimiter, asyncHandler(handleUpdateTicketStatus));
+  app.post("/api/support/assign", strictRateLimiter, asyncHandler(handleAssignTicket));
+  app.get("/api/admin/support/tickets", asyncHandler(handleGetAllTickets));
+  app.get("/api/admin/support/stats", asyncHandler(handleGetTicketStatistics));
+  app.get("/api/support/search", normalRateLimiter, asyncHandler(handleSearchTickets));
 
   // ============ DEKONT (RECEIPT) ROUTES ============
-  app.post("/api/receipt/upload", handleUploadReceipt);
-  app.get("/api/receipt/user", handleGetUserReceipts);
-  app.get("/api/receipt/admin/pending", handleGetPendingReceipts);
-  app.get("/api/receipt/:receiptId", handleGetReceipt);
-  app.post("/api/receipt/approve", handleApproveReceipt);
+  app.post("/api/receipt/upload", asyncHandler(handleUploadReceipt));
+  app.get("/api/receipt/user", asyncHandler(handleGetUserReceipts));
+  app.get("/api/receipt/admin/pending", asyncHandler(handleGetPendingReceipts));
+  app.get("/api/receipt/:receiptId", asyncHandler(handleGetReceipt));
+  app.post("/api/receipt/approve", asyncHandler(handleApproveReceipt));
 
   // ============ TARAMA (SCANS) ROUTES ============
   // Subscription gerekli - Kullanıcı aktif subscription'a sahip olmalı
-  app.post("/api/scan/save", requireActiveSubscription, handleSaveScan);
-  app.get("/api/scan/user", requireActiveSubscription, handleGetUserScans);
-  app.get("/api/scan/area", requireActiveSubscription, handleGetAreaScans);
-  app.get("/api/scan/stats", requireActiveSubscription, handleGetScanStats);
+  app.post("/api/scan/save", requireActiveSubscription, asyncHandler(handleSaveScan));
+  app.get("/api/scan/user", requireActiveSubscription, asyncHandler(handleGetUserScans));
+  app.get("/api/scan/area", requireActiveSubscription, asyncHandler(handleGetAreaScans));
+  app.get("/api/scan/stats", requireActiveSubscription, asyncHandler(handleGetScanStats));
 
   // ============ ÜYE ONAY (MEMBER APPROVAL) ROUTES ============
-  app.get("/api/admin/members/pending", handleGetPendingMembers);
-  app.get("/api/admin/members/old", handleGetOldUsers);
-  app.post("/api/admin/members/approve", requireAdminAuth, handleApproveUser);
-  app.post("/api/admin/members/delete", requireAdminAuth, handleDeleteUser);
-  app.post("/api/admin/members/update-subscription", requireAdminAuth, handleUpdateUserSubscription);
+  app.get("/api/admin/members/pending", asyncHandler(handleGetPendingMembers));
+  app.get("/api/admin/members/old", asyncHandler(handleGetOldUsers));
+  app.post("/api/admin/members/approve", requireAdminAuth, asyncHandler(handleApproveUser));
+  app.post("/api/admin/members/delete", requireAdminAuth, asyncHandler(handleDeleteUser));
+  app.post("/api/admin/members/update-subscription", requireAdminAuth, asyncHandler(handleUpdateUserSubscription));
 
   // ============ CURRENCY ROUTES (MULTI-CURRENCY SUPPORT) ============
-  app.get("/api/currency/supported", getSupportedCurrenciesHandler);
-  app.get("/api/currency/rates", getExchangeRatesHandler);
-  app.post("/api/currency/convert", convertCurrencyHandler);
-  app.post("/api/currency/format", formatCurrencyHandler);
+  app.get("/api/currency/supported", asyncHandler(getSupportedCurrenciesHandler));
+  app.get("/api/currency/rates", asyncHandler(getExchangeRatesHandler));
+  app.post("/api/currency/convert", asyncHandler(convertCurrencyHandler));
+  app.post("/api/currency/format", asyncHandler(formatCurrencyHandler));
 
   // ============ INVOICE ROUTES ============
-  app.post("/api/invoice/generate", generateInvoiceHandler);
-  app.get("/api/invoice/:invoiceId", getInvoiceHandler);
-  app.get("/api/invoice/user/:userId", getUserInvoicesHandler);
-  app.put("/api/invoice/:invoiceId", updateInvoiceHandler);
-  app.get("/api/invoice/:invoiceId/download", downloadInvoiceHandler);
-  app.get("/api/invoice/:invoiceId/view", viewInvoiceHandler);
+  app.post("/api/invoice/generate", asyncHandler(generateInvoiceHandler));
+  app.get("/api/invoice/:invoiceId", asyncHandler(getInvoiceHandler));
+  app.get("/api/invoice/user/:userId", asyncHandler(getUserInvoicesHandler));
+  app.put("/api/invoice/:invoiceId", asyncHandler(updateInvoiceHandler));
+  app.get("/api/invoice/:invoiceId/download", asyncHandler(downloadInvoiceHandler));
+  app.get("/api/invoice/:invoiceId/view", asyncHandler(viewInvoiceHandler));
 
   // ============ CHECKOUT SETTINGS ROUTES (Admin Dashboard) ============
   // Getter endpoints (herkes erişebilir)
-  app.get("/api/checkout-settings", handleGetCheckoutSettings);
-  app.get("/api/checkout-settings/bank-accounts", handleGetBankAccounts);
-  app.get("/api/checkout-settings/payment-methods", handleGetPaymentMethods);
-  app.get("/api/checkout-settings/coupons", handleGetCoupons);
+  app.get("/api/checkout-settings", asyncHandler(handleGetCheckoutSettings));
+  app.get("/api/checkout-settings/bank-accounts", asyncHandler(handleGetBankAccounts));
+  app.get("/api/checkout-settings/payment-methods", asyncHandler(handleGetPaymentMethods));
+  app.get("/api/checkout-settings/coupons", asyncHandler(handleGetCoupons));
 
   // Admin-only endpoints (Admin authentication gerekli)
-  app.post("/api/checkout-settings/bank-accounts", requireAdminAuth, handleAddBankAccount);
-  app.put("/api/checkout-settings/bank-accounts/:id", requireAdminAuth, handleUpdateBankAccount);
-  app.delete("/api/checkout-settings/bank-accounts/:id", requireAdminAuth, handleDeleteBankAccount);
+  app.post("/api/checkout-settings/bank-accounts", requireAdminAuth, asyncHandler(handleAddBankAccount));
+  app.put("/api/checkout-settings/bank-accounts/:id", requireAdminAuth, asyncHandler(handleUpdateBankAccount));
+  app.delete("/api/checkout-settings/bank-accounts/:id", requireAdminAuth, asyncHandler(handleDeleteBankAccount));
 
-  app.post("/api/checkout-settings/payment-methods", requireAdminAuth, handleAddPaymentMethod);
-  app.put("/api/checkout-settings/payment-methods/:id", requireAdminAuth, handleUpdatePaymentMethod);
-  app.delete("/api/checkout-settings/payment-methods/:id", requireAdminAuth, handleDeletePaymentMethod);
+  app.post("/api/checkout-settings/payment-methods", requireAdminAuth, asyncHandler(handleAddPaymentMethod));
+  app.put("/api/checkout-settings/payment-methods/:id", requireAdminAuth, asyncHandler(handleUpdatePaymentMethod));
+  app.delete("/api/checkout-settings/payment-methods/:id", requireAdminAuth, asyncHandler(handleDeletePaymentMethod));
 
-  app.post("/api/checkout-settings/coupons", requireAdminAuth, handleCreateCoupon);
-  app.put("/api/checkout-settings/coupons/:id", requireAdminAuth, handleUpdateCoupon);
-  app.delete("/api/checkout-settings/coupons/:id", requireAdminAuth, handleDeleteCoupon);
+  app.post("/api/checkout-settings/coupons", requireAdminAuth, asyncHandler(handleCreateCoupon));
+  app.put("/api/checkout-settings/coupons/:id", requireAdminAuth, asyncHandler(handleUpdateCoupon));
+  app.delete("/api/checkout-settings/coupons/:id", requireAdminAuth, asyncHandler(handleDeleteCoupon));
 
-  app.put("/api/checkout-settings/package-prices/:packageId", requireAdminAuth, handleUpdatePackagePrice);
+  app.put("/api/checkout-settings/package-prices/:packageId", requireAdminAuth, asyncHandler(handleUpdatePackagePrice));
 
-  app.post("/api/checkout-settings/reset", requireAdminAuth, handleResetCheckoutSettings);
+  app.post("/api/checkout-settings/reset", requireAdminAuth, asyncHandler(handleResetCheckoutSettings));
 
   // ============ AUTHENTICATION ROUTES ============
   // Kayıt endpoint'i rate limiting'siz (herkese açık olması için)
-  app.post("/api/auth/register", handleRegister);
-  app.post("/api/auth/login", strictRateLimiter, handleLogin);
-  app.get("/api/auth/profile", normalRateLimiter, handleGetProfile);
-  app.post("/api/auth/logout", normalRateLimiter, handleLogout);
+  app.post("/api/auth/register", asyncHandler(handleRegister));
+  app.post("/api/auth/login", strictRateLimiter, asyncHandler(handleLogin));
+  app.get("/api/auth/profile", normalRateLimiter, asyncHandler(handleGetProfile));
+  app.post("/api/auth/logout", normalRateLimiter, asyncHandler(handleLogout));
 
   // ============ ADMIN AUTHENTICATION ROUTES ============
-  app.post("/api/admin/login", handleAdminLogin);
-  app.get("/api/admin/verify", requireAdminAuth, handleAdminVerify);
-  app.post("/api/admin/refresh-token", requireAdminAuth, handleTokenRefresh);
+  app.post("/api/admin/login", asyncHandler(handleAdminLogin));
+  app.get("/api/admin/verify", requireAdminAuth, asyncHandler(handleAdminVerify));
+  app.post("/api/admin/refresh-token", requireAdminAuth, asyncHandler(handleTokenRefresh));
 
   // ============ FIRESTORE ADMIN ROUTES ============
-  app.post("/api/admin/firestore/delete-users", requireAdminAuth, handleDeleteAllFirestoreUsers);
-  app.get("/api/admin/firestore/collections", requireAdminAuth, handleListFirestoreCollections);
-  app.post("/api/admin/firestore/delete-collection", requireAdminAuth, handleDeleteFirestoreCollection);
+  app.post("/api/admin/firestore/delete-users", requireAdminAuth, asyncHandler(handleDeleteAllFirestoreUsers));
+  app.get("/api/admin/firestore/collections", requireAdminAuth, asyncHandler(handleListFirestoreCollections));
+  app.post("/api/admin/firestore/delete-collection", requireAdminAuth, asyncHandler(handleDeleteFirestoreCollection));
 
   // ============ AUDIT LOGGING ROUTES ============
-  app.post("/api/admin/audit-log", requireAdminAuth, handleCreateAuditLog);
-  app.get("/api/admin/audit-logs", requireAdminAuth, handleGetAuditLogs);
-  app.get("/api/admin/audit-logs/stats", requireAdminAuth, handleGetAuditLogStats);
-  app.get("/api/admin/audit-logs/resource/:resourceType/:resourceId", requireAdminAuth, handleGetAuditLogsByResource);
-  app.get("/api/admin/audit-logs/admin/:adminId", requireAdminAuth, handleGetAuditLogsByAdmin);
-  app.get("/api/admin/audit-logs/range", requireAdminAuth, handleGetAuditLogsByDateRange);
-  app.get("/api/admin/audit-logs/export/:format", requireAdminAuth, handleExportAuditLogs);
+  app.post("/api/admin/audit-log", requireAdminAuth, asyncHandler(handleCreateAuditLog));
+  app.get("/api/admin/audit-logs", requireAdminAuth, asyncHandler(handleGetAuditLogs));
+  app.get("/api/admin/audit-logs/stats", requireAdminAuth, asyncHandler(handleGetAuditLogStats));
+  app.get("/api/admin/audit-logs/resource/:resourceType/:resourceId", requireAdminAuth, asyncHandler(handleGetAuditLogsByResource));
+  app.get("/api/admin/audit-logs/admin/:adminId", requireAdminAuth, asyncHandler(handleGetAuditLogsByAdmin));
+  app.get("/api/admin/audit-logs/range", requireAdminAuth, asyncHandler(handleGetAuditLogsByDateRange));
+  app.get("/api/admin/audit-logs/export/:format", requireAdminAuth, asyncHandler(handleExportAuditLogs));
 
   // ============ EMAIL NOTIFICATION ROUTES ============
-  app.post("/api/email/escrow-approved", handleEscrowApprovedEmail);
-  app.post("/api/email/escrow-rejected", handleEscrowRejectedEmail);
-  app.post("/api/email/escrow-delivered", handleEscrowDeliveredEmail);
-  app.post("/api/email/payment-received", handlePaymentReceivedEmail);
-  app.post("/api/email/refund-processed", handleRefundProcessedEmail);
-  app.get("/api/email/logs", requireAdminAuth, handleGetEmailLogs);
+  app.post("/api/email/escrow-approved", asyncHandler(handleEscrowApprovedEmail));
+  app.post("/api/email/escrow-rejected", asyncHandler(handleEscrowRejectedEmail));
+  app.post("/api/email/escrow-delivered", asyncHandler(handleEscrowDeliveredEmail));
+  app.post("/api/email/payment-received", asyncHandler(handlePaymentReceivedEmail));
+  app.post("/api/email/refund-processed", asyncHandler(handleRefundProcessedEmail));
+  app.get("/api/email/logs", requireAdminAuth, asyncHandler(handleGetEmailLogs));
 
   // ============ PAYMENT VERIFICATION ROUTES ============
-  app.post("/api/payment/verify", verifyPaymentStatus);
-  app.get("/api/payment/status/:orderId", checkPaymentStatusV2);
-  app.post("/api/payment/webhook", paymentWebhookV2);
-  app.post("/api/payment/refund", refundPayment);
+  app.post("/api/payment/verify", asyncHandler(verifyPaymentStatus));
+  app.get("/api/payment/status/:orderId", asyncHandler(checkPaymentStatusV2));
+  app.post("/api/payment/webhook", asyncHandler(paymentWebhookV2));
+  app.post("/api/payment/refund", asyncHandler(refundPayment));
 
   // ============ SUBSCRIPTION ROUTES ============
-  app.get("/api/subscription/plans", handleGetPlans);
-  app.get("/api/subscription/active", handleGetActiveSubscription);
-  app.post("/api/subscription/create", handleCreateSubscription);
-  app.post("/api/subscription/cancel", handleCancelSubscription);
-  app.get("/api/subscription/admin/all", handleGetAllSubscriptions);
-  app.get("/api/subscription/admin/user/:userId", handleGetUserSubscriptionHistory);
+  app.get("/api/subscription/plans", asyncHandler(handleGetPlans));
+  app.get("/api/subscription/active", asyncHandler(handleGetActiveSubscription));
+  app.post("/api/subscription/create", asyncHandler(handleCreateSubscription));
+  app.post("/api/subscription/cancel", asyncHandler(handleCancelSubscription));
+  app.get("/api/subscription/admin/all", asyncHandler(handleGetAllSubscriptions));
+  app.get("/api/subscription/admin/user/:userId", asyncHandler(handleGetUserSubscriptionHistory));
 
   // ============ CORS PROXY - Harici API'lere CORS sorunlarını çöz ============
   // Tarayıcı CORS kısıtlamalarını bypass etmek için server üzerinden proxy yap
@@ -1439,39 +1439,58 @@ export function createServer() {
   // ============ ÖDEME SİSTEMİ API'LERİ ============
 
   // Ödeme başlat - strict rate limiting
-  app.post("/api/payment/initiate", strictRateLimiter, initiatePayment);
+  app.post("/api/payment/initiate", strictRateLimiter, asyncHandler(initiatePayment));
 
   // Webhook handler (Payment Gateway'den callback) - daha rahat
-  app.post("/api/payment/webhook", normalRateLimiter, paymentWebhookV2);
+  app.post("/api/payment/webhook", normalRateLimiter, asyncHandler(paymentWebhookV2));
 
   // Ödeme durumunu kontrol et - relaxed
-  app.get("/api/payment/status/:orderId", relaxedRateLimiter, getPaymentStatus);
+  app.get("/api/payment/status/:orderId", relaxedRateLimiter, asyncHandler(getPaymentStatus));
 
   // Master License Escrow bildirimi - strict
-  app.post("/api/payment/escrow-notify", strictRateLimiter, escrowNotify);
-  app.get("/api/payment/escrow-records", requireAdminAuth, handleGetEscrowRecords);
+  app.post("/api/payment/escrow-notify", strictRateLimiter, asyncHandler(escrowNotify));
+  app.get("/api/payment/escrow-records", requireAdminAuth, asyncHandler(handleGetEscrowRecords));
 
   // ============ RATE LIMITING ADMIN ROUTES (GÖREV 12) ============
-  app.get("/api/admin/rate-limit/stats", handleGetRateLimitStats);
-  app.post("/api/admin/rate-limit/reset", handleResetRateLimitStore);
+  app.get("/api/admin/rate-limit/stats", asyncHandler(handleGetRateLimitStats));
+  app.post("/api/admin/rate-limit/reset", asyncHandler(handleResetRateLimitStore));
 
   // ============ GLOBAL ERROR HANDLER ============
   app.use((err: any, req: any, res: any, next: any) => {
-    console.error("❌ Express Error:", err);
+    console.error("❌ EXPRESS ERROR HANDLER TRIGGERED");
+    console.error("   Error Message:", err?.message || "No message");
+    console.error("   Error Stack:", err?.stack);
+    console.error("   Request URL:", req?.url);
+    console.error("   Request Method:", req?.method);
 
     // Eğer response zaten gönderildiyse, error handler'a devam etme
     if (res.headersSent) {
+      console.warn("   Response headers already sent, skipping error response");
       return next(err);
     }
 
-    const statusCode = err.statusCode || err.status || 500;
-    const message = err.message || "Sunucu hatası";
+    const statusCode = err?.statusCode || err?.status || 500;
+    const message = err?.message || "Sunucu hatası";
+
+    console.error(`   Sending error response: ${statusCode} - ${message}`);
 
     res.status(statusCode).json({
       success: false,
       error: message,
-      ...(process.env.NODE_ENV === "development" && { details: err.stack })
+      details: process.env.NODE_ENV === "development" ? err?.stack : undefined,
+      timestamp: new Date().toISOString(),
     });
+  });
+
+  // ============ UNHANDLED REJECTION HANDLER ============
+  process.on('unhandledRejection', (reason: any, promise: any) => {
+    console.error('❌ UNHANDLED REJECTION:', reason);
+    console.error('   Promise:', promise);
+  });
+
+  // ============ UNCAUGHT EXCEPTION HANDLER ============
+  process.on('uncaughtException', (error: any) => {
+    console.error('❌ UNCAUGHT EXCEPTION:', error);
   });
 
   return app;

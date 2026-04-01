@@ -44,6 +44,23 @@ interface EscrowRecord {
   acknowledged: boolean;
 }
 
+interface StoredPaymentRequest {
+  id: string;
+  userId: string;
+  packageId: string;
+  amount: number;
+  email: string;
+  currency: Currency;
+  status: 'pending' | 'user_uploaded_receipt' | 'admin_approved' | 'admin_rejected';
+  createdAt: number;
+  expiryDate: number;
+  approvedAt?: number;
+  rejectionReason?: string;
+  rejectedAt?: number;
+}
+
+// Bellek içinde ödeme taleplerini sakla
+const paymentRequestsStore: Map<string, StoredPaymentRequest> = new Map();
 const escrowRecords: EscrowRecord[] = [];
 
 /**
@@ -70,8 +87,8 @@ export const initiatePayment: RequestHandler = async (req, res) => {
       });
     }
 
-    // Banka hesaplarını localStorage'dan al (demo sistem)
-    // Gerçek sistemde Firestore veya DB'den çekiliyor
+    // Banka hesaplarını bellek içinden al (Memory Storage)
+    // Gerçek sistemde Firestore veya veritabanından çekiliyor
     const bankAccounts: BankAccount[] = [
       {
         id: 'bank_001',
@@ -104,27 +121,22 @@ export const initiatePayment: RequestHandler = async (req, res) => {
     console.log(`   Banka: ${activeBank.bankName}`);
     console.log(`   IBAN: ${activeBank.iban}`);
 
-    // Ödeme talebini localStorage'a kaydet (demo sistem)
-    const paymentRequest = {
+    // Ödeme talebini bellek içinde sakla
+    const paymentRequest: StoredPaymentRequest = {
       id: referenceCode,
       userId,
       packageId,
       amount,
       email,
-      currency,
+      currency: (currency || 'TRY') as Currency,
       status: 'pending', // pending → user_uploaded_receipt → admin_approved → activated
       createdAt: Date.now(),
       expiryDate: Date.now() + (24 * 60 * 60 * 1000) // 24 saat içinde dekont yüklemesi gerekir
     };
 
-    // localStorage'a kaydet
-    try {
-      const existingPayments = JSON.parse(localStorage.getItem('payment_requests') || '[]');
-      existingPayments.push(paymentRequest);
-      localStorage.setItem('payment_requests', JSON.stringify(existingPayments));
-    } catch (e) {
-      console.warn('Payment request localStorage kayıt hatası:', e);
-    }
+    // Bellek içinde sakla
+    paymentRequestsStore.set(referenceCode, paymentRequest);
+    console.log(`💾 Ödeme talebi bellek içinde kaydedildi: ${referenceCode}`);
 
     return res.json({
       success: true,
@@ -167,39 +179,30 @@ export const getPaymentStatus: RequestHandler = async (req, res) => {
       });
     }
 
-    // localStorage'dan ödeme talebini ara
-    try {
-      const paymentRequests = JSON.parse(localStorage.getItem('payment_requests') || '[]');
-      const payment = paymentRequests.find((p: any) => p.id === referenceCode);
+    // Bellek içinden ödeme talebini ara
+    const payment = paymentRequestsStore.get(referenceCode);
 
-      if (!payment) {
-        return res.status(404).json({
-          success: false,
-          message: 'Ödeme talebi bulunamadı'
-        });
-      }
-
-      return res.json({
-        success: true,
-        referenceCode,
-        status: payment.status,
-        packageId: payment.packageId,
-        amount: payment.amount,
-        createdAt: payment.createdAt,
-        message: {
-          pending: 'Dekont yüklemesi bekleniyor',
-          user_uploaded_receipt: 'Dekont alındı, admin onayı bekleniyor',
-          admin_approved: 'Ödemeniz onaylandı, subscription aktif edildi',
-          admin_rejected: 'Dekont reddedildi'
-        }[payment.status] || 'Bilinmeyen durum'
-      });
-    } catch (e) {
-      console.error('Payment status kontrol hatası:', e);
-      return res.status(500).json({
+    if (!payment) {
+      return res.status(404).json({
         success: false,
-        message: 'Ödeme durumu kontrol edilemedi'
+        message: 'Ödeme talebi bulunamadı'
       });
     }
+
+    return res.json({
+      success: true,
+      referenceCode,
+      status: payment.status,
+      packageId: payment.packageId,
+      amount: payment.amount,
+      createdAt: payment.createdAt,
+      message: {
+        pending: 'Dekont yüklemesi bekleniyor',
+        user_uploaded_receipt: 'Dekont alındı, admin onayı bekleniyor',
+        admin_approved: 'Ödemeniz onaylandı, subscription aktif edildi',
+        admin_rejected: 'Dekont reddedildi'
+      }[payment.status] || 'Bilinmeyen durum'
+    });
 
   } catch (error) {
     console.error('Payment status error:', error);
@@ -234,71 +237,64 @@ export const activateSubscriptionAfterApproval: RequestHandler = async (req, res
       });
     }
 
-    // Ödeme talebini güncelle
-    try {
-      const paymentRequests = JSON.parse(localStorage.getItem('payment_requests') || '[]');
-      const paymentIndex = paymentRequests.findIndex((p: any) => p.id === referenceCode);
+    // Bellek içinden ödeme talebini al
+    const payment = paymentRequestsStore.get(referenceCode);
 
-      if (paymentIndex === -1) {
-        return res.status(404).json({
-          success: false,
-          message: 'Ödeme talebi bulunamadı'
-        });
-      }
-
-      const payment = paymentRequests[paymentIndex];
-
-      // Subscription verilerini hazırla
-      const expiryTimestamp = calculateExpiryTimestamp(packageId, Date.now());
-      const startDate = Date.now();
-      const daysRemaining = Math.ceil((expiryTimestamp - startDate) / (1000 * 60 * 60 * 24));
-
-      const subscription = {
-        id: `sub_${Date.now()}`,
-        userId,
-        packageId,
-        status: 'active',
-        startDate,
-        endDate: expiryTimestamp,
-        daysRemaining,
-        amount: payment.amount,
-        currency: payment.currency,
-        paymentReference: referenceCode,
-        activatedAt: Date.now(),
-        activatedBy: 'admin'
-      };
-
-      // Ödeme talebini güncelle
-      paymentRequests[paymentIndex].status = 'admin_approved';
-      paymentRequests[paymentIndex].approvedAt = Date.now();
-      localStorage.setItem('payment_requests', JSON.stringify(paymentRequests));
-
-      // Subscription'ı kaydet (client tarafında kullanılmak üzere)
-      // Gerçek sistemde Firestore/DB'ye yazılabilir
-      const subscriptions = JSON.parse(localStorage.getItem('subscriptions') || '[]');
-      subscriptions.push(subscription);
-      localStorage.setItem('subscriptions', JSON.stringify(subscriptions));
-
-      console.log(`✅ Subscription Aktive Edildi:`);
-      console.log(`   User: ${userId}`);
-      console.log(`   Package: ${packageId}`);
-      console.log(`   Duration: ${daysRemaining} days`);
-      console.log(`   Expiry: ${new Date(expiryTimestamp).toLocaleString('tr-TR')}`);
-
-      return res.json({
-        success: true,
-        message: 'Subscription başarıyla aktive edildi',
-        subscription,
-        paymentReference: referenceCode
-      });
-
-    } catch (e) {
-      console.error('Subscription aktivasyon hatası:', e);
-      return res.status(500).json({
+    if (!payment) {
+      return res.status(404).json({
         success: false,
-        message: 'Subscription aktive edilemedi'
+        message: 'Ödeme talebi bulunamadı'
       });
     }
+
+    // Subscription verilerini hazırla
+    const expiryTimestamp = calculateExpiryTimestamp(packageId as any, Date.now());
+    const startDate = Date.now();
+    const daysRemaining = Math.ceil((expiryTimestamp - startDate) / (1000 * 60 * 60 * 24));
+
+    const subscription = {
+      id: `sub_${Date.now()}`,
+      userId,
+      packageId,
+      status: 'active',
+      startDate,
+      endDate: expiryTimestamp,
+      daysRemaining,
+      amount: payment.amount,
+      currency: payment.currency,
+      paymentReference: referenceCode,
+      activatedAt: Date.now(),
+      activatedBy: 'admin'
+    };
+
+    // Ödeme talebini güncelle - bellek içinde
+    payment.status = 'admin_approved';
+    payment.approvedAt = Date.now();
+    paymentRequestsStore.set(referenceCode, payment);
+
+    // Firestore'a da kaydet
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      try {
+        await firestoreDb.collection('subscriptions').doc(subscription.id).set(subscription);
+        await firestoreDb.collection('payment_requests').doc(referenceCode).set(payment);
+      } catch (fbError) {
+        console.warn('Firestore yazma hatası:', fbError);
+      }
+    }
+
+    console.log(`✅ Subscription Aktive Edildi:`);
+    console.log(`   User: ${userId}`);
+    console.log(`   Package: ${packageId}`);
+    console.log(`   Duration: ${daysRemaining} days`);
+    console.log(`   Expiry: ${new Date(expiryTimestamp).toLocaleString('tr-TR')}`);
+
+    return res.json({
+      success: true,
+      message: 'Subscription başarıyla aktive edildi',
+      subscription,
+      paymentReference: referenceCode
+    });
 
   } catch (error) {
     console.error('Aktivasyon hatası:', error);
@@ -333,39 +329,40 @@ export const rejectReceipt: RequestHandler = async (req, res) => {
       });
     }
 
-    // Ödeme talebini güncelle
-    try {
-      const paymentRequests = JSON.parse(localStorage.getItem('payment_requests') || '[]');
-      const paymentIndex = paymentRequests.findIndex((p: any) => p.id === referenceCode);
+    // Bellek içinden ödeme talebini al
+    const payment = paymentRequestsStore.get(referenceCode);
 
-      if (paymentIndex === -1) {
-        return res.status(404).json({
-          success: false,
-          message: 'Ödeme talebi bulunamadı'
-        });
-      }
-
-      paymentRequests[paymentIndex].status = 'admin_rejected';
-      paymentRequests[paymentIndex].rejectionReason = reason || 'Admin tarafından reddedildi';
-      paymentRequests[paymentIndex].rejectedAt = Date.now();
-      localStorage.setItem('payment_requests', JSON.stringify(paymentRequests));
-
-      console.log(`❌ Dekont Reddedildi: ${referenceCode}`);
-      console.log(`   Sebep: ${reason}`);
-
-      return res.json({
-        success: true,
-        message: 'Dekont reddedildi',
-        referenceCode
-      });
-
-    } catch (e) {
-      console.error('Dekont reddetme hatası:', e);
-      return res.status(500).json({
+    if (!payment) {
+      return res.status(404).json({
         success: false,
-        message: 'Dekont reddetilemedi'
+        message: 'Ödeme talebi bulunamadı'
       });
     }
+
+    // Ödeme talebini reddet - bellek içinde
+    payment.status = 'admin_rejected';
+    payment.rejectionReason = reason || 'Admin tarafından reddedildi';
+    payment.rejectedAt = Date.now();
+    paymentRequestsStore.set(referenceCode, payment);
+
+    // Firestore'a da kaydet
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      try {
+        await firestoreDb.collection('payment_requests').doc(referenceCode).set(payment);
+      } catch (fbError) {
+        console.warn('Firestore yazma hatası:', fbError);
+      }
+    }
+
+    console.log(`❌ Dekont Reddedildi: ${referenceCode}`);
+    console.log(`   Sebep: ${reason}`);
+
+    return res.json({
+      success: true,
+      message: 'Dekont reddedildi',
+      referenceCode
+    });
 
   } catch (error) {
     console.error('Reddetme hatası:', error);
@@ -470,3 +467,4 @@ export const healthCheck: RequestHandler = (req, res) => {
 };
 
 export type { BankTransferResponse };
+export { paymentRequestsStore };
