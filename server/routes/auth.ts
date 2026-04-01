@@ -1,6 +1,7 @@
 import { RequestHandler } from "express";
 import { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse, UserProfile } from "@shared/api";
 import { getDatabase, UserRecord } from "../database";
+import { getAdminDb } from "../lib/firebase-admin";
 
 // Basit in-memory user store (Üretimde veritabanı kullanılacak)
 const users = new Map<string, UserProfile & { password: string }>();
@@ -61,7 +62,7 @@ export { initializeDemoUsers };
  */
 export const handleRegister: RequestHandler<any, RegisterResponse, RegisterRequest> = async (req, res) => {
   try {
-    const { username, phone, password } = req.body;
+    const { username, phone, password, email } = req.body as any;
     const db = getDatabase();
 
     // Validasyon
@@ -120,8 +121,8 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       password_hash: passwordHash,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      approval_status: 'approved', // Otomatik onay - istersen 'pending' yapabilirsin
-      is_active: true,
+      approval_status: 'pending', // Admin onayını beklet
+      is_active: false, // Onay alana kadar inaktif
     };
 
     const dbResult = await db.saveUser(dbUser);
@@ -130,6 +131,27 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
         success: false,
         message: dbResult.error || "Kullanıcı kaydı başarısız",
       });
+    }
+
+    // Firebase Firestore'a da kaydet
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      try {
+        await firestoreDb.collection('users').doc(userId).set({
+          id: userId,
+          username: username,
+          phone: phone,
+          email: email || `user_${userId}@app.local`,
+          approval_status: 'pending',
+          is_active: false,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { merge: true });
+        console.log(`✅ Kullanıcı Firestore'a kaydedildi: ${username} (ID: ${userId}) - Onay bekleniyor`);
+      } catch (firestoreError) {
+        console.warn(`⚠️ Firestore kayıt hatası (devam ediliyor): ${username}`, firestoreError);
+        // Hata olsa bile kayıt işlemine devam et, Firestore olmasa da sistem çalışmalı
+      }
     }
 
     // Bellek içi cache'de de tut
@@ -255,6 +277,53 @@ export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = asy
       }
     }
 
+    // Firebase'den de kontrol et
+    if (!user) {
+      const firestoreDb = getAdminDb();
+      if (firestoreDb) {
+        try {
+          // E-posta veya username ile ara
+          const snapshot = await firestoreDb
+            .collection('users')
+            .where('email', '==', email)
+            .limit(1)
+            .get();
+
+          if (!snapshot.empty) {
+            const firestoreUser = snapshot.docs[0].data();
+            user = {
+              uid: firestoreUser.id || snapshot.docs[0].id,
+              email: firestoreUser.email || email,
+              username: firestoreUser.username,
+              phone: firestoreUser.phone || '',
+              password: '', // Firestore'da şifre saklanmaz
+              createdAt: new Date(firestoreUser.created_at).getTime(),
+              updatedAt: new Date(firestoreUser.updated_at).getTime(),
+              isAdmin: false,
+              preferences: {
+                theme: "light",
+                language: "tr",
+                notifications: true,
+              },
+              statistics: {
+                totalScans: 0,
+                totalScanTime: 0,
+                areasExplored: 0,
+              },
+              subscription: {
+                plan: "free",
+                isActive: false,
+                daysRemaining: 0,
+                endDate: 0,
+              },
+            };
+          }
+        } catch (firestoreError) {
+          console.warn('Firebase login kontrolü hatası:', firestoreError);
+        }
+      }
+    }
+
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -284,7 +353,7 @@ export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = asy
     // Şifreyi çıkar
     const { password: _, ...userProfile } = user;
 
-    console.log(`✅ Giriş başarılı: ${username} (ID: ${user.uid})`);
+    console.log(`✅ Giriş başarılı: ${user.username} (ID: ${user.uid})`);
 
     res.json({
       success: true,

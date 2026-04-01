@@ -1,6 +1,7 @@
 import { RequestHandler } from 'express';
 import { validatePackagePrice, calculateExpiryTimestamp } from '@shared/packages';
 import { Currency } from '@shared/api';
+import { getAdminDb } from '../lib/firebase-admin';
 import crypto from 'crypto';
 
 /**
@@ -33,6 +34,17 @@ interface BankTransferResponse {
   amount?: number;
   packageId?: string;
 }
+
+interface EscrowRecord {
+  id: string;
+  status: string;
+  amount?: number;
+  licenseeId?: string;
+  receivedAt: number;
+  acknowledged: boolean;
+}
+
+const escrowRecords: EscrowRecord[] = [];
 
 /**
  * Ödeme başlat endpoint (IBAN/Havale)
@@ -386,8 +398,8 @@ export const escrowNotify: RequestHandler = async (req, res) => {
     console.log(`   Amount: ${amount}`);
     console.log(`   Licensee: ${licenseeId}`);
 
-    // Escrow durumunu kaydet (demo sistem)
-    const escrowRecord = {
+    // Escrow durumunu kaydet
+    const escrowRecord: EscrowRecord = {
       id: transactionId,
       status,
       amount,
@@ -396,13 +408,11 @@ export const escrowNotify: RequestHandler = async (req, res) => {
       acknowledged: true
     };
 
-    // localStorage'a kaydet
-    try {
-      const escrowRecords = JSON.parse(localStorage.getItem('escrow_records') || '[]');
-      escrowRecords.push(escrowRecord);
-      localStorage.setItem('escrow_records', JSON.stringify(escrowRecords));
-    } catch (e) {
-      console.warn('Escrow record localStorage kayıt hatası:', e);
+    escrowRecords.push(escrowRecord);
+
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      await firestoreDb.collection('escrow_requests').doc(transactionId).set(escrowRecord, { merge: true });
     }
 
     res.json({
@@ -425,6 +435,25 @@ export const escrowNotify: RequestHandler = async (req, res) => {
  * Sistem health check
  * GET /api/payment/health
  */
+export const handleGetEscrowRecords: RequestHandler = (req, res) => {
+  try {
+    const status = req.query.status as string | undefined;
+    const filtered = status ? escrowRecords.filter(record => record.status === status) : escrowRecords;
+
+    res.json({
+      success: true,
+      count: filtered.length,
+      records: filtered.slice().reverse()
+    });
+  } catch (error) {
+    console.error('Escrow kayıtları getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Escrow kayıtları alınamadı'
+    });
+  }
+};
+
 export const healthCheck: RequestHandler = (req, res) => {
   res.json({
     success: true,

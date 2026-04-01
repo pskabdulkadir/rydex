@@ -259,18 +259,7 @@ export default function AdminPanel() {
         }
 
         // 4. Beklemede olan Escrow isteklerini say
-        const escrowStr = localStorage.getItem('escrowRequests');
-        let pendingRequests = 0;
-        if (escrowStr) {
-          try {
-            const escrow = JSON.parse(escrowStr);
-            if (Array.isArray(escrow)) {
-              pendingRequests = escrow.filter((e: any) => e.status === 'pending').length;
-            }
-          } catch (e) {
-            console.warn('Escrow parse hatası:', e);
-          }
-        }
+        const pendingRequests = requests.filter((e: any) => e.status === 'pending').length;
 
         // 5. Conversion rate'i hesapla
         // Demo: Sayfaya giren vs satın alan oranı (varsayılan 3.2% veya gerçek verilerden)
@@ -306,12 +295,29 @@ export default function AdminPanel() {
     const interval = setInterval(calculateStats, 3000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [requests]);
 
-  // Escrow istekleri localStorage'dan otomatik yükleme
+  // Escrow istekleri API'den otomatik yükleme
   useEffect(() => {
-    const loadEscrowRequests = () => {
+    const loadEscrowRequests = async () => {
       try {
+        const token = getAdminToken();
+        if (token) {
+          const response = await fetch('/api/payment/escrow-records', {
+            headers: {
+              'Authorization': `Bearer ${token.token}`,
+            },
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+            const escrowReqs = (data.records || []) as EscrowRequest[];
+            setRequests(escrowReqs);
+            console.log('📋 Escrow istekleri yüklendi:', escrowReqs.length);
+            return;
+          }
+        }
+
         const saved = localStorage.getItem('escrowRequests');
         if (saved) {
           const escrowReqs: EscrowRequest[] = JSON.parse(saved);
@@ -325,7 +331,7 @@ export default function AdminPanel() {
 
     loadEscrowRequests();
 
-    // Her 3 saniyede bir localStorage kontrol et (real-time update)
+    // Her 3 saniyede bir API/localStorage kontrol et (real-time update)
     const interval = setInterval(loadEscrowRequests, 3000);
 
     return () => clearInterval(interval);
@@ -546,11 +552,28 @@ export default function AdminPanel() {
   const loadRequests = async () => {
     setIsLoading(true);
     try {
+      const token = getAdminToken();
+      if (token) {
+        const response = await fetch('/api/payment/escrow-records', {
+          headers: {
+            'Authorization': `Bearer ${token.token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const parsedRequests = (data.records || []) as EscrowRequest[];
+          setRequests(parsedRequests);
+          console.log('✅ Escrow istekleri yüklendi:', parsedRequests.length);
+          return;
+        }
+      }
+
       // localStorage'dan önceden kaydedilmiş istekleri yükle
       const saved = localStorage.getItem('escrowRequests');
       if (saved) {
         const parsedRequests = JSON.parse(saved);
-        setRequests([...requests, ...parsedRequests]);
+        setRequests(parsedRequests);
         console.log('✅ Escrow istekleri yüklendi:', parsedRequests.length);
       }
     } catch (error) {

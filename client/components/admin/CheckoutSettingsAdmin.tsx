@@ -277,7 +277,7 @@ export default function CheckoutSettingsAdmin() {
         const data = await response.json();
         setPaymentMethods([...paymentMethods, data.data]);
         setNewPaymentMethod({
-          type: 'credit-card' as 'credit-card' | 'bank-transfer',
+          type: 'bank-transfer',
           label: '',
           description: '',
           isEnabled: true

@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { initializeDatabase, getDatabase } from "./database";
-import { initiatePayment, getPaymentStatus, escrowNotify } from "./routes/payment";
+import { initiatePayment, getPaymentStatus, escrowNotify, handleGetEscrowRecords } from "./routes/payment";
 import {
   verifyPaymentStatus,
   checkPaymentStatus as checkPaymentStatusV2,
@@ -1447,6 +1447,7 @@ export function createServer() {
 
   // Master License Escrow bildirimi - strict
   app.post("/api/payment/escrow-notify", strictRateLimiter, escrowNotify);
+  app.get("/api/payment/escrow-records", requireAdminAuth, handleGetEscrowRecords);
 
   // ============ RATE LIMITING ADMIN ROUTES (GÖREV 12) ============
   app.get("/api/admin/rate-limit/stats", handleGetRateLimitStats);
