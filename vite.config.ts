@@ -53,10 +53,25 @@ export default defineConfig(({ mode }) => ({
       "/api": {
         target: "http://localhost:5173",
         changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.error('[Vite Proxy] ❌ Backend sunucusuna ulaşılamıyor:', err.message);
+          });
+          proxy.on('proxyRes', (proxyRes, req, _res) => {
+            if (proxyRes.statusCode === 502) {
+              console.warn('[Vite Proxy] ⚠️ 502 Hatası alındı:', req.url);
+            }
+          });
+        },
       },
       "/camera-analysis": {
         target: "http://localhost:5173",
         changeOrigin: true,
+        configure: (proxy, _options) => {
+          proxy.on('error', (err, _req, _res) => {
+            console.error('[Vite Proxy - Camera] ❌ Hata:', err.message);
+          });
+        },
       },
     },
   },

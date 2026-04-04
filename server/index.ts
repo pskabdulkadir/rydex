@@ -206,13 +206,28 @@ import { initializeFirebaseAdmin } from "./lib/firebase-admin";
  * Tüm servisler ücretsiz ve açık erişimli.
  */
 
-// Veritabanı başlatma
-initializeDatabase({
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseKey: process.env.SUPABASE_ANON_KEY,
-  neonConnectionString: process.env.DATABASE_URL,
-  useInMemory: !process.env.DATABASE_URL && !process.env.SUPABASE_URL,
-});
+// Veritabanı başlatma (Güvenli yöntemle)
+try {
+  console.log('🔄 Veritabanı başlatılıyor...');
+  const dbConfig = {
+    supabaseUrl: process.env.SUPABASE_URL,
+    supabaseKey: process.env.SUPABASE_ANON_KEY,
+    neonConnectionString: process.env.DATABASE_URL,
+    useInMemory: !process.env.DATABASE_URL && !process.env.SUPABASE_URL,
+  };
+  console.log('   Mod:', dbConfig.useInMemory ? 'Bellek içinde' : 'Veritabanı');
+  initializeDatabase(dbConfig);
+  console.log('✅ Veritabanı başlatıldı');
+} catch (error) {
+  console.error('❌ Veritabanı başlatma başarısız:', error instanceof Error ? error.message : String(error));
+  console.error('   Fallback: Bellek içi depolama kullanılacak');
+  // Fallback - bellek içinde çalışmaya devam et
+  try {
+    initializeDatabase({ useInMemory: true });
+  } catch (fallbackError) {
+    console.error('❌ KRITIK: Fallback veritabanı da başlatılamadı!');
+  }
+}
 
 interface SyncItem {
   id?: string;
@@ -272,15 +287,42 @@ const stats = {
 export function createServer() {
   const app = express();
 
-  // Firebase Admin SDK'yı başlat
-  initializeFirebaseAdmin();
+  // Firebase Admin SDK'yı başlat (güvenli yöntemle)
+  try {
+    initializeFirebaseAdmin();
+  } catch (error) {
+    console.warn('⚠️ Firebase Admin SDK başlatma başarısız, fallback modunda çalışıyor:', error instanceof Error ? error.message : String(error));
+  }
 
-  // Demo kullanıcılarını initialize et
-  initializeDemoUsers();
+  // Demo kullanıcılarını initialize et (güvenli yöntemle)
+  try {
+    initializeDemoUsers();
+  } catch (error) {
+    console.warn('⚠️ Demo kullanıcıları başlatma başarısız:', error instanceof Error ? error.message : String(error));
+  }
 
   // Global error handler for async route handlers
-  const asyncHandler = (fn: any) => (req: any, res: any, next: any) =>
-    Promise.resolve(fn(req, res, next)).catch(next);
+  const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
+    try {
+      const result = fn(req, res, next);
+      // Eğer Promise ise, catch et
+      if (result && typeof result.catch === 'function') {
+        return result.catch(next);
+      }
+      return result;
+    } catch (error) {
+      // Synchronous hataları yakala
+      console.error('❌ HANDLER SYNC ERROR:', error);
+      if (!res.headersSent) {
+        return res.status(500).json({
+          success: false,
+          error: error instanceof Error ? error.message : 'Sunucu hatası',
+          timestamp: new Date().toISOString(),
+        });
+      }
+      next(error);
+    }
+  };
 
   // Ara yazılım (Middleware)
   app.use(cors());
@@ -1484,13 +1526,24 @@ export function createServer() {
 
   // ============ UNHANDLED REJECTION HANDLER ============
   process.on('unhandledRejection', (reason: any, promise: any) => {
-    console.error('❌ UNHANDLED REJECTION:', reason);
+    console.error('❌ UNHANDLED REJECTION:');
+    console.error('   Reason:', reason instanceof Error ? reason.message : String(reason));
+    if (reason instanceof Error) {
+      console.error('   Stack:', reason.stack);
+    }
     console.error('   Promise:', promise);
+    // Process'i kill etme - devam et
   });
 
   // ============ UNCAUGHT EXCEPTION HANDLER ============
   process.on('uncaughtException', (error: any) => {
-    console.error('❌ UNCAUGHT EXCEPTION:', error);
+    console.error('❌ UNCAUGHT EXCEPTION:');
+    console.error('   Message:', error instanceof Error ? error.message : String(error));
+    if (error instanceof Error) {
+      console.error('   Stack:', error.stack);
+    }
+    // Kritik exception'da, eğer çok önemliyse process exit et, ama şimdi önemliyse devam et
+    // process.exit(1);
   });
 
   return app;

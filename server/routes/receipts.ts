@@ -38,6 +38,8 @@ const mapFirestoreReceipt = (doc: any) => {
  */
 export const handleUploadReceipt: RequestHandler = async (req, res) => {
   try {
+    console.log('📄 Dekont yükleme başlandı...');
+
     const { subscriptionId, plan, amount, currency, fileName, fileUrl, fileSize, mimeType } = req.body;
     const userId = req.headers['x-user-id'] as string;
 
@@ -56,7 +58,14 @@ export const handleUploadReceipt: RequestHandler = async (req, res) => {
     }
 
     const db = getDatabase();
-    const firestoreDb = getAdminDb();
+    let firestoreDb = null;
+
+    try {
+      firestoreDb = getAdminDb();
+    } catch (fbError) {
+      console.warn('⚠️ Firebase Firestore yüklenemedi:', fbError instanceof Error ? fbError.message : String(fbError));
+    }
+
     const receiptId = `receipt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     const receipt: ReceiptRecord = {
@@ -143,20 +152,32 @@ export const handleGetUserReceipts: RequestHandler = async (req, res) => {
  */
 export const handleGetPendingReceipts: RequestHandler = async (req, res) => {
   try {
-    const firestoreDb = getAdminDb();
+    console.log('📄 Bekleyen dekonlar sorgulanıyor...');
+
+    let firestoreDb = null;
+    try {
+      firestoreDb = getAdminDb();
+    } catch (fbError) {
+      console.warn('⚠️ Firebase Firestore yüklenemedi:', fbError instanceof Error ? fbError.message : String(fbError));
+    }
+
     if (firestoreDb) {
-      const snapshot = await firestoreDb
-        .collection('receipts')
-        .where('status', '==', 'pending')
-        .get();
+      try {
+        const snapshot = await firestoreDb
+          .collection('receipts')
+          .where('status', '==', 'pending')
+          .get();
 
-      const firestoreReceipts = snapshot.docs.map(mapFirestoreReceipt);
+        const firestoreReceipts = snapshot.docs.map(mapFirestoreReceipt);
 
-      return res.json({
-        success: true,
-        receipts: firestoreReceipts,
-        count: firestoreReceipts.length
-      });
+        return res.json({
+          success: true,
+          receipts: firestoreReceipts,
+          count: firestoreReceipts.length
+        });
+      } catch (fbQueryError) {
+        console.warn('⚠️ Firestore sorgusu başarısız, bellek içine fallback:', fbQueryError instanceof Error ? fbQueryError.message : String(fbQueryError));
+      }
     }
 
     const db = getDatabase();
@@ -168,10 +189,11 @@ export const handleGetPendingReceipts: RequestHandler = async (req, res) => {
       count: receipts.length
     });
   } catch (error) {
-    console.error('Bekleyen dekont sorgulaması hatası:', error);
+    console.error('❌ Bekleyen dekont sorgulaması hatası:', error);
     res.status(500).json({
       success: false,
-      message: 'Dekontlar alınamadı'
+      message: 'Dekontlar alınamadı',
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 };
