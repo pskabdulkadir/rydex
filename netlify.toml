@@ -6,10 +6,8 @@
 [build.environment]
   NODE_VERSION = "22"
 
-[functions]
-  # Netlify'a bu paketleri dışarıda bırakmamasını söylüyoruz
+[functions.node_bundle]
   external_node_modules = ["express", "firebase-admin", "serverless-http", "cors", "dotenv"]
-  node_bundle = true
 
 [[redirects]]
   from = "/api/*"
