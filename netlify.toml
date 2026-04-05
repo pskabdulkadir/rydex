@@ -1,5 +1,5 @@
 [build]
-  command = "pnpm install && pnpm run build"
+  command = "npm run build"
   functions = "netlify/functions"
   publish = "dist"
 
@@ -7,8 +7,9 @@
   NODE_VERSION = "22"
 
 [functions]
-  external_node_modules = ["express", "cors"]
-  node_bundler = "esbuild"
+  # Netlify'a bu paketleri dışarıda bırakmamasını söylüyoruz
+  external_node_modules = ["express", "firebase-admin", "serverless-http", "cors", "dotenv"]
+  node_bundle = true
 
 [[redirects]]
   from = "/api/*"
