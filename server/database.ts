@@ -60,6 +60,7 @@ interface MagnetometerRecord {
 interface UserRecord {
   id: string;
   username: string;
+  email?: string;
   phone: string;
   password_hash: string;
   created_at: string;

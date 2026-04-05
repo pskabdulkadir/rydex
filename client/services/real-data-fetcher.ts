@@ -129,6 +129,7 @@ export class RealDataFetcher {
         longitude: lon,
         dominantRock: 'Bilinmiyor',
         deposits: [],
+        rockTypes: [],
         mineralDensity: 2.65,
         rockAge: 'Bilinmiyor',
         source: 'Fallback (API başarısız)',
@@ -138,15 +139,22 @@ export class RealDataFetcher {
         latitude: lat,
         longitude: lon,
         unescoSites: [],
+        archaeologicalSites: [],
+        historicalPeriods: [],
+        knownArtifacts: [],
         historicalSites: [],
         archaeologicalContext: 'Bilinmiyor',
         source: 'Fallback (API başarısız)',
       });
 
       const getTerrainFallback = (lat: number, lon: number) => ({
-        latitude: lat,
-        longitude: lon,
-        elevation: 0,
+        elevation: {
+          latitude: lat,
+          longitude: lon,
+          elevation: 0,
+          resolution: 0,
+          source: 'USGS' as const,
+        },
         slope: 0,
         aspect: 0,
         source: 'Fallback (API başarısız)',

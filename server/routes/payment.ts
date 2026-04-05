@@ -182,7 +182,9 @@ export const initiatePayment: RequestHandler = async (req, res) => {
  */
 export const getPaymentStatus: RequestHandler = async (req, res) => {
   try {
-    const { referenceCode } = req.params;
+    const referenceCode = Array.isArray(req.params.referenceCode)
+      ? req.params.referenceCode[0]
+      : req.params.referenceCode;
 
     if (!referenceCode) {
       return res.status(400).json({

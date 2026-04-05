@@ -117,6 +117,7 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
     const dbUser: UserRecord = {
       id: userId,
       username,
+      email: email || undefined,
       phone,
       password_hash: passwordHash,
       created_at: new Date().toISOString(),

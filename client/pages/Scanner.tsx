@@ -391,13 +391,12 @@ export default function Index() {
 
           // İklim Verisi (Open-Meteo)
           climateData: additionalData[0]?.status === 'fulfilled' && additionalData[0].value ? {
-            temperature: additionalData[0].value.temperature || 'Bilinmiyor',
-            humidity: additionalData[0].value.humidity || 0,
-            pressure: additionalData[0].value.pressure_msl || 0,
+            temperature: Number(additionalData[0].value.temperature) || 0,
+            humidity: Number(additionalData[0].value.humidity) || 0,
+            pressure: Number(additionalData[0].value.pressure_msl) || 0,
             windDirection: 0,
           } : {
-            dataFound: false,
-            temperature: 'Veri bulunamadı',
+            temperature: 0,
             humidity: 0,
             pressure: 0,
             windDirection: 0,
@@ -405,12 +404,11 @@ export default function Index() {
 
           // Rüzgar Verisi
           windAnalysis: additionalData[1]?.status === 'fulfilled' && additionalData[1].value ? {
-            speed: additionalData[1].value.speed || 0,
-            direction: additionalData[1].value.direction || 0,
-            strength: Math.round((additionalData[1].value.speed || 0) / 5 * 100),
-            gusts: (additionalData[1].value.speed || 0) * 1.5,
+            speed: Number(additionalData[1].value.speed) || 0,
+            direction: Number(additionalData[1].value.direction) || 0,
+            strength: Math.round((Number(additionalData[1].value.speed) || 0) / 5 * 100),
+            gusts: (Number(additionalData[1].value.speed) || 0) * 1.5,
           } : {
-            dataFound: false,
             speed: 0,
             direction: 0,
             strength: 0,
@@ -419,12 +417,11 @@ export default function Index() {
 
           // Toprak Analizi
           soilComposition: additionalData[2]?.status === 'fulfilled' && additionalData[2].value ? {
-            pH: additionalData[2].value.pH || 6,
-            mineralDensity: additionalData[2].value.mineralDensity || 2.6,
-            organicContent: additionalData[2].value.organicContent || 0,
-            carbonContent: additionalData[2].value.carbonContent || 0,
+            pH: Number(additionalData[2].value.pH) || 6,
+            mineralDensity: Number(additionalData[2].value.mineralDensity) || 2.6,
+            organicContent: Number(additionalData[2].value.organicContent) || 0,
+            carbonContent: Number(additionalData[2].value.carbonContent) || 0,
           } : {
-            dataFound: false,
             pH: 0,
             mineralDensity: 0,
             organicContent: 0,
@@ -440,7 +437,6 @@ export default function Index() {
             structures: specialData[0].value.structures || [],
             overallIntegrity: specialData[0].value.overallIntegrity || 0,
           } : {
-            dataFound: false,
             structuresDetected: false,
             totalStructures: 0,
             structureCount: 0,
@@ -457,7 +453,6 @@ export default function Index() {
             estimatedTotalValue: specialData[1].value.estimatedTotalValue || 0,
             archaeologicalSignificance: specialData[1].value.archaeologicalSignificance || 0,
           } : {
-            dataFound: false,
             artifactsDetected: false,
             totalArtifacts: 0,
             artifacts: [],
