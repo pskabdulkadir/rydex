@@ -361,6 +361,13 @@ export default function MemberPanel() {
           </div>
           <div className="flex items-center gap-3">
             <Button
+              onClick={() => navigate('/admin')}
+              className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-bold"
+              title="Admin Paneline Git"
+            >
+              ⚙️ Admin Paneli
+            </Button>
+            <Button
               onClick={handleGoBack}
               className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-bold"
             >
@@ -422,6 +429,13 @@ export default function MemberPanel() {
                 className="w-full px-4 py-2 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-400 rounded-lg text-sm font-semibold transition-all text-left flex items-center gap-2"
               >
                 👤 Üye Paneline Dön
+              </button>
+              <button
+                onClick={() => navigate('/admin')}
+                className="w-full px-4 py-2 bg-purple-600/20 hover:bg-purple-600/30 border border-purple-500/30 text-purple-400 rounded-lg text-sm font-semibold transition-all text-left flex items-center gap-2"
+                title="Admin Paneline Git"
+              >
+                ⚙️ Admin Paneli
               </button>
             </div>
 

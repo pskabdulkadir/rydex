@@ -90,6 +90,13 @@ export default function Landing() {
             >
               ✨ Üye Ol
             </button>
+            <button
+              onClick={() => navigate('/admin-login')}
+              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 border border-purple-500/30 text-white rounded-lg text-sm font-semibold transition-all"
+              title="Admin Giriş Yap"
+            >
+              ⚙️ Admin
+            </button>
           </nav>
         </div>
       </header>

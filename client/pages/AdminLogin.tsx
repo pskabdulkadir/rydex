@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Shield, Eye, EyeOff, AlertCircle, Lock } from 'lucide-react';
 import { toast } from 'sonner';
 import { loginAdminLocal, isAdminLoggedIn, scheduleTokenRefresh } from '@/lib/admin-auth';
@@ -160,10 +160,31 @@ export default function AdminLogin() {
         </div>
 
         {/* Footer */}
-        <div className="text-center mt-6">
+        <div className="text-center mt-6 space-y-3">
           <p className="text-slate-400 text-sm">
             Bu sayfa sadece yöneticiler için tasarlanmıştır
           </p>
+
+          <div className="pt-3 border-t border-slate-700/30">
+            <p className="text-slate-400 text-sm">
+              Üye misiniz?{' '}
+              <Link
+                to="/member-login"
+                className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"
+              >
+                Üye Giriş
+              </Link>
+            </p>
+          </div>
+
+          <div className="pt-3 border-t border-slate-700/30">
+            <Link
+              to="/rydex"
+              className="text-slate-400 hover:text-slate-300 text-sm transition-colors"
+            >
+              ← Ana Sayfaya Dön
+            </Link>
+          </div>
         </div>
       </div>
     </div>

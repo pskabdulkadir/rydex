@@ -137,6 +137,15 @@ export default function Login() {
         </div>
 
         <div className="mt-6 pt-6 border-t border-gray-200">
+          <p className="text-center text-gray-600 text-sm">
+            Yönetici misiniz?{' '}
+            <Link to="/admin-login" className="text-purple-600 hover:text-purple-700 font-medium">
+              Admin Giriş
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-6 pt-6 border-t border-gray-200">
           <Link
             to="/rydex"
             className="text-center block text-sm text-gray-600 hover:text-gray-700"

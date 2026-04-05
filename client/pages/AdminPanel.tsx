@@ -1093,12 +1093,16 @@ export default function AdminPanel() {
       <div className="border-b border-slate-700/30 backdrop-blur-md sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('/rydex')} title="Ana sayfaya dön">
-              <div className="p-3 bg-slate-800 rounded-lg border border-slate-700 group-hover:border-cyan-400/50 group-hover:bg-slate-700 transition-all">
+            <div className="flex items-center gap-4">
+              <div
+                className="cursor-pointer group p-3 bg-slate-800 rounded-lg border border-slate-700 group-hover:border-cyan-400/50 group-hover:bg-slate-700 transition-all"
+                onClick={() => navigate('/rydex')}
+                title="Ana sayfaya dön"
+              >
                 <Shield className="w-6 h-6 text-cyan-400" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors">Admin Paneli</h1>
+                <h1 className="text-2xl font-bold text-white">Admin Paneli</h1>
                 <p className="text-sm text-slate-400">Master License Escrow Yönetimi</p>
               </div>
             </div>
@@ -1302,6 +1306,17 @@ export default function AdminPanel() {
             }`}
           >
             💳 Checkout Yönetimi
+          </button>
+          <button
+            onClick={() => navigate('/member-panel')}
+            className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 whitespace-nowrap flex items-center gap-2 ${
+              selectedTab === 'member'
+                ? 'border-indigo-500 text-white shadow-sm shadow-indigo-500/20'
+                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-indigo-500/50'
+            }`}
+            title="Üye Paneline Git"
+          >
+            👤 Üye Paneli
           </button>
         </div>
 
