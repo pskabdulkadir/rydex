@@ -1,0 +1,12 @@
+{
+  "name": "akn-netlify-functions",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "express": "^4.19.2",
+    "firebase-admin": "^13.7.0",
+    "serverless-http": "^3.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5"
+  }
+}

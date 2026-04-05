@@ -6,6 +6,10 @@
 [build.environment]
   NODE_VERSION = "22"
 
+[functions]
+  included_files = ["server/**", "shared/**", "netlify/**"]
+  excluded_files = ["node_modules/**", "dist/**"]
+
 [functions.node_bundle]
   external_node_modules = ["express", "firebase-admin", "serverless-http", "cors", "dotenv"]
 
