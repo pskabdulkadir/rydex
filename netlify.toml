@@ -1,13 +1,16 @@
 [build]
-  command = "npm run build"
+  command = "npm run build:client && npm run build:netlify"
   functions = "netlify/functions"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
+  TS_NODE_TRANSPILE_ONLY = "true"
 
 [functions.node_bundle]
-  external_node_modules = ["express", "firebase-admin", "serverless-http", "cors", "dotenv"]
+  external_node_modules = ["express", "firebase-admin", "serverless-http", "cors", "dotenv", "jsonwebtoken", "uuid", "date-fns", "axios", "zod"]
+  format = "esm"
+  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/api/*"

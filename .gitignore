@@ -32,3 +32,6 @@ dist-ssr
 
 # Firebase Admin SDK - Gizli Anahtarlar
 server/lib/firebase-adminsdk.json
+
+# Local Netlify folder
+.netlify

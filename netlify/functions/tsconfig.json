@@ -10,7 +10,11 @@
     "skipLibCheck": true,
     "noEmit": false,
     "outDir": "./dist",
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": "../",
+    "paths": {
+      "@shared/*": ["shared/*"]
+    }
   },
   "include": ["**/*.ts"],
   "exclude": ["node_modules"]
