@@ -19,7 +19,14 @@ function removeDir(dirPath) {
 
 // Dizini kopyala ve imports'ı güncelle
 function copyAndFixImports(src, dest) {
-  fs.cpSync(src, dest, { recursive: true });
+  // Kopyala, ancak esbuild.config.js gibi config dosyalarını hariç tut
+  fs.cpSync(src, dest, {
+    recursive: true,
+    filter: (src) => {
+      // esbuild.config.js gibi konfigürasyon dosyalarını hariç tut
+      return !src.endsWith('esbuild.config.js');
+    }
+  });
   
   // Tüm .ts dosyalarını bulup @shared/* imports'ı relative paths'e çevir
   const tsFiles = findFiles(dest, /\.ts$/);
@@ -64,6 +71,21 @@ function findFiles(dir, pattern) {
 // Sil ve kopyala
 removeDir(targetServerDir);
 removeDir(targetSharedDir);
+
+// netlify/functions altındaki tüm .js config dosyalarını sil (esbuild.config.js vb.)
+const netlifyFunctionsDir = path.join(projectRoot, 'netlify/functions');
+if (fs.existsSync(netlifyFunctionsDir)) {
+  const files = fs.readdirSync(netlifyFunctionsDir);
+  files.forEach(file => {
+    const fullPath = path.join(netlifyFunctionsDir, file);
+    const stat = fs.statSync(fullPath);
+    // Sadece .js config dosyalarını sil (functions değil)
+    if (stat.isFile() && file.endsWith('.config.js')) {
+      fs.unlinkSync(fullPath);
+      console.log(`  - Kaldırıldı: ${file}`);
+    }
+  });
+}
 
 copyAndFixImports(sourceServerDir, targetServerDir);
 
