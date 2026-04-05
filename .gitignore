@@ -29,3 +29,6 @@ dist-ssr
 
 .vercel
 .env*.local
+
+# Firebase Admin SDK - Gizli Anahtarlar
+server/lib/firebase-adminsdk.json

@@ -1,102 +1,67 @@
-import * as admin from 'firebase-admin';
-
-let adminDb: any = null;
-let adminAuth: any = null;
-let isInitialized = false;
+import admin from "firebase-admin";
+import path from "path";
+import fs from "fs";
 
 /**
- * Firebase Admin SDK'yı başlat
- * FIREBASE_ADMIN_KEY ortam değişkeninden okur
+ * AKN Global Group - Firebase Admin SDK Dosya Tabanlı Başlatma
  */
-export function initializeFirebaseAdmin() {
-  if (isInitialized && adminDb && adminAuth) {
-    return { adminDb, adminAuth };
+let adminApp: admin.app.App | null = null;
+let adminDbInstance: admin.firestore.Firestore | null = null;
+let adminAuthInstance: admin.auth.Auth | null = null;
+
+const initializeFirebaseAdmin = () => {
+  if (adminApp && admin.apps.length > 0) {
+    return adminApp;
   }
 
-  try {
-    const adminKey = process.env.FIREBASE_ADMIN_KEY;
+  // Dosya yolunu belirle
+  const serviceAccountPath = path.resolve(process.cwd(), "server/lib/firebase-adminsdk.json");
 
-    if (!adminKey) {
-      console.warn('⚠️ FIREBASE_ADMIN_KEY ortam değişkeni bulunamadı.');
-      console.warn('💡 Firebase servisleri devre dışı. Lütfen .env dosyasını kontrol edin.');
-      return { adminDb: null, adminAuth: null };
-    }
-
-    // FIREBASE_ADMIN_KEY'i JSON objesine çevir
-    let serviceAccount: any;
-    
-    if (adminKey.trim().startsWith('{')) {
-      // Zaten JSON string formatında
-      serviceAccount = JSON.parse(adminKey);
-    } else {
-      // Base64 encoded formatında
-      serviceAccount = JSON.parse(
-        Buffer.from(adminKey, 'base64').toString('utf-8')
-      );
-    }
-
-    // Firebase Admin Apps'in kontrol et
-    if (!admin.apps.length) {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
+  // Dosyanın varlığını kontrol et
+  if (fs.existsSync(serviceAccountPath)) {
+    try {
+      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+      
+      adminApp = admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount)
       });
 
-      adminDb = admin.firestore();
-      adminAuth = admin.auth();
-      isInitialized = true;
+      adminDbInstance = adminApp.firestore();
+      adminAuthInstance = adminApp.auth();
 
-      console.log(`✅ Firebase Admin SDK başarıyla başlatıldı (Proje: ${serviceAccount.project_id})`);
-    } else {
-      // Zaten başlatılmış
-      adminDb = admin.firestore();
-      adminAuth = admin.auth();
-      isInitialized = true;
+      console.log("🚀 [AKN Global] Admin SDK dosyadan başarıyla yüklendi.");
+      return adminApp;
+    } catch (error) {
+      console.error("❌ [AKN Global] Admin SDK JSON dosyası okunamadı:", error);
     }
-
-    return { adminDb, adminAuth };
-  } catch (error) {
-    console.error('❌ Firebase Admin başlatma hatası:', error);
-
-    if (error instanceof SyntaxError) {
-      console.error('💡 FIREBASE_ADMIN_KEY doğru JSON formatında mı? Kontrol et.');
-      console.error('💡 Hata detayı:', error.message);
-    }
-    
-    return { adminDb: null, adminAuth: null };
+  } else {
+    console.warn("⚠️ [AKN Global] firebase-adminsdk.json bulunamadı. Admin işlemleri kısıtlı olabilir.");
   }
-}
+  return null;
+};
 
-/**
- * Firestore veritabanı örneğini getir
- */
-export function getAdminDb() {
-  if (!adminDb) {
-    const { adminDb: db } = initializeFirebaseAdmin();
-    adminDb = db;
-  }
-  if (!adminDb) {
-    // Sunucunun çökmesini engellemek için hata fırlat, bu route handler tarafından yakalanır
-    throw new Error('Firebase Firestore başlatılamadı. FIREBASE_ADMIN_KEY eksik.');
-  }
-  return adminDb;
-}
+// İlk başlatma
+initializeFirebaseAdmin();
 
-/**
- * Firebase Auth örneğini getir
- */
-export function getAdminAuth() {
-  if (!adminAuth) {
-    const { adminAuth: auth } = initializeFirebaseAdmin();
-    adminAuth = auth;
-  }
-  if (!adminAuth) {
-    // Sunucunun çökmesini engellemek için hata fırlat
-    throw new Error('Firebase Auth başlatılamadı. FIREBASE_ADMIN_KEY eksik.');
-  }
-  return adminAuth;
-}
+// Export'lar
+export { initializeFirebaseAdmin };
 
-/**
- * Export for direct usage
- */
-export { admin };
+export const adminDb = adminDbInstance;
+export const adminAuth = adminAuthInstance;
+
+// Geriye uyumluluk için helper fonksiyonlar
+export const getAdminDb = () => {
+  if (!adminDbInstance) {
+    throw new Error('Firebase Firestore başlatılamadı. firebase-adminsdk.json dosyasını kontrol edin.');
+  }
+  return adminDbInstance;
+};
+
+export const getAdminAuth = () => {
+  if (!adminAuthInstance) {
+    throw new Error('Firebase Auth başlatılamadı. firebase-adminsdk.json dosyasını kontrol edin.');
+  }
+  return adminAuthInstance;
+};
+
+export default admin;
