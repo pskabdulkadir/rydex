@@ -24,8 +24,8 @@ dist-ssr
 *.sw?
 
 .config/
-!.env
-server/lib/.env
+**/.env
+**/.env.*
 
 .vercel
 .env*.local
