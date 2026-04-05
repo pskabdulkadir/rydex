@@ -14,28 +14,47 @@ const initializeFirebaseAdmin = () => {
     return adminApp;
   }
 
-  // Dosya yolunu belirle
-  const serviceAccountPath = path.resolve(process.cwd(), "server/lib/firebase-adminsdk.json");
+  let serviceAccount: any = null;
 
-  // Dosyanın varlığını kontrol et
-  if (fs.existsSync(serviceAccountPath)) {
+  // 1. Önce ortam değişkeninden dene (Netlify production)
+  if (process.env.FIREBASE_ADMIN_KEY) {
     try {
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
-      
+      serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_KEY);
+      console.log("🚀 [AKN Global] Admin SDK ortam değişkeninden yüklendi.");
+    } catch (error) {
+      console.error("❌ [AKN Global] FIREBASE_ADMIN_KEY ayrıştırılamadı:", error);
+    }
+  }
+
+  // 2. Eğer başarısız olursa, lokal dosyadan dene (development)
+  if (!serviceAccount) {
+    const serviceAccountPath = path.resolve(process.cwd(), "server/lib/firebase-adminsdk.json");
+
+    if (fs.existsSync(serviceAccountPath)) {
+      try {
+        serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+        console.log("🚀 [AKN Global] Admin SDK dosyadan başarıyla yüklendi.");
+      } catch (error) {
+        console.error("❌ [AKN Global] Admin SDK JSON dosyası okunamadı:", error);
+      }
+    }
+  }
+
+  // 3. Service account'u başlat
+  if (serviceAccount) {
+    try {
       adminApp = admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
 
       adminDbInstance = adminApp.firestore();
       adminAuthInstance = adminApp.auth();
-
-      console.log("🚀 [AKN Global] Admin SDK dosyadan başarıyla yüklendi.");
       return adminApp;
     } catch (error) {
-      console.error("❌ [AKN Global] Admin SDK JSON dosyası okunamadı:", error);
+      console.error("❌ [AKN Global] Firebase başlatılamadı:", error);
     }
   } else {
-    console.warn("⚠️ [AKN Global] firebase-adminsdk.json bulunamadı. Admin işlemleri kısıtlı olabilir.");
+    console.warn("⚠️ [AKN Global] Firebase Admin SDK başlatılamadı. FIREBASE_ADMIN_KEY ortam değişkenini veya firebase-adminsdk.json dosyasını kontrol edin.");
   }
   return null;
 };
