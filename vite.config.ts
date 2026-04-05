@@ -33,6 +33,15 @@ const expressServerPlugin = (): Plugin => {
         devServerProcess.on("error", (error: any) => {
           console.error("[Express Server ERROR EVENT]", error);
         });
+
+        // Child process'in kapanma event'i
+        devServerProcess.on("exit", (code: number | null, signal: string | null) => {
+          if (code !== 0) {
+            console.error(`[Express Server] 🛑 Express sunucusu beklenmedik şekilde kapandı! Çıkış kodu: ${code}, Sinyal: ${signal}`);
+          } else {
+            console.log(`[Express Server] ✅ Express sunucusu başarıyla kapandı. Çıkış kodu: ${code}, Sinyal: ${signal}`);
+          }
+        });
       }
     },
     apply: "serve",
@@ -51,7 +60,7 @@ export default defineConfig(({ mode }) => ({
     // Not: Express server'ı manuel olarak başlatmalısın: npm run dev:express
     proxy: {
       "/api": {
-        target: "http://localhost:5173",
+        target: "http://127.0.0.1:5173",
         changeOrigin: true,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {
@@ -65,7 +74,7 @@ export default defineConfig(({ mode }) => ({
         },
       },
       "/camera-analysis": {
-        target: "http://localhost:5173",
+        target: "http://127.0.0.1:5173",
         changeOrigin: true,
         configure: (proxy, _options) => {
           proxy.on('error', (err, _req, _res) => {

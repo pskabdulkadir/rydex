@@ -3,14 +3,16 @@
  * Gerçek tarama verilerinin kalıcı depolanması
  */
 
-// Supabase client'ını import et (isteğe bağlı)
-let createClient: any = null;
+let supabaseModule: any = null;
 
-try {
-  const supabaseModule = require('@supabase/supabase-js');
-  createClient = supabaseModule.createClient;
-} catch (error) {
-  console.warn('⚠️ Supabase modülü yüklü değil - bellek içi depolama kullanılacak');
+async function getSupabaseCreator() {
+  if (supabaseModule) return supabaseModule.createClient;
+  try {
+    supabaseModule = await import('@supabase/supabase-js');
+    return supabaseModule.createClient;
+  } catch (error) {
+    return null;
+  }
 }
 
 // Veritabanı bağlantısı (Supabase/Neon kullanabilir)
@@ -102,13 +104,18 @@ class DatabaseManager {
   private inMemoryReceipts: ReceiptRecord[] = [];
 
   constructor(config: DatabaseConfig) {
+    this.initialize(config);
+  }
+
+  private async initialize(config: DatabaseConfig) {
     try {
+      const createClient = await getSupabaseCreator();
+      
       if (config.useInMemory) {
         this.useInMemory = true;
         console.log('📊 Bellek içi veritabanı kullanılıyor (geliştirme ortamı)');
       } else if (config.supabaseUrl && config.supabaseKey && createClient) {
         try {
-          // Supabase bağlantısı (createClient yüklü olmalı)
           this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
           console.log('✅ Supabase bağlantısı başarıyla kuruldu');
         } catch (supabaseError) {
@@ -164,7 +171,7 @@ class DatabaseManager {
         return { success: true, id: scanRecord.id };
       }
 
-      if (this.supabase && createClient) {
+      if (this.supabase) {
         try {
           const { data, error } = await this.supabase
             .from('scans')
@@ -220,7 +227,7 @@ class DatabaseManager {
         return { success: true };
       }
 
-      if (this.supabase && createClient) {
+      if (this.supabase) {
         try {
           const { error } = await this.supabase
             .from('magnetometer_data')
@@ -437,7 +444,7 @@ class DatabaseManager {
         return { success: true };
       }
 
-      if (this.supabase && createClient) {
+      if (this.supabase) {
         try {
           // Aynı kullanıcı adı var mı kontrol et
           const { data: existing } = await this.supabase

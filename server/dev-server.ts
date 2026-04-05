@@ -7,9 +7,9 @@ try {
 
   const port = 5173; // Vite'den farklı port
 
-  app.listen(port, () => {
-    console.log(`[Express Dev] ✅ Server çalışıyor: http://localhost:${port}`);
-    console.log(`[Express Dev] API endpoints: http://localhost:${port}/api/*`);
+  app.listen(port, "127.0.0.1", () => {
+    console.log(`[Express Dev] ✅ Server çalışıyor: http://127.0.0.1:${port}`);
+    console.log(`[Express Dev] API endpoints: http://127.0.0.1:${port}/api/*`);
   });
 
   // Unhandled rejection handling

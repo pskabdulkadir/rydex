@@ -1,4 +1,12 @@
-import "dotenv/config";
+import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Ortam değişkenlerini yükle (Kök dizin ve server/lib dizinini kontrol et)
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.resolve(__dirname, "lib/.env") });
+dotenv.config(); // Kök dizindeki .env için fallback
+
 import express from "express";
 import cors from "cors";
 import { initializeDatabase, getDatabase } from "./database";
@@ -570,10 +578,10 @@ export function createServer() {
 
   // ============ TARAMA (SCANS) ROUTES ============
   // Subscription gerekli - Kullanıcı aktif subscription'a sahip olmalı
-  app.post("/api/scan/save", requireActiveSubscription, asyncHandler(handleSaveScan));
-  app.get("/api/scan/user", requireActiveSubscription, asyncHandler(handleGetUserScans));
-  app.get("/api/scan/area", requireActiveSubscription, asyncHandler(handleGetAreaScans));
-  app.get("/api/scan/stats", requireActiveSubscription, asyncHandler(handleGetScanStats));
+  app.post("/api/scan/save", asyncHandler(requireActiveSubscription), asyncHandler(handleSaveScan));
+  app.get("/api/scan/user", asyncHandler(requireActiveSubscription), asyncHandler(handleGetUserScans));
+  app.get("/api/scan/area", asyncHandler(requireActiveSubscription), asyncHandler(handleGetAreaScans));
+  app.get("/api/scan/stats", asyncHandler(requireActiveSubscription), asyncHandler(handleGetScanStats));
 
   // ============ ÜYE ONAY (MEMBER APPROVAL) ROUTES ============
   app.get("/api/admin/members/pending", asyncHandler(handleGetPendingMembers));

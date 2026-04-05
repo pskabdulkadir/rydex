@@ -17,14 +17,15 @@ export function initializeFirebaseAdmin() {
     const adminKey = process.env.FIREBASE_ADMIN_KEY;
 
     if (!adminKey) {
-      console.warn('⚠️ FIREBASE_ADMIN_KEY ortam değişkeni bulunamadı');
+      console.warn('⚠️ FIREBASE_ADMIN_KEY ortam değişkeni bulunamadı.');
+      console.warn('💡 Firebase servisleri devre dışı. Lütfen .env dosyasını kontrol edin.');
       return { adminDb: null, adminAuth: null };
     }
 
     // FIREBASE_ADMIN_KEY'i JSON objesine çevir
     let serviceAccount: any;
     
-    if (adminKey.startsWith('{')) {
+    if (adminKey.trim().startsWith('{')) {
       // Zaten JSON string formatında
       serviceAccount = JSON.parse(adminKey);
     } else {
@@ -44,7 +45,7 @@ export function initializeFirebaseAdmin() {
       adminAuth = admin.auth();
       isInitialized = true;
 
-      console.log('✅ Firebase Admin SDK başarıyla başlatıldı');
+      console.log(`✅ Firebase Admin SDK başarıyla başlatıldı (Proje: ${serviceAccount.project_id})`);
     } else {
       // Zaten başlatılmış
       adminDb = admin.firestore();
@@ -55,9 +56,10 @@ export function initializeFirebaseAdmin() {
     return { adminDb, adminAuth };
   } catch (error) {
     console.error('❌ Firebase Admin başlatma hatası:', error);
-    
+
     if (error instanceof SyntaxError) {
       console.error('💡 FIREBASE_ADMIN_KEY doğru JSON formatında mı? Kontrol et.');
+      console.error('💡 Hata detayı:', error.message);
     }
     
     return { adminDb: null, adminAuth: null };
@@ -72,6 +74,10 @@ export function getAdminDb() {
     const { adminDb: db } = initializeFirebaseAdmin();
     adminDb = db;
   }
+  if (!adminDb) {
+    // Sunucunun çökmesini engellemek için hata fırlat, bu route handler tarafından yakalanır
+    throw new Error('Firebase Firestore başlatılamadı. FIREBASE_ADMIN_KEY eksik.');
+  }
   return adminDb;
 }
 
@@ -82,6 +88,10 @@ export function getAdminAuth() {
   if (!adminAuth) {
     const { adminAuth: auth } = initializeFirebaseAdmin();
     adminAuth = auth;
+  }
+  if (!adminAuth) {
+    // Sunucunun çökmesini engellemek için hata fırlat
+    throw new Error('Firebase Auth başlatılamadı. FIREBASE_ADMIN_KEY eksik.');
   }
   return adminAuth;
 }
