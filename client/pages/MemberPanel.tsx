@@ -1168,7 +1168,7 @@ export default function MemberPanel() {
                   <label className="flex items-center gap-3 cursor-pointer">
                     <input
                       type="checkbox"
-                      defaultChecked={user?.preferences?.language === 'tr' ?? true}
+                      defaultChecked={user?.preferences?.language === 'tr'}
                       className="w-4 h-4 accent-blue-500"
                     />
                     <span className="text-slate-300 text-sm">Türkçe Dilini Kullan</span>

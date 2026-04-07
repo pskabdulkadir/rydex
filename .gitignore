@@ -37,3 +37,6 @@ netlify/functions/server/lib/firebase-adminsdk.json
 # Local Netlify folder
 .netlify
 .opencode
+
+.vercel
+.env*.local
