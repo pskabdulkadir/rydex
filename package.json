@@ -13,7 +13,7 @@
     "builder": "npm run build",
     "build:client": "vite build",
     "build:server": "node scripts/setup-netlify-functions.js",
-    "build:server-standalone": "esbuild server/index.ts --platform=node --bundle --outfile=dist-server/index.js --format=esm --external:express --external:firebase-admin --external:firebase",
+    "build:server-standalone": "esbuild server/index.ts --platform=node --bundle --outfile=dist-server/index.js --format=cjs --external:express --external:firebase-admin --external:firebase --external:dotenv",
     "build:functions": "echo 'Functions build done'",
     "build:netlify": "npm run build:client && npm run build:server",
     "start": "node dist-server/index.js",
