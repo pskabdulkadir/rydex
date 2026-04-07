@@ -1,0 +1,172 @@
+{
+  "timestamp": "2026-04-07T19:48:20.273Z",
+  "totalTests": 27,
+  "passed": 26,
+  "failed": 1,
+  "skipped": 0,
+  "tests": [
+    {
+      "name": "Currency Service Import",
+      "category": "IMPORT",
+      "status": "PASS",
+      "message": "Tüm fonksiyonlar mevcut"
+    },
+    {
+      "name": "Invoice Service Import",
+      "category": "IMPORT",
+      "status": "PASS",
+      "message": "Tüm fonksiyonlar mevcut"
+    },
+    {
+      "name": "Firebase Admin Import",
+      "category": "IMPORT",
+      "status": "FAIL",
+      "message": "Firebase Admin SDK eksik"
+    },
+    {
+      "name": "Database Import",
+      "category": "IMPORT",
+      "status": "PASS",
+      "message": "Database modülü mevcut"
+    },
+    {
+      "name": "getCurrencyInfo(TRY)",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "Sembol: ₺"
+    },
+    {
+      "name": "getSupportedCurrencies",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "4 para birimi"
+    },
+    {
+      "name": "getExchangeRates",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "Temel: TRY"
+    },
+    {
+      "name": "convertToTRY(1 USD)",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "31.25 TRY"
+    },
+    {
+      "name": "formatCurrency(1000, TRY)",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "₺1.000,00"
+    },
+    {
+      "name": "generateInvoiceNumber",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "INV-2026-76287"
+    },
+    {
+      "name": "isValidCurrency",
+      "category": "CURRENCY",
+      "status": "PASS",
+      "message": "USD: true, XYZ: false"
+    },
+    {
+      "name": "createInvoice",
+      "category": "INVOICE",
+      "status": "PASS",
+      "message": "Invoice ID: inv_1775591300681"
+    },
+    {
+      "name": "getInvoiceById",
+      "category": "INVOICE",
+      "status": "PASS",
+      "message": "Invoice bulundu: inv_1775591300682"
+    },
+    {
+      "name": "getUserInvoices",
+      "category": "INVOICE",
+      "status": "PASS",
+      "message": "1 invoice bulundu"
+    },
+    {
+      "name": "Initialize Database",
+      "category": "DATABASE",
+      "status": "PASS",
+      "message": "Veritabanı başlatıldı"
+    },
+    {
+      "name": "Save Scan",
+      "category": "DATABASE",
+      "status": "PASS",
+      "message": "Scan kaydedildi: scan_1775591300685"
+    },
+    {
+      "name": "Save User",
+      "category": "DATABASE",
+      "status": "PASS",
+      "message": "User kaydedildi: user_1775591300685"
+    },
+    {
+      "name": "Save Payment",
+      "category": "DATABASE",
+      "status": "PASS",
+      "message": "Payment kaydedildi: payment_1775591300686"
+    },
+    {
+      "name": "GET /api/health",
+      "category": "API",
+      "status": "PASS",
+      "message": "Server çalışıyor"
+    },
+    {
+      "name": "GET /api/ping",
+      "category": "API",
+      "status": "PASS",
+      "message": "Ping başarılı"
+    },
+    {
+      "name": "GET /api/currency/supported",
+      "category": "API",
+      "status": "PASS",
+      "message": "4 para birimi"
+    },
+    {
+      "name": "GET /api/currency/rates",
+      "category": "API",
+      "status": "PASS",
+      "message": "Temel: TRY"
+    },
+    {
+      "name": "GET /api/search?q=test",
+      "category": "API",
+      "status": "PASS",
+      "message": "0 sonuç"
+    },
+    {
+      "name": "Auth Handlers",
+      "category": "ROUTES",
+      "status": "PASS",
+      "message": "Tüm handler'lar mevcut"
+    },
+    {
+      "name": "Payment Handlers",
+      "category": "ROUTES",
+      "status": "PASS",
+      "message": "Tüm handler'lar mevcut"
+    },
+    {
+      "name": "Subscription Handlers",
+      "category": "ROUTES",
+      "status": "PASS",
+      "message": "Tüm handler'lar mevcut"
+    },
+    {
+      "name": "Middleware Handlers",
+      "category": "ROUTES",
+      "status": "PASS",
+      "message": "Tüm handler'lar mevcut"
+    }
+  ],
+  "errors": []
+}

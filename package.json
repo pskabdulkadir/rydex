@@ -17,6 +17,7 @@
     "build:netlify": "npm run build:client && npm run build:server",
     "start": "vite preview",
     "test": "vitest --run",
+    "test:full-system": "tsx scripts/run-full-system-test.ts",
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "cap": "capacitor",

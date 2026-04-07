@@ -135,8 +135,8 @@ export default function MemberPanel() {
     };
   }, [user]);
 
-  // Subscription'ı load et
-  useEffect(() => {
+  // Subscription'ı load et (localStorage'dan)
+  const loadSubscription = () => {
     const savedSub = localStorage.getItem('subscription');
     if (savedSub) {
       try {
@@ -147,10 +147,18 @@ export default function MemberPanel() {
           ...sub,
           daysRemaining
         });
+        console.log('✅ Subscription yüklendi:', sub.plan, 'Kalan gün:', daysRemaining);
       } catch (e) {
         console.warn('Subscription parse hatası:', e);
       }
     }
+  };
+
+  useEffect(() => {
+    loadSubscription();
+    // Her 5 saniyede bir localStorage'ı kontrol et (admin onayı sonrası güncelleme için)
+    const interval = setInterval(loadSubscription, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   // Dekonları getir
@@ -1020,7 +1028,13 @@ export default function MemberPanel() {
                       // Dosyayı base64 olarak oku
                       const reader = new FileReader();
                       reader.onload = async (e) => {
-                        const base64 = (e.target?.result as string)?.split(',')[1];
+                        const result = e.target?.result as string;
+                        if (!result) {
+                          toast.error('Dosya okunamadı');
+                          setUploadingReceipt(false);
+                          return;
+                        }
+                        const base64 = result.split(',')[1];
 
                         // API'ye gönder
                         const response = await fetch('/api/receipt/upload', {
@@ -1034,10 +1048,10 @@ export default function MemberPanel() {
                             plan: paymentInfo.plan,
                             amount: paymentInfo.amount,
                             currency: 'TRY',
-                            fileName: selectedFile.name,
-                            fileUrl: `data:${selectedFile.type};base64,${base64}`,
-                            fileSize: selectedFile.size,
-                            mimeType: selectedFile.type,
+                            fileName: selectedFile.name || 'dekont.jpg',
+                            fileUrl: `data:${selectedFile.type || 'image/jpeg'};base64,${base64}`,
+                            fileSize: selectedFile.size || 0,
+                            mimeType: selectedFile.type || 'image/jpeg',
                           }),
                         });
 

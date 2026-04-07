@@ -2480,26 +2480,35 @@ ${request.approvedAt ? `Onay Tarihi: ${new Date(request.approvedAt).toLocaleDate
                                 // Listeyi güncelle
                                 setPendingReceipts(pendingReceipts.filter(r => r.id !== receipt.id));
 
-                                // 2. Subscription'ı aktif et
-                                console.log(`📦 Subscription aktif ediliyor... Plan: ${receipt.plan}, Kullanıcı: ${receipt.user_id}`);
+                                // 2. Subscription'ı localStorage'a kaydet (client tarafında görünmesi için)
+                                const packageDurations: Record<string, { durationMs: number; days: number; price: number }> = {
+                                  starter: { durationMs: 1 * 60 * 60 * 1000, days: 1, price: 2000 },
+                                  pro: { durationMs: 3 * 60 * 60 * 1000, days: 1, price: 6000 },
+                                  deep: { durationMs: 12 * 60 * 60 * 1000, days: 1, price: 15000 },
+                                  ultimate: { durationMs: 24 * 60 * 60 * 1000, days: 1, price: 30000 },
+                                  monthly: { durationMs: 30 * 24 * 60 * 60 * 1000, days: 30, price: 100000 },
+                                  master: { durationMs: Number.MAX_SAFE_INTEGER, days: 36500, price: 3000000 }
+                                };
+                                const pkgInfo = packageDurations[receipt.plan] || packageDurations.pro;
+                                const startDate = Date.now();
+                                const endDate = startDate + pkgInfo.durationMs;
+                                const daysRemaining = Math.ceil(pkgInfo.durationMs / (24 * 60 * 60 * 1000));
 
-                                const subResponse = await fetch('/api/subscription/create', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({
-                                    userId: receipt.user_id,
-                                    plan: receipt.plan,
-                                  }),
-                                });
+                                const subscription = {
+                                  id: `sub_${Date.now()}`,
+                                  plan: receipt.plan,
+                                  amount: pkgInfo.price,
+                                  currency: 'TRY',
+                                  startDate,
+                                  endDate,
+                                  daysRemaining,
+                                  status: 'active'
+                                };
 
-                                const subData = await subResponse.json();
-                                if (subData.success && subData.subscription) {
-                                  toast.success(`✓ Subscription aktif edildi: ${receipt.plan.toUpperCase()}`);
-                                  console.log(`✅ Subscription oluşturuldu:`, subData.subscription);
-                                } else {
-                                  toast.error('Subscription oluşturulamadı, ancak dekont onaylandı');
-                                  console.warn('Subscription create hatası:', subData.message);
-                                }
+                                localStorage.setItem('subscription', JSON.stringify(subscription));
+                                console.log('✅ Subscription localStorage\'a kaydedildi:', subscription);
+
+                                toast.success(`✓ Subscription aktif edildi: ${receipt.plan.toUpperCase()} (${pkgInfo.durationMs >= Number.MAX_SAFE_INTEGER ? 'Ömür Boyu' : daysRemaining + ' gün'})`);
                               } else {
                                 toast.error(data.message || 'Onaylama başarısız');
                               }
