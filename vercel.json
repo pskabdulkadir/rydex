@@ -1,10 +1,6 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "env": {
-    "NODE_ENV": "@node_env",
-    "VITE_PUBLIC_BUILDER_KEY": "@vite_public_builder_key"
-  },
   "headers": [
     {
       "source": "/index.html",
@@ -25,7 +21,7 @@
       ]
     },
     {
-      "source": "/(.*\\.(js|css))",
+      "source": "/(.*).(js|css)",
       "headers": [
         {
           "key": "Cache-Control",
