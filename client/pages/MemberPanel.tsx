@@ -290,50 +290,16 @@ export default function MemberPanel() {
   };
 
   const handlePurchasePackage = (packageId: string) => {
-    // Paketi seç ve direkt subscription oluştur (ödeme bypass)
+    // Paketi seç ve ödeme sayfasına yönlendir
     const pkg = PACKAGES[packageId as keyof typeof PACKAGES];
     if (!pkg) {
       toast.error('Paket bulunamadı');
       return;
     }
 
-    // Subscription oluştur
-    const startDate = Date.now();
-    // Paket süresini günlere çevir (örneğin "30 gün" → 30, "3 ay" → 90)
-    let daysInMs = 30 * 24 * 60 * 60 * 1000; // Varsayılan 30 gün
-
-    if (pkg.duration.includes('3 ay') || pkg.duration.includes('3ay')) {
-      daysInMs = 90 * 24 * 60 * 60 * 1000;
-    } else if (pkg.duration.includes('1 ay') || pkg.duration.includes('1ay')) {
-      daysInMs = 30 * 24 * 60 * 60 * 1000;
-    } else if (pkg.duration.includes('7 gün') || pkg.duration.includes('7gün')) {
-      daysInMs = 7 * 24 * 60 * 60 * 1000;
-    }
-
-    const endDate = startDate + daysInMs;
-    const daysRemaining = Math.ceil(daysInMs / (24 * 60 * 60 * 1000));
-
-    const subscription = {
-      id: `sub_${Date.now()}`,
-      plan: packageId,
-      amount: pkg.price,
-      currency: 'TRY',
-      startDate,
-      endDate,
-      daysRemaining,
-      status: 'active'
-    };
-
-    // localStorage'a kaydet
-    localStorage.setItem('subscription', JSON.stringify(subscription));
-
-    toast.success(`✅ ${pkg.name} paketi aktif edildi! ${daysRemaining} gün kullanabilirsiniz.`);
-    console.log('✅ Paket satın alındı:', subscription);
-
-    // Başarı sayfasına yönlendir
-    setTimeout(() => {
-      navigate('/dashboard', { replace: true });
-    }, 1500);
+    // Ödeme sayfasına yönlendir (süreyi uzatmak için de bu kullanılıyor)
+    navigate('/pricing', { state: { packageId, action: 'purchase' } });
+    toast.info(`📦 ${pkg.name} paketi için ödeme sayfasına yönlendiriliyorsunuz...`);
   };
 
   const handleOpenPackagesModal = () => {
@@ -1135,12 +1101,19 @@ export default function MemberPanel() {
                             </p>
                             {receipt.file_url && (
                               <Button
-                                onClick={() => window.open(receipt.file_url, '_blank')}
+                                onClick={() => {
+                                  // Base64 dosyayı yeni sekmede aç
+                                  const link = document.createElement('a');
+                                  link.href = receipt.file_url;
+                                  link.download = receipt.file_name || 'dekont';
+                                  link.target = '_blank';
+                                  link.click();
+                                }}
                                 size="sm"
                                 variant="outline"
                                 className="mt-2 text-xs border-slate-600 hover:bg-slate-700"
                               >
-                                Dosyayı Aç
+                                Dosyayı İndir/Aç
                               </Button>
                             )}
                           </div>
@@ -1184,22 +1157,22 @@ export default function MemberPanel() {
                 <div className="mt-6 pt-6 border-t border-slate-700/30">
                   <h4 className="text-white font-semibold mb-3">Tercihler</h4>
                   <div className="space-y-3">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        defaultChecked={user.preferences.notifications}
-                        className="w-4 h-4 accent-blue-500"
-                      />
-                      <span className="text-slate-300 text-sm">Bildirimleri Aç</span>
-                    </label>
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        defaultChecked={user.preferences.language === 'tr'}
-                        className="w-4 h-4 accent-blue-500"
-                      />
-                      <span className="text-slate-300 text-sm">Türkçe Dilini Kullan</span>
-                    </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked={user?.preferences?.notifications ?? true}
+                      className="w-4 h-4 accent-blue-500"
+                    />
+                    <span className="text-slate-300 text-sm">Bildirimleri Aç</span>
+                  </label>
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      defaultChecked={user?.preferences?.language === 'tr' ?? true}
+                      className="w-4 h-4 accent-blue-500"
+                    />
+                    <span className="text-slate-300 text-sm">Türkçe Dilini Kullan</span>
+                  </label>
                   </div>
                 </div>
               </Card>

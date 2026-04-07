@@ -2481,17 +2481,20 @@ ${request.approvedAt ? `Onay Tarihi: ${new Date(request.approvedAt).toLocaleDate
                                 setPendingReceipts(pendingReceipts.filter(r => r.id !== receipt.id));
 
                                 // 2. Subscription'ı localStorage'a kaydet (client tarafında görünmesi için)
-                                const packageDurations: Record<string, { durationMs: number; days: number; price: number }> = {
-                                  starter: { durationMs: 1 * 60 * 60 * 1000, days: 1, price: 2000 },
-                                  pro: { durationMs: 3 * 60 * 60 * 1000, days: 1, price: 6000 },
-                                  deep: { durationMs: 12 * 60 * 60 * 1000, days: 1, price: 15000 },
-                                  ultimate: { durationMs: 24 * 60 * 60 * 1000, days: 1, price: 30000 },
-                                  monthly: { durationMs: 30 * 24 * 60 * 60 * 1000, days: 30, price: 100000 },
-                                  master: { durationMs: Number.MAX_SAFE_INTEGER, days: 36500, price: 3000000 }
+                                // Paket süreleri saat bazında tanımlı, doğru hesaplama yapalım
+                                const packageDurations: Record<string, { durationMs: number; price: number; durationText: string }> = {
+                                  starter: { durationMs: 1 * 60 * 60 * 1000, price: 2000, durationText: '1 Saat' },
+                                  pro: { durationMs: 3 * 60 * 60 * 1000, price: 6000, durationText: '3 Saat' },
+                                  deep: { durationMs: 12 * 60 * 60 * 1000, price: 15000, durationText: '12 Saat' },
+                                  ultimate: { durationMs: 24 * 60 * 60 * 1000, price: 30000, durationText: '24 Saat' },
+                                  monthly: { durationMs: 30 * 24 * 60 * 60 * 1000, price: 100000, durationText: '30 Gün' },
+                                  master: { durationMs: 365 * 24 * 60 * 60 * 1000, price: 3000000, durationText: 'Ömür Boyu' }
                                 };
                                 const pkgInfo = packageDurations[receipt.plan] || packageDurations.pro;
                                 const startDate = Date.now();
                                 const endDate = startDate + pkgInfo.durationMs;
+                                // Kalan süreyi saat bazında hesapla (küsuratlı)
+                                const hoursRemaining = pkgInfo.durationMs / (60 * 60 * 1000);
                                 const daysRemaining = Math.ceil(pkgInfo.durationMs / (24 * 60 * 60 * 1000));
 
                                 const subscription = {
@@ -2502,13 +2505,15 @@ ${request.approvedAt ? `Onay Tarihi: ${new Date(request.approvedAt).toLocaleDate
                                   startDate,
                                   endDate,
                                   daysRemaining,
+                                  hoursRemaining,
+                                  durationText: pkgInfo.durationText,
                                   status: 'active'
                                 };
 
                                 localStorage.setItem('subscription', JSON.stringify(subscription));
                                 console.log('✅ Subscription localStorage\'a kaydedildi:', subscription);
 
-                                toast.success(`✓ Subscription aktif edildi: ${receipt.plan.toUpperCase()} (${pkgInfo.durationMs >= Number.MAX_SAFE_INTEGER ? 'Ömür Boyu' : daysRemaining + ' gün'})`);
+                                toast.success(`✓ Subscription aktif edildi: ${receipt.plan.toUpperCase()} (${pkgInfo.durationText})`);
                               } else {
                                 toast.error(data.message || 'Onaylama başarısız');
                               }
