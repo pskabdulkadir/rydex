@@ -39,8 +39,8 @@ export default function MemberPanel() {
     if (window.history.length > 1) {
       window.history.back();
     } else {
-      // History yoksa ana sayfaya yönlendir
-      navigate('/');
+      // History yoksa ana sayfaya yönlendir (çıkış yapma!)
+      navigate('/', { replace: false });
     }
   };
   const subscriptionStatus = useSubscriptionStatus(user?.uid);

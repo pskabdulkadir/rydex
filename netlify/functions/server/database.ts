@@ -81,7 +81,7 @@ interface UserRecord {
 interface ReceiptRecord {
   id: string;
   user_id: string;
-  subscription_id: string;
+  subscription_id?: string; // Opsiyonel - yeni ödeme için henüz subscription yok
   plan: string;
   amount: number;
   currency: string;
@@ -96,6 +96,18 @@ interface ReceiptRecord {
   approved_at?: string;
 }
 
+interface PaymentRecord {
+  id: string;
+  user_id: string;
+  amount: number;
+  currency: string;
+  status: 'pending' | 'completed' | 'failed' | 'refunded';
+  payment_method?: string;
+  transaction_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
 class DatabaseManager {
   private supabase: any = null;
   private useInMemory: boolean = false;
@@ -103,8 +115,15 @@ class DatabaseManager {
   private inMemoryMagnetometer: MagnetometerRecord[] = [];
   private inMemoryUsers: UserRecord[] = [];
   private inMemoryReceipts: ReceiptRecord[] = [];
+  private inMemoryPayments: PaymentRecord[] = [];
 
   constructor(config: DatabaseConfig) {
+    // useInMemory'i hemen ayarla
+    if (config.useInMemory) {
+      this.useInMemory = true;
+      console.log('📊 Bellek içi veritabanı kullanılıyor (geliştirme ortamı)');
+    }
+    // Asenkron initialize'i başlat ama bekleme
     this.initialize(config);
   }
 
@@ -112,10 +131,12 @@ class DatabaseManager {
     try {
       const createClient = await getSupabaseCreator();
       
-      if (config.useInMemory) {
-        this.useInMemory = true;
-        console.log('📊 Bellek içi veritabanı kullanılıyor (geliştirme ortamı)');
-      } else if (config.supabaseUrl && config.supabaseKey && createClient) {
+      if (this.useInMemory) {
+        // Zaten ayarlandı
+        return;
+      }
+      
+      if (config.supabaseUrl && config.supabaseKey && createClient) {
         try {
           this.supabase = createClient(config.supabaseUrl, config.supabaseKey);
           console.log('✅ Supabase bağlantısı başarıyla kuruldu');
@@ -910,6 +931,72 @@ class DatabaseManager {
         success: false,
         error: error instanceof Error ? error.message : 'Bilinmeyen hata'
       };
+    }
+  }
+
+  /**
+   * Ödeme kaydını kaydet
+   */
+  async savePayment(payment: PaymentRecord): Promise<{ success: boolean; error?: string }> {
+    try {
+      if (this.useInMemory) {
+        this.inMemoryPayments.push(payment);
+        console.log(`💰 Ödeme kaydedildi (Bellek): ${payment.id}`);
+        return { success: true };
+      }
+
+      if (this.supabase) {
+        const { error } = await this.supabase
+          .from('payments')
+          .insert([payment]);
+
+        if (error) {
+          console.error('Supabase ödeme kaydetme hatası:', error);
+          return { success: false, error: error.message };
+        }
+
+        console.log(`💰 Ödeme kaydedildi (Supabase): ${payment.id}`);
+        return { success: true };
+      }
+
+      return { success: false, error: 'Veritabanı yapılandırması eksik' };
+    } catch (error) {
+      console.error('Ödeme kaydetme hatası:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Bilinmeyen hata'
+      };
+    }
+  }
+
+  /**
+   * Kullanıcının ödemelerini getir
+   */
+  async getUserPayments(userId: string): Promise<PaymentRecord[]> {
+    try {
+      if (this.useInMemory) {
+        return this.inMemoryPayments.filter(p => p.user_id === userId);
+      }
+
+      if (this.supabase) {
+        const { data, error } = await this.supabase
+          .from('payments')
+          .select('*')
+          .eq('user_id', userId)
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Supabase ödeme sorgulama hatası:', error);
+          return [];
+        }
+
+        return (data || []) as PaymentRecord[];
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Ödeme sorgulama hatası:', error);
+      return [];
     }
   }
 

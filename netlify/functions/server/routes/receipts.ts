@@ -50,10 +50,11 @@ export const handleUploadReceipt: RequestHandler = async (req, res) => {
       });
     }
 
-    if (!subscriptionId || !plan || !amount || !fileUrl || !fileName) {
+    // subscriptionId opsiyonel (yeni ödeme için henüz subscription yok)
+    if (!plan || !amount || !fileUrl || !fileName) {
       return res.status(400).json({
         success: false,
-        message: 'Gerekli alanlar eksik'
+        message: 'Gerekli alanlar eksik: plan, amount, fileUrl, fileName gerekli'
       });
     }
 
@@ -93,7 +94,18 @@ export const handleUploadReceipt: RequestHandler = async (req, res) => {
     }
 
     if (firestoreDb) {
-      await firestoreDb.collection('receipts').doc(receiptId).set(receipt, { merge: true });
+      try {
+        // Firestore undefined değerleri kabul etmez, temizle
+        const firestoreReceipt: any = { ...receipt };
+        if (firestoreReceipt.subscription_id === undefined) {
+          delete firestoreReceipt.subscription_id;
+        }
+        await firestoreDb.collection('receipts').doc(receiptId).set(firestoreReceipt, { merge: true });
+        console.log(`📦 Firestore'a kaydedildi: ${receiptId}`);
+      } catch (fbError) {
+        console.warn('⚠️ Firestore kaydetme hatası (bellek içinde kayıtlı):', fbError instanceof Error ? fbError.message : String(fbError));
+        // Hata olsa da devam et, zaten bellek içinde kayıtlı
+      }
     }
 
     console.log(`✅ Dekont yüklendi: ${fileName} (${userId})`);
@@ -108,10 +120,12 @@ export const handleUploadReceipt: RequestHandler = async (req, res) => {
       message: 'Dekont başarıyla yüklendi. Onay için bekleniyor.'
     });
   } catch (error) {
-    console.error('Dekont yükleme hatası:', error);
+    console.error('❌ Dekont yükleme hatası:', error);
+    console.error('Stack trace:', error instanceof Error ? error.stack : String(error));
     res.status(500).json({
       success: false,
-      message: 'Dekont yükleme sırasında hata oluştu'
+      message: 'Dekont yükleme sırasında hata oluştu',
+      error: error instanceof Error ? error.message : String(error)
     });
   }
 };
@@ -249,22 +263,18 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
 
     // Firestore'a güncelle
     if (firestoreDb) {
-      const receiptRef = firestoreDb.collection('receipts').doc(receiptId);
+      try {
+        const receiptRef = firestoreDb.collection('receipts').doc(receiptId);
 
-      const updateData: any = {
-        status,
-        approved_by: adminId,
-        approval_notes: notes,
-        approved_at: new Date().toISOString()
-      };
+        const updateData: any = {
+          status,
+          approved_by: adminId,
+          approval_notes: notes,
+          approved_at: new Date().toISOString()
+        };
 
-      // Onay yapıldıysa user'a subscription set et
-      if (status === 'approved' && receipt.user_id) {
-        const userRef = firestoreDb.collection('users').doc(receipt.user_id);
-        const userSnap = await userRef.get();
-
-        if (userSnap.exists) {
-          // Paket bilgisini al
+        // Onay yapıldıysa user'a subscription set et
+        if (status === 'approved' && receipt.user_id) {
           const packageId = (receipt.plan as PackageType) || 'starter';
           const pkg = PACKAGES[packageId];
 
@@ -272,24 +282,41 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
             const startTime = Date.now();
             const expiryTime = calculateExpiryTimestamp(packageId, startTime);
 
-            // User'a subscription set et
-            await userRef.set({
-              current_package: packageId,
-              subscription_start: new Date(startTime).toISOString(),
-              subscription_end: new Date(expiryTime).toISOString(),
-              package_activated_at: new Date().toISOString(),
-              package_activated_by: adminId,
-              last_receipt_approved: receiptId,
-              is_active: true,
-            }, { merge: true });
+            // 1. Önce database'e kaydet (bellek içi)
+            await db.updateUserSubscription(receipt.user_id, packageId, new Date(expiryTime).toISOString());
+            console.log(`📦 User ${receipt.user_id}'e paket açıldı (Database): ${packageId} (Süresi: ${pkg.duration})`);
 
-            console.log(`✅ Dekont onaylandı: ${receiptId}`);
-            console.log(`📦 User ${receipt.user_id}'e paket açıldı: ${packageId} (Süresi: ${pkg.duration})`);
+            // 2. Firestore'a da kaydet (varsa)
+            if (firestoreDb) {
+              try {
+                const userRef = firestoreDb.collection('users').doc(receipt.user_id);
+                const userSnap = await userRef.get();
+
+                if (userSnap.exists) {
+                  await userRef.set({
+                    current_package: packageId,
+                    subscription_start: new Date(startTime).toISOString(),
+                    subscription_end: new Date(expiryTime).toISOString(),
+                    package_activated_at: new Date().toISOString(),
+                    package_activated_by: adminId,
+                    last_receipt_approved: receiptId,
+                    is_active: true,
+                  }, { merge: true });
+                  console.log(`✅ Firestore user güncellendi: ${receipt.user_id}`);
+                }
+              } catch (userError) {
+                console.warn('⚠️ Firestore user güncelleme hatası (database güncellendi):', userError instanceof Error ? userError.message : String(userError));
+              }
+            }
           }
         }
-      }
 
-      await receiptRef.set(updateData, { merge: true });
+        await receiptRef.set(updateData, { merge: true });
+        console.log(`✅ Firestore dekont güncellendi: ${receiptId}`);
+      } catch (fbError) {
+        console.warn('⚠️ Firestore güncelleme hatası (database güncellenecek):', fbError instanceof Error ? fbError.message : String(fbError));
+        // Hata olsa da devam et, database güncellenecek
+      }
     }
 
     // Database'e de güncelle

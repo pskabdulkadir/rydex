@@ -71,6 +71,13 @@ export function getInvoice(invoiceId: string): Invoice | null {
 }
 
 /**
+ * Faturayı ID'ye göre al (getInvoice için alias)
+ */
+export function getInvoiceById(invoiceId: string): Invoice | null {
+  return getInvoice(invoiceId);
+}
+
+/**
  * Kullanıcının tüm faturalarını al
  */
 export function getUserInvoices(userId: string): Invoice[] {

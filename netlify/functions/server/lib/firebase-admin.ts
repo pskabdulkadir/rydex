@@ -16,13 +16,15 @@ const initializeFirebaseAdmin = () => {
 
   let serviceAccount: any = null;
 
-  // 1. Önce ortam değişkeninden dene (Netlify production)
-  if (process.env.FIREBASE_ADMIN_KEY) {
+  // 1. Önce ortam değişkenlerinden dene (Netlify/Vercel production)
+  // FIREBASE_SERVICE_ACCOUNT_JSON veya FIREBASE_ADMIN_KEY
+  const firebaseCredentials = process.env.FIREBASE_SERVICE_ACCOUNT_JSON || process.env.FIREBASE_ADMIN_KEY;
+  if (firebaseCredentials) {
     try {
-      serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_KEY);
-      console.log("🚀 [AKN Global] Admin SDK ortam değişkeninden yüklendi.");
+      serviceAccount = JSON.parse(firebaseCredentials);
+      console.log("🚀 [AKN Global] Admin SDK ortam değişkeninden yüklendi (Production).");
     } catch (error) {
-      console.error("❌ [AKN Global] FIREBASE_ADMIN_KEY ayrıştırılamadı:", error);
+      console.error("❌ [AKN Global] Firebase credentials ayrıştırılamadı:", error);
     }
   }
 
