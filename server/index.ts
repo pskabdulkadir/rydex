@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
 import path from "path";
-import { fileURLToPath } from "url";
 
 // Ortam değişkenlerini yükle (Kök dizin ve server/lib dizinini kontrol et)
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+// CommonJS modunda __dirname otomatik olarak mevcut
 dotenv.config({ path: path.resolve(__dirname, "lib/.env") });
 dotenv.config(); // Kök dizindeki .env için fallback
 
