@@ -6,8 +6,8 @@ WORKDIR /app
 # Sadece gerekli dosyaları kopyala
 COPY package*.json ./
 
-# npm ile bağımlılıkları yükle
-RUN npm install
+# npm with legacy peer deps to handle React version conflicts
+RUN npm install --legacy-peer-deps
 
 # Tüm kodu kopyala
 COPY . .
