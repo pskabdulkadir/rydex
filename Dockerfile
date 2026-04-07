@@ -1,21 +1,33 @@
-FROM node:18-alpine
+# 1. Aşama: Build aşaması
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Paket yöneticisini yükle
+RUN npm install -g pnpm
 
-# Install dependencies
-RUN npm install
+# Sadece gerekli dosyaları kopyala
+COPY package*.json pnpm-lock.yaml* ./
 
-# Copy all files
+# Hata veren kısmı burada düzelttik: --no-frozen-lockfile ekledik
+RUN pnpm install --no-frozen-lockfile
+
+# Tüm kodu kopyala
 COPY . .
 
-# Build the project
-RUN npm run build
+# 2. Aşama: Çalıştırma aşaması
+FROM node:22-alpine
 
-# Expose port
+WORKDIR /app
+
+RUN npm install -g pnpm
+
+# Sadece üretim için gerekli paketleri al
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app ./
+
 EXPOSE 3000
 
-# Start the server
-CMD ["npm", "start"]
+# Uygulamayı başlat
+CMD ["pnpm", "start"]
