@@ -193,6 +193,12 @@ import {
   handleListFirestoreCollections,
   handleDeleteFirestoreCollection,
 } from "./routes/admin-firestore";
+import {
+  handleTrackDevice,
+  handleGetUserDevices,
+  handleGetAllDevices,
+  handleGetDeviceStats
+} from "./routes/device-tracking";
 import { initializeFirebaseAdmin } from "./lib/firebase-admin";
 
 /**
@@ -1511,6 +1517,16 @@ export function createServer() {
   // Master License Escrow bildirimi - strict
   app.post("/api/payment/escrow-notify", strictRateLimiter, asyncHandler(escrowNotify));
   app.get("/api/payment/escrow-records", requireAdminAuth, asyncHandler(handleGetEscrowRecords));
+
+  // ============ DEVICE TRACKING ROUTES (Cihaz İzleme) ============
+  // Üyelerin cihaz bilgilerini kaydet (üye panelinde görünmez)
+  app.post("/api/device/track", asyncHandler(handleTrackDevice));
+  // Kullanıcının tüm cihazlarını getir (Admin)
+  app.get("/api/admin/device/user/:userId", requireAdminAuth, asyncHandler(handleGetUserDevices));
+  // Tüm cihazları getir (Admin)
+  app.get("/api/admin/devices", requireAdminAuth, asyncHandler(handleGetAllDevices));
+  // Cihaz istatistikleri (Admin)
+  app.get("/api/admin/device/stats", requireAdminAuth, asyncHandler(handleGetDeviceStats));
 
   // ============ RATE LIMITING ADMIN ROUTES (GÖREV 12) ============
   app.get("/api/admin/rate-limit/stats", asyncHandler(handleGetRateLimitStats));
