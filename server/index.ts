@@ -339,6 +339,15 @@ export function createServer() {
   // Static dosyaları servis et (Vite build output)
   app.use(express.static(path.join(__dirname, '..', 'dist')));
 
+  // SPA fallback - tüm bilinmeyen route'lar için index.html döndür
+  app.get('*', (req, res, next) => {
+    // API route'ları için fallback yapma
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    res.sendFile(path.join(__dirname, '..', 'dist', 'index.html'));
+  });
+
   // ============ HEALTH CHECK ============
   // Rate limiter uygulamadan health check endpoint'lerini ekle
   app.get("/api/health", (_req, res) => {
