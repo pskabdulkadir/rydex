@@ -336,6 +336,9 @@ export function createServer() {
   app.use(express.json({ limit: "10mb" }));
   app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
+  // Static dosyaları servis et (Vite build output)
+  app.use(express.static(path.join(__dirname, '..', 'dist')));
+
   // ============ HEALTH CHECK ============
   // Rate limiter uygulamadan health check endpoint'lerini ekle
   app.get("/api/health", (_req, res) => {
