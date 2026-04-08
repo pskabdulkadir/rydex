@@ -2498,6 +2498,7 @@ ${request.approvedAt ? `Onay Tarihi: ${new Date(request.approvedAt).toLocaleDate
 
                                 const subscription = {
                                   id: `sub_${Date.now()}`,
+                                  userId: receipt.user_id, // Üye ID'sini ekle - hasAppAccess için gerekli
                                   plan: receipt.plan,
                                   amount: pkgInfo.price,
                                   currency: 'TRY',
