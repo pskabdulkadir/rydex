@@ -1342,17 +1342,13 @@ export default function AdminPanel() {
           >
             💳 Checkout Yönetimi
           </button>
-          <button
-            onClick={() => navigate('/member-panel')}
-            className={`px-6 py-3 font-semibold transition-all duration-200 border-b-2 whitespace-nowrap flex items-center gap-2 ${
-              selectedTab === 'member'
-                ? 'border-indigo-500 text-white shadow-sm shadow-indigo-500/20'
-                : 'border-transparent text-slate-400 hover:text-slate-300 hover:border-indigo-500/50'
-            }`}
-            title="Üye Paneline Git"
-          >
-            👤 Üye Paneli
-          </button>
+            <button
+              onClick={() => navigate('/member-panel')}
+              className="px-6 py-3 font-semibold transition-all duration-200 border-b-2 border-transparent text-slate-400 hover:text-slate-300 hover:border-indigo-500/50 whitespace-nowrap flex items-center gap-2"
+              title="Üye Paneline Git"
+            >
+              👤 Üye Paneli
+            </button>
         </div>
 
         {/* Dashboard Tab */}
@@ -2549,7 +2545,28 @@ ${request.approvedAt ? `Onay Tarihi: ${new Date(request.approvedAt).toLocaleDate
                                 localStorage.setItem('subscription', JSON.stringify(subscription));
                                 console.log('✅ Subscription localStorage\'a kaydedildi:', subscription);
 
+                                // 3. hasAppAccess kontrolü yap
+                                const hasAccess = (() => {
+                                  try {
+                                    const sub = JSON.parse(localStorage.getItem('subscription') || '{}');
+                                    if (!sub || !sub.userId) return false;
+                                    if (sub.userId !== receipt.user_id) return false;
+                                    const remaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+                                    return remaining > 0;
+                                  } catch (e) {
+                                    console.warn('hasAppAccess kontrol hatası:', e);
+                                    return false;
+                                  }
+                                })();
+
+                                console.log('🔒 hasAppAccess kontrolü:', { userId: receipt.user_id, hasAccess });
+
                                 toast.success(`✓ Subscription aktif edildi: ${receipt.plan.toUpperCase()} (${pkgInfo.durationText})`);
+                                if (hasAccess) {
+                                  toast.success('🎉 Kullanıcı artık uygulamaya erişebilir!');
+                                } else {
+                                  toast.warning('⚠️ Kullanıcı erişimi kontrol edilmeli');
+                                }
                               } else {
                                 toast.error(data.message || 'Onaylama başarısız');
                               }

@@ -72,16 +72,10 @@ export const adminAuth = adminAuthInstance;
 
 // Geriye uyumluluk için helper fonksiyonlar
 export const getAdminDb = () => {
-  if (!adminDbInstance) {
-    throw new Error('Firebase Firestore başlatılamadı. firebase-adminsdk.json dosyasını kontrol edin.');
-  }
   return adminDbInstance;
 };
 
 export const getAdminAuth = () => {
-  if (!adminAuthInstance) {
-    throw new Error('Firebase Auth başlatılamadı. firebase-adminsdk.json dosyasını kontrol edin.');
-  }
   return adminAuthInstance;
 };
 
