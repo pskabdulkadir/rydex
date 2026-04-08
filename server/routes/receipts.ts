@@ -246,11 +246,21 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
     const db = getDatabase();
     let receipt = await db.getReceipt(receiptId);
 
-    const firestoreDb = getAdminDb();
+    let firestoreDb = null;
+    try {
+      firestoreDb = getAdminDb();
+    } catch (fbError) {
+      console.warn('⚠️ Firestore başlatma hatası (bellek içi devam ediyor):', fbError instanceof Error ? fbError.message : String(fbError));
+    }
+
     if (firestoreDb && !receipt) {
-      const receiptSnap = await firestoreDb.collection('receipts').doc(receiptId).get();
-      if (receiptSnap.exists) {
-        receipt = mapFirestoreReceipt(receiptSnap);
+      try {
+        const receiptSnap = await firestoreDb.collection('receipts').doc(receiptId).get();
+        if (receiptSnap.exists) {
+          receipt = mapFirestoreReceipt(receiptSnap);
+        }
+      } catch (fbQueryError) {
+        console.warn('⚠️ Firestore receipt sorgu hatası:', fbQueryError instanceof Error ? fbQueryError.message : String(fbQueryError));
       }
     }
 
