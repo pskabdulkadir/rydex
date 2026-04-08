@@ -261,7 +261,7 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
       });
     }
 
-    // Firestore'a güncelle
+    // Firestore'a güncelle (eğer varsa)
     if (firestoreDb) {
       try {
         const receiptRef = firestoreDb.collection('receipts').doc(receiptId);
@@ -286,7 +286,7 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
             await db.updateUserSubscription(receipt.user_id, packageId, new Date(expiryTime).toISOString());
             console.log(`📦 User ${receipt.user_id}'e paket açıldı (Database): ${packageId} (Süresi: ${pkg.duration})`);
 
-            // 2. Firestore'a da kaydet (varsa)
+            // 2. Firestore'a da kaydet (eğer varsa)
             if (firestoreDb) {
               try {
                 const userRef = firestoreDb.collection('users').doc(receipt.user_id);

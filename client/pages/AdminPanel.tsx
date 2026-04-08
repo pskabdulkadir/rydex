@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, CheckCircle, Clock, AlertCircle, Download, RefreshCw, BarChart3, TrendingUp, Users, DollarSign, Activity, Edit2, Trash2, UserPlus, Lock, Unlock, LogOut, Zap, MessageCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAdmin } from '@/lib/admin-context';
-import { isAdminLoggedIn, getAdminUser, logoutAdmin, getAdminToken, refreshAdminToken } from '@/lib/admin-auth';
+import { isAdminLoggedIn, getAdminUser, logoutAdmin, getAdminToken, refreshAdminToken, getAuthorizationHeader } from '@/lib/admin-auth';
 import { useTokenExpiryWarning } from '@/lib/hooks/useAdminAuth';
 import { createAuditLog, getAuditLogs, formatAuditLogForTimeline } from '@/lib/audit-logger';
 import CheckoutSettingsAdmin from '@/components/admin/CheckoutSettingsAdmin';
@@ -302,11 +302,10 @@ export default function AdminPanel() {
     const loadEscrowRequests = async () => {
       try {
         const token = getAdminToken();
-        if (token) {
+        const authHeader = getAuthorizationHeader();
+        if (authHeader) {
           const response = await fetch('/api/payment/escrow-records', {
-            headers: {
-              'Authorization': `Bearer ${token.token}`,
-            },
+            headers: authHeader,
           });
 
           if (response.ok) {
