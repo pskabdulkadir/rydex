@@ -3,6 +3,10 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Vite config'leri ARG olarak al (Render environment variables'dan gelir)
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
+
 # Firebase config'leri ARG olarak al (Render environment variables'dan gelir)
 ARG VITE_FIREBASE_API_KEY
 ARG VITE_FIREBASE_AUTH_DOMAIN
