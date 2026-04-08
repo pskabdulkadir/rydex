@@ -439,6 +439,42 @@ export default function AdminPanel() {
   }, []);
 
   const [users, setUsers] = useState<User[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(false);
+
+  // Gerçek kullanıcıları API'den yükle
+  const loadRealUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      // Firebase'den tüm kullanıcıları al
+      const response = await fetch('/api/admin/members/pending');
+      if (response.ok) {
+        const data = await response.json();
+        // Tüm üyeleri User formatına dönüştür
+        const allMembers = data.allMembers || [];
+        const realUsers: User[] = allMembers.map((member: any) => ({
+          id: member.id || member.userId || '',
+          name: member.username || member.email || 'Bilinmeyen',
+          email: member.email || '',
+          role: 'user' as const,
+          status: member.approval_status === 'approved' ? 'active' : member.approval_status === 'rejected' ? 'inactive' : 'inactive',
+          joinDate: new Date(member.created_at || Date.now()).getTime(),
+          lastLogin: new Date(member.updated_at || Date.now()).getTime(),
+          package: member.current_package || member.plan || 'starter'
+        }));
+        setUsers(realUsers);
+        console.log(`✅ ${realUsers.length} gerçek üye yüklendi`);
+      }
+    } catch (error) {
+      console.error('Gerçek üyeler yükleme hatası:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
+  // Sayfa yüklendiğinde gerçek kullanıcıları yükle
+  useEffect(() => {
+    loadRealUsers();
+  }, []);
 
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
