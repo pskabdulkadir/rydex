@@ -301,7 +301,23 @@ export default function AdminPanel() {
   useEffect(() => {
     const loadEscrowRequests = async () => {
       try {
+        // Token'ı kontrol et ve gerekirse yenile
         const token = getAdminToken();
+        if (!token) {
+          console.warn('❌ Admin token yok, escrow kayıtları yüklenemedi');
+          return;
+        }
+
+        // Token süresi dolmuş mu kontrol et
+        if (token.expiresAt < Date.now()) {
+          console.warn('❌ Token süresi dolmuş, yenileniyor...');
+          const refreshedToken = await refreshAdminToken();
+          if (!refreshedToken) {
+            console.error('❌ Token yenilenemedi, escrow kayıtları yüklenemedi');
+            return;
+          }
+        }
+
         const authHeader = getAuthorizationHeader();
         if (authHeader) {
           const response = await fetch('/api/payment/escrow-records', {
@@ -314,6 +330,26 @@ export default function AdminPanel() {
             setRequests(escrowReqs);
             console.log('📋 Escrow istekleri yüklendi:', escrowReqs.length);
             return;
+          } else if (response.status === 401) {
+            console.warn('❌ 401 Unauthorized, token yenileniyor...');
+            const refreshedToken = await refreshAdminToken();
+            if (refreshedToken) {
+              // Yeni token ile tekrar dene
+              const newAuthHeader = getAuthorizationHeader();
+              if (newAuthHeader) {
+                const retryResponse = await fetch('/api/payment/escrow-records', {
+                  headers: newAuthHeader,
+                });
+                
+                if (retryResponse.ok) {
+                  const data = await retryResponse.json();
+                  const escrowReqs = (data.records || []) as EscrowRequest[];
+                  setRequests(escrowReqs);
+                  console.log('📋 Escrow istekleri (yeniden) yüklendi:', escrowReqs.length);
+                  return;
+                }
+              }
+            }
           }
         }
 
@@ -441,12 +477,109 @@ export default function AdminPanel() {
   const [users, setUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
 
+  // Tüm kullanıcıları API'den yükle
+  const loadAllUsers = async () => {
+    setLoadingUsers(true);
+    try {
+      // Token'ı kontrol et ve gerekirse yenile
+      const token = getAdminToken();
+      if (!token) {
+        console.warn('❌ Admin token yok, üyeler yüklenemedi');
+        return;
+      }
+
+      // Token süresi dolmuş mu kontrol et
+      if (token.expiresAt < Date.now()) {
+        console.warn('❌ Token süresi dolmuş, yenileniyor...');
+        const refreshedToken = await refreshAdminToken();
+        if (!refreshedToken) {
+          console.error('❌ Token yenilenemedi, üyeler yüklenemedi');
+          return;
+        }
+      }
+
+      // Yeni endpoint'ten tüm kullanıcıları al
+      const authHeader = getAuthorizationHeader();
+      const response = await fetch('/api/admin/members/all', {
+        headers: authHeader
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // API'den gelen veriyi User formatına dönüştür
+        const realUsers: User[] = data.map((member: any) => ({
+          id: member.id || member.userId || '',
+          name: member.username || member.email || 'Bilinmeyen',
+          email: member.email || '',
+          role: 'user' as const,
+          status: member.approval_status === 'approved' ? 'active' : member.approval_status === 'rejected' ? 'inactive' : 'inactive',
+          joinDate: new Date(member.created_at || Date.now()).getTime(),
+          lastLogin: new Date(member.updated_at || Date.now()).getTime(),
+          package: member.current_package || member.plan || 'starter'
+        }));
+        setUsers(realUsers);
+        console.log(`✅ ${realUsers.length} gerçek üye yüklendi`);
+      } else if (response.status === 401) {
+        console.warn('❌ 401 Unauthorized, token yenileniyor...');
+        const refreshedToken = await refreshAdminToken();
+        if (refreshedToken) {
+          // Yeni token ile tekrar dene
+          const newAuthHeader = getAuthorizationHeader();
+          const retryResponse = await fetch('/api/admin/members/all', {
+            headers: newAuthHeader
+          });
+          
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            const realUsers: User[] = data.map((member: any) => ({
+              id: member.id || member.userId || '',
+              name: member.username || member.email || 'Bilinmeyen',
+              email: member.email || '',
+              role: 'user' as const,
+              status: member.approval_status === 'approved' ? 'active' : member.approval_status === 'rejected' ? 'inactive' : 'inactive',
+              joinDate: new Date(member.created_at || Date.now()).getTime(),
+              lastLogin: new Date(member.updated_at || Date.now()).getTime(),
+              package: member.current_package || member.plan || 'starter'
+            }));
+            setUsers(realUsers);
+            console.log(`✅ ${realUsers.length} gerçek üye (yeniden) yüklendi`);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Gerçek üyeler yükleme hatası:', error);
+    } finally {
+      setLoadingUsers(false);
+    }
+  };
+
   // Gerçek kullanıcıları API'den yükle
   const loadRealUsers = async () => {
     setLoadingUsers(true);
     try {
+      // Token'ı kontrol et ve gerekirse yenile
+      const token = getAdminToken();
+      if (!token) {
+        console.warn('❌ Admin token yok, üyeler yüklenemedi');
+        return;
+      }
+
+      // Token süresi dolmuş mu kontrol et
+      if (token.expiresAt < Date.now()) {
+        console.warn('❌ Token süresi dolmuş, yenileniyor...');
+        const refreshedToken = await refreshAdminToken();
+        if (!refreshedToken) {
+          console.error('❌ Token yenilenemedi, üyeler yüklenemedi');
+          return;
+        }
+      }
+
       // Firebase'den tüm kullanıcıları al
-      const response = await fetch('/api/admin/members/pending');
+      const authHeader = getAuthorizationHeader();
+      const response = await fetch('/api/admin/members/pending', {
+        headers: authHeader
+      });
+
       if (response.ok) {
         const data = await response.json();
         // Tüm üyeleri User formatına dönüştür
@@ -463,6 +596,33 @@ export default function AdminPanel() {
         }));
         setUsers(realUsers);
         console.log(`✅ ${realUsers.length} gerçek üye yüklendi`);
+      } else if (response.status === 401) {
+        console.warn('❌ 401 Unauthorized, token yenileniyor...');
+        const refreshedToken = await refreshAdminToken();
+        if (refreshedToken) {
+          // Yeni token ile tekrar dene
+          const newAuthHeader = getAuthorizationHeader();
+          const retryResponse = await fetch('/api/admin/members/pending', {
+            headers: newAuthHeader
+          });
+          
+          if (retryResponse.ok) {
+            const data = await retryResponse.json();
+            const allMembers = data.allMembers || [];
+            const realUsers: User[] = allMembers.map((member: any) => ({
+              id: member.id || member.userId || '',
+              name: member.username || member.email || 'Bilinmeyen',
+              email: member.email || '',
+              role: 'user' as const,
+              status: member.approval_status === 'approved' ? 'active' : member.approval_status === 'rejected' ? 'inactive' : 'inactive',
+              joinDate: new Date(member.created_at || Date.now()).getTime(),
+              lastLogin: new Date(member.updated_at || Date.now()).getTime(),
+              package: member.current_package || member.plan || 'starter'
+            }));
+            setUsers(realUsers);
+            console.log(`✅ ${realUsers.length} gerçek üye (yeniden) yüklendi`);
+          }
+        }
       }
     } catch (error) {
       console.error('Gerçek üyeler yükleme hatası:', error);
@@ -2017,7 +2177,67 @@ export default function AdminPanel() {
             {/* Tüm Üyeler */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold text-white">Tüm Üyeler</h2>
-              <PendingMembersPanel adminId={adminUser?.adminId || 'admin'} />
+              <div className="bg-slate-900/50 border border-slate-700/50 rounded-lg p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-white">Üye Listesi</h3>
+                    <p className="text-sm text-slate-400">Sistemdeki tüm kullanıcılar</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={loadAllUsers}
+                      disabled={loadingUsers}
+                      className="px-3 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors"
+                    >
+                      {loadingUsers ? '⏳ Yükleniyor...' : '🔄 Yenile'}
+                    </button>
+                  </div>
+                </div>
+
+                {loadingUsers ? (
+                  <div className="text-center py-8">
+                    <p className="text-slate-400">Üyeler yükleniyor...</p>
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-slate-400">Henüz üye yok</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {users.map((user) => (
+                      <div
+                        key={user.id}
+                        className="bg-slate-800/50 border border-slate-700/50 rounded-lg p-4 hover:border-slate-600 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-semibold text-white">{user.name}</h4>
+                            <p className="text-sm text-slate-400">{user.email}</p>
+                            <div className="flex gap-2 mt-2">
+                              <span className={`px-2 py-1 text-xs rounded-full ${
+                                user.status === 'active' ? 'bg-green-500/20 text-green-400' :
+                                user.status === 'banned' ? 'bg-red-500/20 text-red-400' :
+                                'bg-yellow-500/20 text-yellow-400'
+                              }`}>
+                                {user.status === 'active' ? '✓ Aktif' : user.status === 'banned' ? '✕ Engelli' : '⏸ Pasif'}
+                              </span>
+                              <span className="px-2 py-1 text-xs bg-blue-500/20 text-blue-400 rounded-full">
+                                {user.package}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-xs text-slate-400">Katılma</p>
+                            <p className="text-sm font-semibold text-white">
+                              {new Date(user.joinDate).toLocaleDateString('tr-TR')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Tüm Satın Almalar */}

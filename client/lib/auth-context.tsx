@@ -11,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
 import { auth, db, isFirebaseEnabled } from './firebase';
-import { getUserSubscription, migrateUserDataToFirestore } from './firestore-user';
+import { getUserSubscription, setUserSubscription, migrateUserDataToFirestore } from './firestore-user';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -312,7 +312,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('userName');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('systemInitialized');
-      localStorage.removeItem('subscription');
+      // Subscription'ı localStorage'dan silme - Firestore'dan okunacak
+      // localStorage.removeItem('subscription'); // YORUMA ALINDI - subscription Firestore'da saklanıyor
     }
   };
 
@@ -344,11 +345,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       if (!auth.currentUser) return;
 
-      // Önce Firestore'dan subscription kontrol et
+      // 1. Önce Firestore'dan subscription kontrol et (birincil kaynak)
       try {
         const sub = await getUserSubscription(auth.currentUser.uid);
         if (sub) {
           setSubscription(sub);
+          
+          // localStorage'a da kaydet (offline erişim için)
+          localStorage.setItem('subscription', JSON.stringify({
+            ...sub,
+            endDate: sub.endDate
+          }));
 
           // Subscription'ın süresi dolduysa logout yap
           if (sub.daysRemaining <= 0) {
@@ -361,7 +368,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         console.warn('⚠ Firestore subscription kontrol hatası:', firestoreErr);
       }
 
-      // Firestore başarısız olursa localStorage'dan kontrol et
+      // 2. Firestore'da yoksa localStorage'dan kontrol et (yedek)
       const savedSubscription = localStorage.getItem('subscription');
       if (savedSubscription) {
         try {
@@ -376,6 +383,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             status: daysRemaining > 0 ? 'active' : 'expired'
           });
 
+          // Firestore'a da kaydet (senkronizasyon)
+          if (auth.currentUser && daysRemaining > 0) {
+            try {
+              await setUserSubscription(auth.currentUser.uid, sub);
+            } catch (syncErr) {
+              console.warn('⚠ Firestore senkronizasyon hatası:', syncErr);
+            }
+          }
+
           // Subscription'ın süresi dolduysa logout yap
           if (daysRemaining <= 0) {
             console.warn('⏰ Subscription süresi doldu, çıkış yapılıyor...');
@@ -387,7 +403,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       }
 
-      // Firestore ve localStorage'dan kontrol yeterli (Firebase kullanıyor)
+      // 3. Hiçbir yerde subscription yoksa null döndür
+      setSubscription(null);
     } catch (err) {
       console.error('Subscription check error:', err);
     }

@@ -934,6 +934,33 @@ class DatabaseManager {
     }
   }
 
+  async getAllUsers(): Promise<UserRecord[]> {
+    try {
+      if (this.useInMemory) {
+        return this.inMemoryUsers;
+      }
+
+      if (this.supabase) {
+        const { data, error } = await this.supabase
+          .from('users')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          console.error('Supabase tüm kullanıcı sorgulama hatası:', error);
+          return [];
+        }
+
+        return (data || []) as UserRecord[];
+      }
+
+      return [];
+    } catch (error) {
+      console.error('Tüm kullanıcı sorgulama hatası:', error);
+      return [];
+    }
+  }
+
   /**
    * Ödeme kaydını kaydet
    */

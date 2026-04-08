@@ -213,6 +213,7 @@ export const handleApproveUser: RequestHandler = async (req, res) => {
           updateData.subscription_end = new Date(expiryTime).toISOString();
           updateData.package_activated_at = new Date().toISOString();
           updateData.package_activated_by = adminId;
+          updateData.is_active = true; // Kullanıcıyı aktif yap
         }
 
         await userRef.set(updateData, { merge: true });
@@ -250,17 +251,25 @@ export const handleApproveUser: RequestHandler = async (req, res) => {
       });
     }
 
-    // Onay başarılı ise paket data al ve subscription set et
-    let subscriptionEnd = undefined;
-    if (status === 'approved') {
-      const pkg = PACKAGES[packageId as PackageType];
-      if (pkg) {
-        const startTime = Date.now();
-        const expiryTime = calculateExpiryTimestamp(packageId as PackageType, startTime);
-        subscriptionEnd = new Date(expiryTime).toISOString();
-        console.log(`📦 Paket açıldı: ${packageId} (Süresi: ${pkg.duration})`);
-      }
-    }
+        // Onay başarılı ise paket data al ve subscription set et
+        let subscriptionEnd = undefined;
+        if (status === 'approved') {
+          const pkg = PACKAGES[packageId as PackageType];
+          if (pkg) {
+            const startTime = Date.now();
+            const expiryTime = calculateExpiryTimestamp(packageId as PackageType, startTime);
+            subscriptionEnd = new Date(expiryTime).toISOString();
+            console.log(`📦 Paket açıldı: ${packageId} (Süresi: ${pkg.duration})`);
+            
+            // Veritabanına da subscription bilgisini ekle
+            try {
+              const db = getDatabase();
+              await db.updateUserSubscription(userId, packageId, subscriptionEnd);
+            } catch (dbErr) {
+              console.warn(`⚠️ Veritabanı subscription güncelleme hatası: ${userId}`, dbErr);
+            }
+          }
+        }
 
     console.log(`✅ Üye ${status}: ${userId} (Admin: ${adminId})`);
 
@@ -335,6 +344,56 @@ export const handleDeleteUser: RequestHandler = async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Silme işlemi başarısız',
+      details: error instanceof Error ? error.message : String(error)
+    });
+  }
+};
+
+/**
+ * Tüm kullanıcıları getir (Admin için)
+ */
+export const handleGetAllUsers: RequestHandler = async (req, res) => {
+  try {
+    const firestoreDb = getAdminDb();
+    if (firestoreDb) {
+      const snapshot = await firestoreDb.collection('users').get();
+      
+      const users = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          username: data.username || data.displayName || data.email || doc.id,
+          email: data.email || '',
+          phone: data.phone || data.phoneNumber || '',
+          created_at: toISOTime(data.createdAt || data.created_at),
+          approval_status: data.approval_status || data.approvalStatus || 'pending',
+          is_active: data.is_active !== false,
+          current_package: data.current_package || 'free',
+          subscription_end: data.subscription_end ? toISOTime(data.subscription_end) : null,
+          last_login: data.last_login ? toISOTime(data.last_login) : null,
+        };
+      });
+
+      return res.json({
+        success: true,
+        count: users.length,
+        users: users.sort((a: any, b: any) => a.created_at.localeCompare(b.created_at))
+      });
+    }
+
+    const db = getDatabase();
+    const users = await db.getAllUsers();
+
+    res.json({
+      success: true,
+      count: users.length,
+      users: users
+    });
+  } catch (error) {
+    console.error('Tüm kullanıcıları getirme hatası:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Kullanıcılar alınamadı',
       details: error instanceof Error ? error.message : String(error)
     });
   }

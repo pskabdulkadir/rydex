@@ -26,6 +26,7 @@ import {
   cleanupOldPaymentRecords
 } from '@/lib/payment-verification';
 import { useSubscriptionStatus, useSubscriptionExpiryWarning } from '@/lib/hooks/useSubscriptionStatus';
+import { getUserSubscription } from '@/lib/firestore-user';
 
 export default function MemberPanel() {
   const navigate = useNavigate();
@@ -135,8 +136,41 @@ export default function MemberPanel() {
     };
   }, [user]);
 
-  // Subscription'ı load et (localStorage'dan)
-  const loadSubscription = () => {
+  // Subscription'ı load et (API'den + localStorage fallback)
+  const loadSubscription = async () => {
+    if (!user?.uid) return;
+    
+    // 1. Önce API'den subscription durumunu kontrol et
+    try {
+      const response = await fetch('/api/subscription/status', {
+        headers: {
+          'x-user-id': user.uid,
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.success && data.subscription) {
+          const sub = data.subscription;
+          const daysRemaining = Math.max(0, Math.ceil((sub.endDate - Date.now()) / (1000 * 60 * 60 * 24)));
+          setLocalSubscription({
+            ...sub,
+            daysRemaining
+          });
+          // localStorage'a da kaydet
+          localStorage.setItem('subscription', JSON.stringify({
+            ...sub,
+            daysRemaining
+          }));
+          console.log('✅ Subscription API\'den yüklendi:', sub.plan, 'Kalan gün:', daysRemaining);
+          return;
+        }
+      }
+    } catch (apiErr) {
+      console.warn('⚠️ API subscription yükleme hatası:', apiErr);
+    }
+
+    // 2. API başarısızsa localStorage'dan dene
     const savedSub = localStorage.getItem('subscription');
     if (savedSub) {
       try {
@@ -147,7 +181,7 @@ export default function MemberPanel() {
           ...sub,
           daysRemaining
         });
-        console.log('✅ Subscription yüklendi:', sub.plan, 'Kalan gün:', daysRemaining);
+        console.log('✅ Subscription localStorage\'dan yüklendi:', sub.plan, 'Kalan gün:', daysRemaining);
       } catch (e) {
         console.warn('Subscription parse hatası:', e);
       }
@@ -156,10 +190,10 @@ export default function MemberPanel() {
 
   useEffect(() => {
     loadSubscription();
-    // Her 5 saniyede bir localStorage'ı kontrol et (admin onayı sonrası güncelleme için)
+    // Her 5 saniyede bir subscription'ı kontrol et (admin onayı sonrası güncelleme için)
     const interval = setInterval(loadSubscription, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user?.uid]);
 
   // Dekonları getir
   const fetchReceipts = async () => {

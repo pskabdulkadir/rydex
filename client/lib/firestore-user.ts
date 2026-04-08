@@ -110,9 +110,63 @@ export async function setUserSubscription(
     };
 
     await setDoc(subDocRef, subscriptionData);
+    console.log(`✅ Subscription Firestore'a kaydedildi: ${uid}`);
   } catch (error) {
     console.error('setUserSubscription hatası:', error);
     throw error;
+  }
+}
+
+/**
+ * Kullanıcının Firestore'daki profilini güncelle (admin onayı sonrası)
+ */
+export async function updateUserApprovalStatus(
+  uid: string,
+  approvalStatus: 'pending' | 'approved' | 'rejected',
+  isActive: boolean,
+  packageId?: string,
+  subscriptionEnd?: string
+): Promise<void> {
+  try {
+    const userRef = doc(db, 'users', uid);
+    const updateData: any = {
+      approval_status: approvalStatus,
+      is_active: isActive,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (packageId) {
+      updateData.current_package = packageId;
+    }
+    if (subscriptionEnd) {
+      updateData.subscription_end = subscriptionEnd;
+      updateData.subscription_start = new Date().toISOString();
+    }
+
+    await updateDoc(userRef, updateData);
+    console.log(`✅ Kullanıcı onay durumu güncellendi: ${uid} -> ${approvalStatus}`);
+  } catch (error) {
+    console.error('updateUserApprovalStatus hatası:', error);
+    throw error;
+  }
+}
+
+/**
+ * Firestore'dan tüm kullanıcıları al (admin paneli için)
+ */
+export async function getAllUsers(): Promise<any[]> {
+  try {
+    const { collection, getDocs } = await import('firebase/firestore');
+    const usersRef = collection(db, 'users');
+    const snapshot = await getDocs(usersRef);
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('getAllUsers hatası:', error);
+    return [];
   }
 }
 

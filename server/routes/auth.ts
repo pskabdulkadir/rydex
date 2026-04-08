@@ -134,26 +134,34 @@ export const handleRegister: RequestHandler<any, RegisterResponse, RegisterReque
       });
     }
 
-    // Firebase Firestore'a da kaydet
-    const firestoreDb = getAdminDb();
-    if (firestoreDb) {
-      try {
-        await firestoreDb.collection('users').doc(userId).set({
-          id: userId,
-          username: username,
-          phone: phone,
-          email: email || `user_${userId}@app.local`,
-          approval_status: 'pending',
-          is_active: false,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        }, { merge: true });
-        console.log(`✅ Kullanıcı Firestore'a kaydedildi: ${username} (ID: ${userId}) - Onay bekleniyor`);
-      } catch (firestoreError) {
-        console.warn(`⚠️ Firestore kayıt hatası (devam ediliyor): ${username}`, firestoreError);
-        // Hata olsa bile kayıt işlemine devam et, Firestore olmasa da sistem çalışmalı
-      }
-    }
+        // Firebase Firestore'a da kaydet
+        const firestoreDb = getAdminDb();
+        if (firestoreDb) {
+          try {
+            await firestoreDb.collection('users').doc(userId).set({
+              id: userId,
+              username: username,
+              phone: phone,
+              email: email || `user_${userId}@app.local`,
+              approval_status: 'pending', // Yeni üye onay bekliyor
+              is_active: false, // Onay alana kadar inaktif
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              // Ek alanlar admin panelinde görünmesi için
+              last_login: new Date().toISOString(),
+              current_package: 'free',
+              subscription_start: null,
+              subscription_end: null,
+              rejection_reason: null,
+              approved_by: null,
+              approved_at: null,
+            }, { merge: true });
+            console.log(`✅ Kullanıcı Firestore'a kaydedildi: ${username} (ID: ${userId}) - Onay bekleniyor`);
+          } catch (firestoreError) {
+            console.warn(`⚠️ Firestore kayıt hatası (devam ediliyor): ${username}`, firestoreError);
+            // Hata olsa bile kayıt işlemine devam et, Firestore olmasa da sistem çalışmalı
+          }
+        }
 
     // Bellek içi cache'de de tut
     const newUser: UserProfile & { password: string } = {
@@ -278,52 +286,52 @@ export const handleLogin: RequestHandler<any, LoginResponse, LoginRequest> = asy
       }
     }
 
-    // Firebase'den de kontrol et
-    if (!user) {
-      const firestoreDb = getAdminDb();
-      if (firestoreDb) {
-        try {
-          // E-posta veya username ile ara
-          const snapshot = await firestoreDb
-            .collection('users')
-            .where('email', '==', email)
-            .limit(1)
-            .get();
+          // Firebase'den de kontrol et
+          if (!user) {
+            const firestoreDb = getAdminDb();
+            if (firestoreDb) {
+              try {
+                // E-posta veya username ile ara
+                const snapshot = await firestoreDb
+                  .collection('users')
+                  .where('email', '==', email)
+                  .limit(1)
+                  .get();
 
-          if (!snapshot.empty) {
-            const firestoreUser = snapshot.docs[0].data();
-            user = {
-              uid: firestoreUser.id || snapshot.docs[0].id,
-              email: firestoreUser.email || email,
-              username: firestoreUser.username,
-              phone: firestoreUser.phone || '',
-              password: '', // Firestore'da şifre saklanmaz
-              createdAt: new Date(firestoreUser.created_at).getTime(),
-              updatedAt: new Date(firestoreUser.updated_at).getTime(),
-              isAdmin: false,
-              preferences: {
-                theme: "light",
-                language: "tr",
-                notifications: true,
-              },
-              statistics: {
-                totalScans: 0,
-                totalScanTime: 0,
-                areasExplored: 0,
-              },
-              subscription: {
-                plan: "free",
-                isActive: false,
-                daysRemaining: 0,
-                endDate: 0,
-              },
-            };
+                if (!snapshot.empty) {
+                  const firestoreUser = snapshot.docs[0].data();
+                  user = {
+                    uid: firestoreUser.id || snapshot.docs[0].id,
+                    email: firestoreUser.email || email,
+                    username: firestoreUser.username,
+                    phone: firestoreUser.phone || '',
+                    password: '', // Firestore'da şifre saklanmaz
+                    createdAt: new Date(firestoreUser.created_at).getTime(),
+                    updatedAt: new Date(firestoreUser.updated_at).getTime(),
+                    isAdmin: false,
+                    preferences: {
+                      theme: "light",
+                      language: "tr",
+                      notifications: true,
+                    },
+                    statistics: {
+                      totalScans: 0,
+                      totalScanTime: 0,
+                      areasExplored: 0,
+                    },
+                    subscription: {
+                      plan: "free",
+                      isActive: false,
+                      daysRemaining: 0,
+                      endDate: 0,
+                    },
+                  };
+                }
+              } catch (firestoreError) {
+                console.warn('Firebase login kontrolü hatası:', firestoreError);
+              }
+            }
           }
-        } catch (firestoreError) {
-          console.warn('Firebase login kontrolü hatası:', firestoreError);
-        }
-      }
-    }
 
     if (!user) {
       return res.status(401).json({

@@ -283,7 +283,7 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
           approved_at: new Date().toISOString()
         };
 
-        // Onay yapıldıysa user'a subscription set et
+            // Onay yapıldıysa user'a subscription set et
         if (status === 'approved' && receipt.user_id) {
           const packageId = (receipt.plan as PackageType) || 'starter';
           const pkg = PACKAGES[packageId];
@@ -311,6 +311,7 @@ export const handleApproveReceipt: RequestHandler = async (req, res) => {
                     package_activated_by: adminId,
                     last_receipt_approved: receiptId,
                     is_active: true,
+                    approval_status: 'approved', // Onaylandı olarak işaretle
                   }, { merge: true });
                   console.log(`✅ Firestore user güncellendi: ${receipt.user_id}`);
                 }
