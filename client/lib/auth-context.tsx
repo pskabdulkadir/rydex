@@ -10,7 +10,7 @@ import {
   sendPasswordResetEmail
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
-import { auth, db } from './firebase';
+import { auth, db, isFirebaseEnabled } from './firebase';
 import { getUserSubscription, migrateUserDataToFirestore } from './firestore-user';
 
 interface AuthContextType {
@@ -42,6 +42,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Firebase Authentication State listener
   useEffect(() => {
+    // Firebase enabled değilse, localStorage'dan kullanıcı durumunu kontrol et
+    if (!isFirebaseEnabled() || !auth) {
+      console.log('🔐 Firebase Auth kapalı, localStorage kontrol ediliyor...');
+      const savedToken = localStorage.getItem('auth_token');
+      const savedUser = localStorage.getItem('user_profile');
+      if (savedToken && savedUser) {
+        try {
+          const userProfile = JSON.parse(savedUser);
+          setUser(userProfile);
+          setToken(savedToken);
+        } catch (e) {
+          console.warn('localStorage auth parse error:', e);
+        }
+      }
+      setLoading(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser: FirebaseUser | null) => {
       try {
         if (firebaseUser) {
