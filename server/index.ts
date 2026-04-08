@@ -1555,3 +1555,18 @@ export function createServer() {
 
   return app;
 }
+
+// ============ SERVER START ============
+const PORT = parseInt(process.env.PORT as string, 10) || 3000;
+
+try {
+  const app = createServer();
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`🚀 Server ${PORT} portunda çalışıyor...`);
+    console.log(`📡 API: http://localhost:${PORT}/api`);
+    console.log(`🏥 Health: http://localhost:${PORT}/api/health`);
+  });
+} catch (error) {
+  console.error('❌ Server başlatma hatası:', error instanceof Error ? error.message : String(error));
+  process.exit(1);
+}
